@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Library, BookOpen, Bookmark, ChevronLeft, ChevronRight, CheckCircle, ArrowRight } from 'lucide-react';
+import React, { useCallback, useState, useEffect } from 'react';
+import { Bookmark, ChevronLeft, ChevronRight, CheckCircle, ArrowRight } from 'lucide-react';
 import { BOOKS } from '@/data/books';
 import { Book, BookChapter, UserSettings, TypingStats, BookProgressRecord } from '@/types';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
 import { LiveStatsBar } from '@/components/typing/LiveStatsBar';
 import { TestResultsModal } from '@/components/typing/TestResultsModal';
-import { db } from '@/lib/db';
+import { createClientId, db } from '@/lib/db';
 
 interface LibraryViewProps {
   settings: UserSettings;
@@ -21,6 +21,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 }) => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [currentChapterIdx, setCurrentChapterIdx] = useState<number>(0);
+  const [sessionOffset, setSessionOffset] = useState(0);
   const [bookProgressMap, setBookProgressMap] = useState<Record<string, BookProgressRecord>>({});
   const [completedStats, setCompletedStats] = useState<TypingStats | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -41,38 +42,42 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     : null;
 
   const targetText = activeChapter ? activeChapter.text : '';
+  const resumeOffset = sessionOffset;
+
+  const persistProgress = useCallback((offset: number, completed = false) => {
+    if (!selectedBook || !activeChapter) return;
+    const earlierCharacters = selectedBook.chapters
+      .slice(0, currentChapterIdx)
+      .reduce((sum, chapter) => sum + chapter.text.length, 0);
+    const totalCharacters = selectedBook.chapters.reduce((sum, chapter) => sum + chapter.text.length, 0);
+    const percent = Math.min(100, Math.round(((earlierCharacters + offset) / Math.max(1, totalCharacters)) * 100));
+    const record: BookProgressRecord = {
+      bookId: selectedBook.id,
+      chapterId: activeChapter.id,
+      chapterIndex: currentChapterIdx,
+      charOffset: offset,
+      percent,
+      totalWordsTyped: selectedBook.chapters.slice(0, currentChapterIdx).reduce((sum, chapter) => sum + chapter.wordCount, 0)
+        + activeChapter.text.slice(0, offset).trim().split(/\s+/).filter(Boolean).length,
+      lastRead: Date.now(),
+      syncedAt: undefined
+    };
+    if (completed) record.charOffset = targetText.length;
+    void db.bookProgress.put(record).then(() => {
+      setBookProgressMap(previous => ({ ...previous, [selectedBook.id]: record }));
+    });
+  }, [activeChapter, currentChapterIdx, selectedBook, targetText.length]);
 
   const handleChapterComplete = (stats: TypingStats) => {
     if (!selectedBook || !activeChapter) return;
     setCompletedStats(stats);
     setIsModalOpen(true);
 
-    const percent = Math.min(100, Math.round(((currentChapterIdx + 1) / selectedBook.chapters.length) * 100));
-
-    // Save bookmark progress in DB
-    db.bookProgress.put({
-      bookId: selectedBook.id,
-      chapterIndex: currentChapterIdx,
-      charOffset: targetText.length,
-      percent,
-      totalWordsTyped: activeChapter.wordCount,
-      lastRead: Date.now()
-    }).then(() => {
-      setBookProgressMap(prev => ({
-        ...prev,
-        [selectedBook.id]: {
-          bookId: selectedBook.id,
-          chapterIndex: currentChapterIdx,
-          charOffset: targetText.length,
-          percent,
-          totalWordsTyped: activeChapter.wordCount,
-          lastRead: Date.now()
-        }
-      }));
-    }).catch(() => {});
+    persistProgress(targetText.length, true);
 
     // Save test result
     db.testResults.add({
+      clientId: createClientId(),
       mode: 'library',
       subMode: selectedBook.title,
       title: `${selectedBook.title} - ${activeChapter.title}`,
@@ -84,6 +89,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       timestamp: Date.now(),
       errors: stats.incorrectChars,
       errorKeys: stats.errorHeatmap
+      ,totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars
     }).catch(() => {});
   };
 
@@ -91,21 +97,39 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     typed,
     wpm,
     accuracy,
+    timeElapsed,
     isFinished,
     handleKeyDown,
     reset
   } = useTypingEngine({
     targetText,
+    initialOffset: resumeOffset,
+    sessionKey: selectedBook && activeChapter ? `${selectedBook.id}-${activeChapter.id}-${resumeOffset}` : 'library-empty',
     strictMode: settings.strictMode,
     onComplete: handleChapterComplete,
     onKeyPress
   });
+
+  useEffect(() => {
+    if (!selectedBook || !activeChapter || typed.length <= resumeOffset || isFinished) return;
+    const timeout = window.setTimeout(() => persistProgress(typed.length), 500);
+    return () => window.clearTimeout(timeout);
+  }, [activeChapter, isFinished, persistProgress, resumeOffset, selectedBook, typed.length]);
+
+  useEffect(() => {
+    const flush = () => {
+      if (selectedBook && activeChapter && typed.length > resumeOffset) persistProgress(typed.length);
+    };
+    window.addEventListener('pagehide', flush);
+    return () => window.removeEventListener('pagehide', flush);
+  }, [activeChapter, persistProgress, resumeOffset, selectedBook, typed.length]);
 
   const handleOpenBook = (book: Book) => {
     const saved = bookProgressMap[book.id];
     const chIdx = saved && saved.chapterIndex < book.chapters.length ? saved.chapterIndex : 0;
     setSelectedBook(book);
     setCurrentChapterIdx(chIdx);
+    setSessionOffset(saved?.chapterIndex === chIdx ? saved.charOffset : 0);
     setIsModalOpen(false);
     reset();
   };
@@ -115,6 +139,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     setIsModalOpen(false);
     if (currentChapterIdx < selectedBook.chapters.length - 1) {
       setCurrentChapterIdx(prev => prev + 1);
+      setSessionOffset(0);
       reset();
     }
   };
@@ -228,7 +253,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           <select
             value={currentChapterIdx}
             onChange={e => {
-              setCurrentChapterIdx(parseInt(e.target.value));
+              const nextIndex = parseInt(e.target.value);
+              setCurrentChapterIdx(nextIndex);
+              const saved = bookProgressMap[selectedBook.id];
+              setSessionOffset(saved?.chapterIndex === nextIndex ? saved.charOffset : 0);
               reset();
             }}
             className="text-xs p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--color-border)] text-[var(--text-primary)] outline-none cursor-pointer"
@@ -246,7 +274,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       <LiveStatsBar
         wpm={wpm}
         accuracy={accuracy}
-        timeElapsed={0}
+        timeElapsed={timeElapsed}
         onReset={() => reset()}
         showLiveWpm={settings.showLiveWpm}
         showLiveAccuracy={settings.showLiveAccuracy}
@@ -260,7 +288,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         caretStyle={settings.caretStyle}
         font={settings.font}
         fontSize={settings.fontSize}
+        wrapMode="literary"
         onKeyDown={handleKeyDown}
+        onReset={() => {
+          setSessionOffset(0);
+          reset(undefined, 0);
+        }}
       />
 
       {/* Chapter Pagination */}
@@ -269,6 +302,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           onClick={() => {
             if (currentChapterIdx > 0) {
               setCurrentChapterIdx(prev => prev - 1);
+              setSessionOffset(0);
               reset();
             }
           }}
@@ -287,6 +321,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           onClick={() => {
             if (currentChapterIdx < selectedBook.chapters.length - 1) {
               setCurrentChapterIdx(prev => prev + 1);
+              setSessionOffset(0);
               reset();
             }
           }}
@@ -305,7 +340,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         title={`Completed Chapter ${currentChapterIdx + 1} of ${selectedBook.title}`}
         onRetry={() => {
           setIsModalOpen(false);
-          reset();
+          setSessionOffset(0);
+          reset(undefined, 0);
         }}
         onNext={currentChapterIdx < selectedBook.chapters.length - 1 ? handleNextChapter : undefined}
       />

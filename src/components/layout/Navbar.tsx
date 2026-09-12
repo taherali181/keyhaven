@@ -1,27 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  BookOpen, 
-  Zap, 
-  Quote as QuoteIcon, 
-  Library, 
-  GraduationCap, 
-  Gamepad2, 
-  Trophy, 
-  User, 
-  Volume2, 
-  VolumeX, 
-  Palette, 
-  Type, 
-  Eye, 
-  EyeOff,
-  CloudRain,
-  Settings,
-  ChevronDown
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  BookOpen, ChevronDown, Eye, EyeOff, Gamepad2, GraduationCap, Library,
+  Moon, Palette, Quote, SlidersHorizontal, Sun, Trophy, User, Volume2, Zap
 } from 'lucide-react';
-import { TypingMode, ThemeId, SwitchSound, AmbientSound, FontFamily, CaretStyle, UserSettings } from '@/types';
-import { THEMES, FONTS } from '@/lib/themes';
+import { AmbientSound, CaretStyle, FontFamily, SwitchSound, ThemeId, TypingMode, UserSettings } from '@/types';
+import { FONTS } from '@/lib/themes';
 
 interface NavbarProps {
   currentMode: TypingMode;
@@ -29,386 +14,138 @@ interface NavbarProps {
   settings: UserSettings;
   onUpdateTheme: (theme: ThemeId) => void;
   onUpdateFont: (font: FontFamily) => void;
-  onUpdateSwitchSound: (s: SwitchSound) => void;
-  onUpdateSoundVolume: (v: number) => void;
-  onUpdateAmbientSound: (a: AmbientSound) => void;
-  onUpdateAmbientVolume: (v: number) => void;
-  onUpdateCaretStyle: (c: CaretStyle) => void;
+  onUpdateSwitchSound: (sound: SwitchSound) => void;
+  onUpdateSoundVolume: (volume: number) => void;
+  onUpdateAmbientSound: (ambient: AmbientSound) => void;
+  onUpdateAmbientVolume: (volume: number) => void;
+  onUpdateCaretStyle: (caret: CaretStyle) => void;
+  onUpdateSetting: <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
   onToggleZenMode: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
-  currentMode,
-  onSelectMode,
-  settings,
-  onUpdateTheme,
-  onUpdateFont,
-  onUpdateSwitchSound,
-  onUpdateSoundVolume,
-  onUpdateAmbientSound,
-  onUpdateAmbientVolume,
-  onUpdateCaretStyle,
-  onToggleZenMode
-}) => {
-  const [showAudioMenu, setShowAudioMenu] = useState(false);
-  const [showThemeMenu, setShowThemeMenu] = useState(false);
-  const [showFontMenu, setShowFontMenu] = useState(false);
+const destinations: Record<string, Array<{ mode: TypingMode; label: string; icon: React.ReactNode }>> = {
+  Practice: [
+    { mode: 'stories', label: 'Stories', icon: <BookOpen /> },
+    { mode: 'quotes', label: 'Quotes', icon: <Quote /> },
+    { mode: 'learn', label: 'Academy', icon: <GraduationCap /> }
+  ],
+  Compete: [
+    { mode: 'speed-test', label: 'Speed Test', icon: <Zap /> },
+    { mode: 'arcade', label: 'Arcade', icon: <Gamepad2 /> },
+    { mode: 'leaderboard', label: 'Leaderboards', icon: <Trophy /> }
+  ],
+  Progress: [{ mode: 'profile', label: 'My Progress', icon: <User /> }]
+};
 
-  const navItems: { mode: TypingMode; label: string; icon: React.ReactNode }[] = [
-    { mode: 'stories', label: 'Stories', icon: <BookOpen className="w-4 h-4" /> },
-    { mode: 'speed-test', label: 'Speed Test', icon: <Zap className="w-4 h-4" /> },
-    { mode: 'quotes', label: 'Quotes', icon: <QuoteIcon className="w-4 h-4" /> },
-    { mode: 'library', label: 'Great Library', icon: <Library className="w-4 h-4" /> },
-    { mode: 'learn', label: 'Academy', icon: <GraduationCap className="w-4 h-4" /> },
-    { mode: 'arcade', label: 'Arcade', icon: <Gamepad2 className="w-4 h-4" /> },
-    { mode: 'leaderboard', label: 'Ranks', icon: <Trophy className="w-4 h-4" /> },
-    { mode: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> }
-  ];
+export const Navbar: React.FC<NavbarProps> = props => {
+  const { currentMode, onSelectMode, settings } = props;
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const shellRef = useRef<HTMLElement>(null);
 
-  const switchSounds: { id: SwitchSound; label: string }[] = [
-    { id: 'off', label: 'Muted (Off)' },
-    { id: 'holy-panda', label: 'Holy Panda (Deep Thock)' },
-    { id: 'cherry-blue', label: 'Cherry MX Blue (Clicky)' },
-    { id: 'gateron-brown', label: 'Gateron Brown (Tactile)' },
-    { id: 'cherry-red', label: 'Cherry Red (Linear)' },
-    { id: 'typewriter', label: 'Vintage Typewriter & Bell' },
-    { id: 'raindrop', label: 'Raindrops (Plop)' }
-  ];
-
-  const ambientSounds: { id: AmbientSound; label: string }[] = [
-    { id: 'none', label: 'None (Silent)' },
-    { id: 'rain', label: 'Gentle Rain' },
-    { id: 'fireplace', label: 'Cozy Fireplace' },
-    { id: 'forest', label: 'Forest Wind' },
-    { id: 'alpha-waves', label: 'Alpha Waves (Deep Focus)' },
-    { id: 'zen-river', label: 'Zen River Flow' }
-  ];
+  useEffect(() => {
+    const close = (event: MouseEvent) => {
+      if (!shellRef.current?.contains(event.target as Node)) setOpenMenu(null);
+    };
+    const escape = (event: KeyboardEvent) => event.key === 'Escape' && setOpenMenu(null);
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', escape);
+    };
+  }, []);
 
   if (settings.zenMode) {
     return (
-      <div className="fixed top-4 right-4 z-40">
-        <button
-          onClick={onToggleZenMode}
-          title="Exit Zen Mode"
-          className="p-2.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-lg transition-all cursor-pointer opacity-40 hover:opacity-100"
-        >
-          <EyeOff className="w-4 h-4" />
-        </button>
-      </div>
+      <button onClick={props.onToggleZenMode} className="fixed right-5 top-5 z-50 rounded-full border border-[var(--color-border)] bg-[var(--bg-card)] p-3 text-[var(--text-secondary)] shadow-xl" title="Exit focus mode">
+        <EyeOff className="h-4 w-4" />
+      </button>
     );
   }
 
-  return (
-    <header className="w-full border-b border-[var(--color-border)] bg-[var(--bg-primary)]/80 backdrop-blur-md sticky top-0 z-30 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Brand / Logo */}
-        <div 
-          onClick={() => onSelectMode('stories')}
-          className="flex items-center gap-2.5 cursor-pointer group"
-        >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-secondary)] flex items-center justify-center text-white font-serif font-black text-lg shadow-sm group-hover:scale-105 transition-transform">
-            K
-          </div>
-          <div>
-            <h1 className="font-serif font-bold text-lg text-[var(--text-primary)] tracking-tight flex items-center gap-1.5">
-              KeyHaven
-            </h1>
-            <p className="text-[10px] text-[var(--text-muted)] -mt-1 hidden sm:block">
-              Relax, Read & Type
-            </p>
-          </div>
-        </div>
+  const choose = (mode: TypingMode) => {
+    onSelectMode(mode);
+    setOpenMenu(null);
+  };
 
-        {/* Navigation Tabs */}
-        <nav className="hidden lg:flex items-center gap-1">
-          {navItems.map(item => {
-            const isActive = currentMode === item.mode;
+  return (
+    <header ref={shellRef} className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--bg-primary)_88%,transparent)] backdrop-blur-xl">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-5 px-4 sm:px-6">
+        <button onClick={() => choose('stories')} className="group flex shrink-0 items-center gap-3 text-left">
+          <span className="relative grid h-9 w-9 place-items-center border border-[var(--color-accent)] text-lg font-semibold text-[var(--color-accent)] before:absolute before:inset-1 before:border before:border-[var(--color-border)]">K</span>
+          <span>
+            <span className="block font-serif text-xl font-semibold leading-none tracking-[-.02em]">KeyHaven</span>
+            <span className="mt-1 hidden text-[9px] uppercase tracking-[.2em] text-[var(--text-muted)] sm:block">Read deeply · type beautifully</span>
+          </span>
+        </button>
+
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
+          {Object.entries(destinations).map(([group, items]) => {
+            const active = items.some(item => item.mode === currentMode);
             return (
-              <button
-                key={item.mode}
-                onClick={() => onSelectMode(item.mode)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-[var(--bg-secondary)] text-[var(--color-accent)] border border-[var(--color-border)] font-semibold shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]'
-                }`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
+              <div className="relative" key={group}>
+                <button onClick={() => setOpenMenu(openMenu === group ? null : group)} className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-colors ${active ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`} aria-expanded={openMenu === group}>
+                  {group}<ChevronDown className="h-3 w-3" />
+                </button>
+                {openMenu === group && (
+                  <div className="absolute left-0 top-full mt-3 min-w-52 rounded-xl border border-[var(--color-border)] bg-[var(--bg-card)] p-2 shadow-2xl">
+                    {items.map(item => (
+                      <button key={item.mode} onClick={() => choose(item.mode)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-xs transition-colors [&_svg]:h-4 [&_svg]:w-4 ${currentMode === item.mode ? 'bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'}`}>
+                        {item.icon}{item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
+          <button onClick={() => choose('library')} className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold ${currentMode === 'library' ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
+            <Library className="h-4 w-4" />Library
+          </button>
         </nav>
 
-        {/* Action Controls & Settings */}
-        <div className="flex items-center gap-2">
-          {/* Audio Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowAudioMenu(!showAudioMenu);
-                setShowThemeMenu(false);
-                setShowFontMenu(false);
-              }}
-              className={`p-2 rounded-xl border text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
-                settings.switchSound !== 'off' || settings.ambientSound !== 'none'
-                  ? 'bg-[var(--bg-secondary)] border-[var(--color-border)] text-[var(--color-accent)]'
-                  : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-              title="Sound & Ambience Settings"
-            >
-              {settings.ambientSound !== 'none' ? (
-                <CloudRain className="w-4 h-4 animate-pulse" />
-              ) : settings.switchSound !== 'off' ? (
-                <Volume2 className="w-4 h-4" />
-              ) : (
-                <VolumeX className="w-4 h-4" />
-              )}
-            </button>
-
-            {showAudioMenu && (
-              <div 
-                className="absolute right-0 mt-2 w-72 p-4 rounded-2xl border shadow-xl z-50 animate-in fade-in slide-in-from-top-2"
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  borderColor: 'var(--color-border)'
-                }}
-              >
-                <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border)] mb-3">
-                  <span className="text-xs font-bold text-[var(--text-primary)]">
-                    Audio & Ambience
-                  </span>
-                  <button
-                    onClick={() => setShowAudioMenu(false)}
-                    className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                {/* Key Switch Sound */}
-                <div className="mb-4">
-                  <label className="text-[11px] font-semibold text-[var(--text-secondary)] block mb-1.5">
-                    Mechanical Switch Audio
-                  </label>
-                  <select
-                    value={settings.switchSound}
-                    onChange={e => onUpdateSwitchSound(e.target.value as SwitchSound)}
-                    className="w-full text-xs p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] outline-none"
-                  >
-                    {switchSounds.map(s => (
-                      <option key={s.id} value={s.id}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-
-                  {settings.switchSound !== 'off' && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="text-[10px] text-[var(--text-muted)]">Volume:</span>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={settings.soundVolume}
-                        onChange={e => onUpdateSoundVolume(parseFloat(e.target.value))}
-                        className="w-full accent-[var(--color-accent)] h-1 rounded-lg"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Ambient Sound */}
-                <div>
-                  <label className="text-[11px] font-semibold text-[var(--text-secondary)] block mb-1.5">
-                    Relaxing Background Ambience
-                  </label>
-                  <select
-                    value={settings.ambientSound}
-                    onChange={e => onUpdateAmbientSound(e.target.value as AmbientSound)}
-                    className="w-full text-xs p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] outline-none"
-                  >
-                    {ambientSounds.map(a => (
-                      <option key={a.id} value={a.id}>
-                        {a.label}
-                      </option>
-                    ))}
-                  </select>
-
-                  {settings.ambientSound !== 'none' && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="text-[10px] text-[var(--text-muted)]">Volume:</span>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={settings.ambientVolume}
-                        onChange={e => onUpdateAmbientVolume(parseFloat(e.target.value))}
-                        className="w-full accent-[var(--color-accent)] h-1 rounded-lg"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Theme Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowThemeMenu(!showThemeMenu);
-                setShowAudioMenu(false);
-                setShowFontMenu(false);
-              }}
-              className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--color-border)] transition-all cursor-pointer"
-              title="Select Aesthetic Theme"
-            >
-              <Palette className="w-4 h-4" />
-            </button>
-
-            {showThemeMenu && (
-              <div 
-                className="absolute right-0 mt-2 w-64 p-3 rounded-2xl border shadow-xl z-50 grid grid-cols-1 gap-1 max-h-96 overflow-y-auto"
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  borderColor: 'var(--color-border)'
-                }}
-              >
-                <div className="px-2 py-1 text-xs font-bold text-[var(--text-primary)] border-b border-[var(--color-border)] mb-1">
-                  Themes ({Object.keys(THEMES).length})
-                </div>
-                {Object.values(THEMES).map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => {
-                      onUpdateTheme(t.id);
-                      setShowThemeMenu(false);
-                    }}
-                    className={`flex items-center justify-between p-2 rounded-xl text-xs text-left transition-all cursor-pointer ${
-                      settings.theme === t.id
-                        ? 'bg-[var(--bg-secondary)] text-[var(--color-accent)] font-semibold border border-[var(--color-border)]'
-                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)]'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-medium">{t.name}</div>
-                      <div className="text-[10px] text-[var(--text-muted)]">{t.category}</div>
-                    </div>
-                    <div className="flex gap-1">
-                      <span className="w-3 h-3 rounded-full border" style={{ backgroundColor: t.colors.bg }} />
-                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.colors.accent }} />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Font & Caret Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowFontMenu(!showFontMenu);
-                setShowAudioMenu(false);
-                setShowThemeMenu(false);
-              }}
-              className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--color-border)] transition-all cursor-pointer"
-              title="Typography & Caret"
-            >
-              <Type className="w-4 h-4" />
-            </button>
-
-            {showFontMenu && (
-              <div 
-                className="absolute right-0 mt-2 w-64 p-3 rounded-2xl border shadow-xl z-50"
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  borderColor: 'var(--color-border)'
-                }}
-              >
-                <div className="px-2 py-1 text-xs font-bold text-[var(--text-primary)] border-b border-[var(--color-border)] mb-2">
-                  Typography & Caret
-                </div>
-                
-                <div className="mb-3">
-                  <label className="text-[11px] font-semibold text-[var(--text-secondary)] block mb-1">
-                    Font Family
-                  </label>
-                  <div className="grid grid-cols-1 gap-1">
-                    {(Object.keys(FONTS) as FontFamily[]).map(f => (
-                      <button
-                        key={f}
-                        onClick={() => onUpdateFont(f)}
-                        className={`p-1.5 px-2 rounded-lg text-xs text-left transition-all cursor-pointer ${
-                          settings.font === f
-                            ? 'bg-[var(--bg-secondary)] text-[var(--color-accent)] font-semibold'
-                            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
-                        }`}
-                      >
-                        {FONTS[f].name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-semibold text-[var(--text-secondary)] block mb-1">
-                    Caret Style
-                  </label>
-                  <div className="grid grid-cols-2 gap-1">
-                    {(['smooth', 'block', 'underline', 'glow', 'bar'] as CaretStyle[]).map(c => (
-                      <button
-                        key={c}
-                        onClick={() => onUpdateCaretStyle(c)}
-                        className={`p-1.5 rounded-lg text-xs capitalize text-center transition-all cursor-pointer ${
-                          settings.caretStyle === c
-                            ? 'bg-[var(--bg-secondary)] text-[var(--color-accent)] font-semibold border border-[var(--color-border)]'
-                            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Zen Mode Toggle */}
-          <button
-            onClick={onToggleZenMode}
-            className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--color-border)] transition-all cursor-pointer"
-            title="Toggle Zen Mode (Hide navigation)"
-          >
-            <Eye className="w-4 h-4" />
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => props.onUpdateTheme(settings.theme === 'reading-room' ? 'daylight' : 'reading-room')} className="rounded-lg p-2.5 text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--color-accent)]" title="Toggle daylight">
+            {settings.theme === 'reading-room' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
+          <div className="relative">
+            <button onClick={() => setOpenMenu(openMenu === 'settings' ? null : 'settings')} className="rounded-lg p-2.5 text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--color-accent)]" title="Reading and typing settings">
+              <SlidersHorizontal className="h-4 w-4" />
+            </button>
+            {openMenu === 'settings' && (
+              <div className="absolute right-0 top-full mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-[var(--color-border)] bg-[var(--bg-card)] p-5 shadow-2xl">
+                <div className="mb-5 flex items-center gap-2 border-b border-[var(--color-border)] pb-3"><Palette className="h-4 w-4 text-[var(--color-accent)]" /><span className="text-xs font-bold uppercase tracking-widest">Preferences</span></div>
+                <label className="mb-4 block text-[11px] text-[var(--text-secondary)]">Typeface
+                  <select value={settings.font} onChange={event => props.onUpdateFont(event.target.value as FontFamily)} className="mt-1.5 w-full rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] p-2 text-xs text-[var(--text-primary)]">
+                    {(Object.keys(FONTS) as FontFamily[]).filter(font => font !== 'fira').map(font => <option value={font} key={font}>{FONTS[font].name}</option>)}
+                  </select>
+                </label>
+                <label className="mb-4 block text-[11px] text-[var(--text-secondary)]">Caret
+                  <select value={settings.caretStyle} onChange={event => props.onUpdateCaretStyle(event.target.value as CaretStyle)} className="mt-1.5 w-full rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] p-2 text-xs text-[var(--text-primary)]">
+                    {(['smooth', 'bar', 'block', 'underline', 'glow'] as CaretStyle[]).map(value => <option key={value} value={value}>{value}</option>)}
+                  </select>
+                </label>
+                <label className="mb-4 block text-[11px] text-[var(--text-secondary)]"><span className="flex items-center gap-2"><Volume2 className="h-3.5 w-3.5" />Key sound</span>
+                  <select value={settings.switchSound} onChange={event => props.onUpdateSwitchSound(event.target.value as SwitchSound)} className="mt-1.5 w-full rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] p-2 text-xs text-[var(--text-primary)]">
+                    {['off', 'holy-panda', 'cherry-blue', 'gateron-brown', 'cherry-red', 'typewriter', 'raindrop'].map(value => <option key={value} value={value}>{value.replaceAll('-', ' ')}</option>)}
+                  </select>
+                </label>
+                <label className="flex items-center justify-between gap-4 border-t border-[var(--color-border)] py-3 text-xs text-[var(--text-secondary)]">Strict typing
+                  <input type="checkbox" checked={settings.strictMode} onChange={event => props.onUpdateSetting('strictMode', event.target.checked)} className="accent-[var(--color-accent)]" />
+                </label>
+                <button onClick={props.onToggleZenMode} className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Eye className="h-4 w-4" />Enter focus mode</button>
+              </div>
+            )}
+          </div>
+          <button onClick={() => choose('profile')} className="ml-1 grid h-9 w-9 place-items-center rounded-full border border-[var(--color-border)] bg-[var(--bg-card)] text-[var(--color-accent)]" title="Account and progress"><User className="h-4 w-4" /></button>
         </div>
       </div>
 
-      {/* Mobile Nav Bar */}
-      <div className="lg:hidden flex items-center gap-1 px-4 py-2 border-t border-[var(--color-border)] overflow-x-auto">
-        {navItems.map(item => {
-          const isActive = currentMode === item.mode;
-          return (
-            <button
-              key={item.mode}
-              onClick={() => onSelectMode(item.mode)}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs whitespace-nowrap transition-all ${
-                isActive
-                  ? 'bg-[var(--bg-secondary)] text-[var(--color-accent)] font-semibold'
-                  : 'text-[var(--text-secondary)]'
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <nav className="flex w-full max-w-full gap-1 overflow-x-auto border-t border-[var(--color-border)] px-3 py-2 md:hidden" aria-label="Mobile navigation">
+        {[...Object.values(destinations).flat(), { mode: 'library' as TypingMode, label: 'Library', icon: <Library /> }].map(item => (
+          <button key={item.mode} onClick={() => choose(item.mode)} className={`flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] [&_svg]:h-3.5 [&_svg]:w-3.5 ${currentMode === item.mode ? 'bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}>{item.icon}{item.label}</button>
+        ))}
+      </nav>
     </header>
   );
 };

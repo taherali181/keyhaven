@@ -1,4 +1,4 @@
-import { CharTiming, HistoryPoint } from '@/types';
+import { HistoryPoint } from '@/types';
 
 export function calculateWPM(correctChars: number, timeSeconds: number): number {
   if (timeSeconds <= 0) return 0;

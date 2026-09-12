@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Quote as QuoteIcon, Shuffle, Sparkles, BookOpen } from 'lucide-react';
+import { Quote as QuoteIcon, Shuffle } from 'lucide-react';
 import { QUOTES } from '@/data/quotes';
 import { Quote, UserSettings, TypingStats } from '@/types';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
 import { LiveStatsBar } from '@/components/typing/LiveStatsBar';
 import { TestResultsModal } from '@/components/typing/TestResultsModal';
-import { db } from '@/lib/db';
+import { createClientId, db } from '@/lib/db';
 
 interface QuotesViewProps {
   settings: UserSettings;
@@ -44,6 +44,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
     setIsModalOpen(true);
 
     db.testResults.add({
+      clientId: createClientId(),
       mode: 'quotes',
       subMode: currentQuote.category,
       title: `Quote by ${currentQuote.author}`,
@@ -55,6 +56,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
       timestamp: Date.now(),
       errors: stats.incorrectChars,
       errorKeys: stats.errorHeatmap
+      ,totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars
     }).catch(() => {});
   };
 
@@ -62,11 +64,13 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
     typed,
     wpm,
     accuracy,
+    timeElapsed,
     isFinished,
     handleKeyDown,
     reset
   } = useTypingEngine({
     targetText: currentQuote.text,
+    sessionKey: `${selectedCategory}-${currentQuote.id}`,
     strictMode: settings.strictMode,
     onComplete: handleQuoteComplete,
     onKeyPress
@@ -143,7 +147,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
       <LiveStatsBar
         wpm={wpm}
         accuracy={accuracy}
-        timeElapsed={0}
+        timeElapsed={timeElapsed}
         onReset={() => reset()}
         showLiveWpm={settings.showLiveWpm}
         showLiveAccuracy={settings.showLiveAccuracy}
@@ -157,7 +161,9 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
         caretStyle={settings.caretStyle}
         font={settings.font}
         fontSize={settings.fontSize}
+        wrapMode="whole-word"
         onKeyDown={handleKeyDown}
+        onReset={() => reset()}
       />
 
       {/* Modal */}

@@ -1,72 +1,55 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { UserSettings, ThemeId, FontFamily, SwitchSound, AmbientSound, CaretStyle } from '@/types';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '@/lib/db';
-import { THEMES } from '@/lib/themes';
+
+function applyTheme(theme: ThemeId) {
+  if (typeof document === 'undefined') return;
+  document.documentElement.dataset.theme = theme;
+}
 
 export function useSettings() {
   const [settings, setSettingsState] = useState<UserSettings>(DEFAULT_SETTINGS);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const loaded = loadSettings();
-    setSettingsState(loaded);
-    applyThemeCss(loaded.theme);
-    setMounted(true);
+    queueMicrotask(() => {
+      const loaded = loadSettings();
+      applyTheme(loaded.theme);
+      setSettingsState(loaded);
+    });
   }, []);
 
-  const applyThemeCss = (themeId: ThemeId) => {
-    if (typeof document === 'undefined') return;
-    const theme = THEMES[themeId] || THEMES['zen-sand'];
-    const root = document.documentElement;
-
-    root.style.setProperty('--bg-primary', theme.colors.bg);
-    root.style.setProperty('--bg-secondary', theme.colors.bgSecondary);
-    root.style.setProperty('--bg-card', theme.colors.bgCard);
-    root.style.setProperty('--text-primary', theme.colors.text);
-    root.style.setProperty('--text-secondary', theme.colors.textSecondary);
-    root.style.setProperty('--text-muted', theme.colors.textMuted);
-    root.style.setProperty('--color-accent', theme.colors.accent);
-    root.style.setProperty('--color-accent-secondary', theme.colors.accentSecondary);
-    root.style.setProperty('--color-caret', theme.colors.caret);
-    root.style.setProperty('--color-correct', theme.colors.correct);
-    root.style.setProperty('--color-incorrect', theme.colors.incorrect);
-    root.style.setProperty('--color-border', theme.colors.border);
-    root.style.setProperty('--color-highlight', theme.colors.highlight);
-  };
-
   const updateSetting = useCallback(<K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
-    setSettingsState(prev => {
-      const next = { ...prev, [key]: value };
+    setSettingsState(previous => {
+      const next = { ...previous, [key]: value, updatedAt: Date.now() };
       saveSettings(next);
-      if (key === 'theme') {
-        applyThemeCss(value as ThemeId);
-      }
+      if (key === 'theme') applyTheme(value as ThemeId);
       return next;
     });
   }, []);
 
-  const setTheme = (theme: ThemeId) => updateSetting('theme', theme);
-  const setFont = (font: FontFamily) => updateSetting('font', font);
-  const setSwitchSound = (s: SwitchSound) => updateSetting('switchSound', s);
-  const setSoundVolume = (v: number) => updateSetting('soundVolume', v);
-  const setAmbientSound = (a: AmbientSound) => updateSetting('ambientSound', a);
-  const setAmbientVolume = (v: number) => updateSetting('ambientVolume', v);
-  const setCaretStyle = (c: CaretStyle) => updateSetting('caretStyle', c);
-  const toggleZenMode = () => updateSetting('zenMode', !settings.zenMode);
+  const replaceSettings = useCallback((incoming: UserSettings) => {
+    setSettingsState(previous => {
+      if (incoming.updatedAt <= previous.updatedAt) return previous;
+      saveSettings(incoming);
+      applyTheme(incoming.theme);
+      return incoming;
+    });
+  }, []);
 
   return {
     settings,
-    mounted,
-    setTheme,
-    setFont,
-    setSwitchSound,
-    setSoundVolume,
-    setAmbientSound,
-    setAmbientVolume,
-    setCaretStyle,
-    toggleZenMode,
-    updateSetting
+    mounted: true,
+    setTheme: (theme: ThemeId) => updateSetting('theme', theme),
+    setFont: (font: FontFamily) => updateSetting('font', font),
+    setSwitchSound: (sound: SwitchSound) => updateSetting('switchSound', sound),
+    setSoundVolume: (volume: number) => updateSetting('soundVolume', volume),
+    setAmbientSound: (ambient: AmbientSound) => updateSetting('ambientSound', ambient),
+    setAmbientVolume: (volume: number) => updateSetting('ambientVolume', volume),
+    setCaretStyle: (caret: CaretStyle) => updateSetting('caretStyle', caret),
+    toggleZenMode: () => updateSetting('zenMode', !settings.zenMode),
+    updateSetting,
+    replaceSettings
   };
 }

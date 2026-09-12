@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TypingMode } from '@/types';
 import { useSettings } from '@/hooks/useSettings';
 import { useSoundEngine } from '@/hooks/useSoundEngine';
@@ -13,126 +13,68 @@ import { LearnView } from '@/components/learn/LearnView';
 import { ArcadeView } from '@/components/arcade/ArcadeView';
 import { LeaderboardView } from '@/components/analytics/LeaderboardView';
 import { ProfileView } from '@/components/analytics/ProfileView';
+import { useCloudSync } from '@/hooks/useCloudSync';
+import { MODES } from '@/lib/navigation';
 
-export default function HomePage() {
-  const [currentMode, setCurrentMode] = useState<TypingMode>('stories');
-  const {
-    settings,
-    mounted,
-    setTheme,
-    setFont,
-    setSwitchSound,
-    setSoundVolume,
-    setAmbientSound,
-    setAmbientVolume,
-    setCaretStyle,
-    toggleZenMode
-  } = useSettings();
+export function KeyHavenApp({ initialMode = 'stories' }: { initialMode?: TypingMode }) {
+  const [currentMode, setCurrentMode] = useState<TypingMode>(initialMode);
+  const settingsApi = useSettings();
+  const { settings } = settingsApi;
+  const { playKeyPress } = useSoundEngine(settings.switchSound, settings.soundVolume, settings.ambientSound, settings.ambientVolume);
+  const syncStatus = useCloudSync(settings, currentMode, settingsApi.replaceSettings);
 
-  const { playKeyPress } = useSoundEngine(
-    settings.switchSound,
-    settings.soundVolume,
-    settings.ambientSound,
-    settings.ambientVolume
-  );
+  useEffect(() => {
+    const onBack = () => {
+      const mode = window.location.pathname.slice(1) as TypingMode;
+      if (MODES.includes(mode)) setCurrentMode(mode);
+    };
+    window.addEventListener('popstate', onBack);
+    return () => window.removeEventListener('popstate', onBack);
+  }, []);
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] text-[var(--text-secondary)] font-serif">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[var(--color-accent)] animate-spin opacity-80" />
-          <p className="text-sm">Opening KeyHaven sanctuary...</p>
-        </div>
-      </div>
-    );
-  }
+  const selectMode = (mode: TypingMode) => {
+    if (mode !== currentMode) window.history.pushState({}, '', `/${mode}`);
+    setCurrentMode(mode);
+  };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between transition-colors duration-300">
-      <div>
-        <Navbar
-          currentMode={currentMode}
-          onSelectMode={setCurrentMode}
-          settings={settings}
-          onUpdateTheme={setTheme}
-          onUpdateFont={setFont}
-          onUpdateSwitchSound={setSwitchSound}
-          onUpdateSoundVolume={setSoundVolume}
-          onUpdateAmbientSound={setAmbientSound}
-          onUpdateAmbientVolume={setAmbientVolume}
-          onUpdateCaretStyle={setCaretStyle}
-          onToggleZenMode={toggleZenMode}
-        />
-
-        <main className="pb-16">
-          {currentMode === 'stories' && (
-            <StoriesView
-              settings={settings}
-              onKeyPress={playKeyPress}
-            />
-          )}
-
-          {currentMode === 'speed-test' && (
-            <SpeedTestView
-              settings={settings}
-              onKeyPress={playKeyPress}
-            />
-          )}
-
-          {currentMode === 'quotes' && (
-            <QuotesView
-              settings={settings}
-              onKeyPress={playKeyPress}
-            />
-          )}
-
-          {currentMode === 'library' && (
-            <LibraryView
-              settings={settings}
-              onKeyPress={playKeyPress}
-            />
-          )}
-
-          {currentMode === 'learn' && (
-            <LearnView
-              settings={settings}
-              onKeyPress={playKeyPress}
-            />
-          )}
-
-          {currentMode === 'arcade' && (
-            <ArcadeView
-              settings={settings}
-              onKeyPress={playKeyPress}
-            />
-          )}
-
-          {currentMode === 'leaderboard' && (
-            <LeaderboardView />
-          )}
-
-          {currentMode === 'profile' && (
-            <ProfileView />
-          )}
-        </main>
-      </div>
-
-      {/* Subtle Footer (hidden in zen mode) */}
+    <div className="flex min-h-screen flex-col">
+      <Navbar
+        currentMode={currentMode}
+        onSelectMode={selectMode}
+        settings={settings}
+        onUpdateTheme={settingsApi.setTheme}
+        onUpdateFont={settingsApi.setFont}
+        onUpdateSwitchSound={settingsApi.setSwitchSound}
+        onUpdateSoundVolume={settingsApi.setSoundVolume}
+        onUpdateAmbientSound={settingsApi.setAmbientSound}
+        onUpdateAmbientVolume={settingsApi.setAmbientVolume}
+        onUpdateCaretStyle={settingsApi.setCaretStyle}
+        onUpdateSetting={settingsApi.updateSetting}
+        onToggleZenMode={settingsApi.toggleZenMode}
+      />
+      <main className="relative flex-1 pb-20">
+        {currentMode === 'stories' && <StoriesView settings={settings} onKeyPress={playKeyPress} />}
+        {currentMode === 'speed-test' && <SpeedTestView settings={settings} onKeyPress={playKeyPress} />}
+        {currentMode === 'quotes' && <QuotesView settings={settings} onKeyPress={playKeyPress} />}
+        {currentMode === 'library' && <LibraryView settings={settings} onKeyPress={playKeyPress} />}
+        {currentMode === 'learn' && <LearnView settings={settings} onKeyPress={playKeyPress} />}
+        {currentMode === 'arcade' && <ArcadeView settings={settings} onKeyPress={playKeyPress} />}
+        {currentMode === 'leaderboard' && <LeaderboardView />}
+        {currentMode === 'profile' && <ProfileView />}
+      </main>
       {!settings.zenMode && (
-        <footer className="w-full py-6 border-t border-[var(--color-border)] bg-[var(--bg-primary)] text-center text-xs text-[var(--text-muted)]">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="font-serif font-bold text-[var(--text-primary)]">KeyHaven</span>
-              <span>— Mindful Reading, Classical Literature & Typing Mastery</span>
-            </div>
-            <div className="flex items-center gap-4 text-[11px]">
-              <span>Public Domain Stories & Books</span>
-              <span>•</span>
-              <span>Offline-First (IndexedDB)</span>
-            </div>
+        <footer className="border-t border-[var(--color-border)] py-8 text-[11px] text-[var(--text-muted)]">
+          <div className="mx-auto flex max-w-7xl flex-col justify-between gap-3 px-6 sm:flex-row">
+            <span className="font-serif text-sm text-[var(--text-secondary)]">KeyHaven <i className="ml-2 font-normal">A quieter way to practice.</i></span>
+            <span className="uppercase tracking-[.16em]">{syncStatus === 'synced' ? 'Cloud synced' : syncStatus === 'syncing' ? 'Syncing…' : syncStatus === 'error' ? 'Saved locally · sync pending' : 'Saved locally · offline ready'}</span>
           </div>
         </footer>
       )}
     </div>
   );
+}
+
+export default function HomePage() {
+  return <KeyHavenApp />;
 }

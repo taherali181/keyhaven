@@ -1,579 +1,211 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Gamepad2, Zap, Flame, Trophy, RotateCcw, Heart, Play, ShieldAlert, Sparkles } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Flag, Heart, Play, RotateCcw, Timer, Zap } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { UserSettings, ArcadeScoreRecord } from '@/types';
-import { db } from '@/lib/db';
+import { UserSettings, TypingStats } from '@/types';
+import { createClientId, db } from '@/lib/db';
 import { COMMON_WORDS_200 } from '@/data/word-lists';
+import { useTypingEngine } from '@/hooks/useTypingEngine';
+import { TypingArea } from '@/components/typing/TypingArea';
 
-interface ArcadeViewProps {
-  settings: UserSettings;
-  onKeyPress: (key: string) => void;
-}
-
+interface ArcadeViewProps { settings: UserSettings; onKeyPress: (key: string) => void; }
 type ArcadeGame = 'alphabet' | 'word-rain' | 'ghost-racer';
 
-export const ArcadeView: React.FC<ArcadeViewProps> = ({
-  settings,
-  onKeyPress
-}) => {
+export const ArcadeView: React.FC<ArcadeViewProps> = ({ settings, onKeyPress }) => {
   const [activeGame, setActiveGame] = useState<ArcadeGame>('alphabet');
-
+  const games: Array<{ id: ArcadeGame; label: string; icon: React.ReactNode }> = [
+    { id: 'alphabet', label: 'Alphabet Sprint', icon: <Zap /> },
+    { id: 'word-rain', label: 'Word Rain', icon: <Timer /> },
+    { id: 'ghost-racer', label: 'Ghost Racer', icon: <Flag /> }
+  ];
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 animate-in fade-in duration-300">
-      {/* Game Selector Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs uppercase tracking-wider font-semibold text-[var(--color-accent)]">
-              Arcade & Mini-Games
-            </span>
-          </div>
-          <h2 className="text-3xl font-serif font-bold text-[var(--text-primary)] mt-1">
-            Typing Arcade & Challenges
-          </h2>
+    <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+      <header className="mb-8 flex flex-col justify-between gap-5 border-b border-[var(--color-border)] pb-7 sm:flex-row sm:items-end">
+        <div><p className="eyebrow">The lower floor</p><h1 className="mt-2 font-serif text-4xl font-medium tracking-tight">The Typing Arcade</h1><p className="mt-2 max-w-xl text-sm text-[var(--text-secondary)]">Three precise little contests. No broken clocks, no phantom inputs.</p></div>
+        <div className="flex flex-wrap gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--bg-secondary)] p-1.5">
+          {games.map(game => <button key={game.id} onClick={() => setActiveGame(game.id)} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold [&_svg]:h-3.5 [&_svg]:w-3.5 ${activeGame === game.id ? 'bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}>{game.icon}{game.label}</button>)}
         </div>
-
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--color-border)]">
-          <button
-            onClick={() => setActiveGame('alphabet')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeGame === 'alphabet'
-                ? 'bg-[var(--color-accent)] text-white shadow-xs'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>Alphabet Sprint (A-Z)</span>
-          </button>
-          <button
-            onClick={() => setActiveGame('word-rain')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeGame === 'word-rain'
-                ? 'bg-[var(--color-accent)] text-white shadow-xs'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5" />
-            <span>Word Rain (Defense)</span>
-          </button>
-          <button
-            onClick={() => setActiveGame('ghost-racer')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeGame === 'ghost-racer'
-                ? 'bg-[var(--color-accent)] text-white shadow-xs'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <Gamepad2 className="w-3.5 h-3.5" />
-            <span>Ghost Racer</span>
-          </button>
-        </div>
-      </div>
-
-      {activeGame === 'alphabet' && <AlphabetSprintGame settings={settings} onKeyPress={onKeyPress} />}
-      {activeGame === 'word-rain' && <WordRainGame settings={settings} onKeyPress={onKeyPress} />}
-      {activeGame === 'ghost-racer' && <GhostRacerGame settings={settings} onKeyPress={onKeyPress} />}
-    </div>
+      </header>
+      {activeGame === 'alphabet' && <AlphabetSprint onKeyPress={onKeyPress} />}
+      {activeGame === 'word-rain' && <WordRain onKeyPress={onKeyPress} />}
+      {activeGame === 'ghost-racer' && <GhostRacer settings={settings} onKeyPress={onKeyPress} />}
+    </section>
   );
 };
 
-// ==========================================
-// GAME 1: ALPHABET SPRINT (A-Z)
-// ==========================================
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
-const AlphabetSprintGame: React.FC<{ settings: UserSettings; onKeyPress: (key: string) => void }> = ({
-  onKeyPress
-}) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [isFinished, setIsFinished] = useState(false);
-  const [bestTime, setBestTime] = useState<number | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+function AlphabetSprint({ onKeyPress }: { onKeyPress: (key: string) => void }) {
+  const [index, setIndex] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [mistakes, setMistakes] = useState(0);
+  const [finished, setFinished] = useState(false);
+  const [best, setBest] = useState<number | null>(null);
+  const startRef = useRef<number | null>(null);
+  const intervalRef = useRef<number | null>(null);
+  const surfaceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load PB from DB
-    db.arcadeScores.where('game').equals('alphabet-sprint').toArray().then(scores => {
-      if (scores.length > 0) {
-        const minTime = Math.min(...scores.map(s => s.timeMs));
-        setBestTime(minTime);
-      }
-    }).catch(() => {});
+    surfaceRef.current?.focus();
+    void db.arcadeScores.where('game').equals('alphabet-sprint').toArray().then(scores => {
+      if (scores.length) setBest(Math.min(...scores.map(score => score.timeMs)));
+    });
+    return () => { if (intervalRef.current) window.clearInterval(intervalRef.current); };
   }, []);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (isFinished) return;
-    const key = e.key.toLowerCase();
-    if (key.length > 1) return;
-
-    const target = ALPHABET[currentIndex];
-    onKeyPress(key);
-
-    if (key === target) {
-      if (currentIndex === 0 && !startTime) {
-        const now = performance.now();
-        setStartTime(now);
-        timerRef.current = setInterval(() => {
-          setElapsedMs(performance.now() - now);
-        }, 10);
-      }
-
-      if (currentIndex === ALPHABET.length - 1) {
-        // Complete!
-        if (timerRef.current) clearInterval(timerRef.current);
-        const finalTime = startTime ? performance.now() - startTime : elapsedMs;
-        setElapsedMs(finalTime);
-        setIsFinished(true);
-
-        // Save high score
-        db.arcadeScores.add({
-          game: 'alphabet-sprint',
-          score: Math.round(100000 / finalTime),
-          wpm: Math.round((26 / 5) / (finalTime / 60000)),
-          accuracy: 100,
-          timeMs: Math.round(finalTime),
-          timestamp: Date.now()
-        }).catch(() => {});
-
-        if (!bestTime || finalTime < bestTime) {
-          setBestTime(finalTime);
-          confetti({ particleCount: 70, spread: 80 });
-        }
-      } else {
-        setCurrentIndex(prev => prev + 1);
-      }
-    }
+  const restart = () => {
+    if (intervalRef.current) window.clearInterval(intervalRef.current);
+    startRef.current = null;
+    setIndex(0); setElapsed(0); setMistakes(0); setFinished(false);
+    requestAnimationFrame(() => surfaceRef.current?.focus());
   };
 
-  const restart = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setCurrentIndex(0);
-    setStartTime(null);
-    setElapsedMs(0);
-    setIsFinished(false);
+  const handleKey = (event: React.KeyboardEvent) => {
+    if (finished || event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) return;
+    const key = event.key.toLowerCase();
+    event.preventDefault(); onKeyPress(key);
+    if (key !== ALPHABET[index]) { setMistakes(value => value + 1); return; }
+    const now = performance.now();
+    if (startRef.current === null) {
+      startRef.current = now;
+      intervalRef.current = window.setInterval(() => setElapsed(performance.now() - (startRef.current ?? performance.now())), 16);
+    }
+    if (index < ALPHABET.length - 1) { setIndex(value => value + 1); return; }
+    if (intervalRef.current) window.clearInterval(intervalRef.current);
+    const finalTime = now - (startRef.current ?? now);
+    const accuracy = Math.round((26 / (26 + mistakes)) * 1000) / 10;
+    setElapsed(finalTime); setFinished(true);
+    void db.arcadeScores.add({
+      clientId: createClientId(), game: 'alphabet-sprint', score: Math.round(100000 / Math.max(1, finalTime)),
+      wpm: Math.round((26 / 5) / (finalTime / 60000)), accuracy, timeMs: Math.round(finalTime), timestamp: Date.now()
+    });
+    if (!best || finalTime < best) { setBest(finalTime); confetti({ particleCount: 60, spread: 70 }); }
   };
 
   return (
-    <div
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--color-border)] shadow-xl text-center outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50"
-    >
-      <div className="flex items-center justify-between max-w-md mx-auto mb-6">
-        <div className="text-left">
-          <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Time</span>
-          <div className="text-3xl font-black font-mono text-[var(--color-accent)]">
-            {(elapsedMs / 1000).toFixed(2)}s
-          </div>
-        </div>
-
-        <div className="text-right">
-          <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Personal Best</span>
-          <div className="text-3xl font-black font-mono text-[var(--text-primary)]">
-            {bestTime ? `${(bestTime / 1000).toFixed(2)}s` : '--'}
-          </div>
-        </div>
-      </div>
-
-      {/* Target Letter Spotlight */}
-      <div className="my-8">
-        <div className="text-xs text-[var(--text-muted)] uppercase tracking-widest mb-2">
-          {isFinished ? 'Sprint Finished!' : 'Next Letter To Type'}
-        </div>
-        <div className="w-32 h-32 mx-auto rounded-3xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-secondary)] flex items-center justify-center text-white text-6xl font-mono font-black shadow-lg animate-pulse">
-          {isFinished ? '🎉' : ALPHABET[currentIndex].toUpperCase()}
-        </div>
-      </div>
-
-      {/* Full Alphabet Track */}
-      <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl mx-auto my-6">
-        {ALPHABET.map((char, idx) => {
-          const isDone = idx < currentIndex;
-          const isTarget = idx === currentIndex;
-          return (
-            <span
-              key={char}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono font-bold border transition-all ${
-                isDone
-                  ? 'bg-[var(--color-correct)] text-white border-[var(--color-correct)]'
-                  : isTarget
-                  ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)] scale-110 shadow-md'
-                  : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--color-border)]'
-              }`}
-            >
-              {char.toUpperCase()}
-            </span>
-          );
-        })}
-      </div>
-
-      <div className="mt-8 flex items-center justify-center gap-4">
-        <button
-          onClick={restart}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-primary)] border border-[var(--color-border)] transition-all cursor-pointer"
-        >
-          <RotateCcw className="w-4 h-4" />
-          <span>Reset Sprint</span>
-        </button>
-      </div>
+    <div ref={surfaceRef} tabIndex={0} onKeyDown={handleKey} className="editorial-panel p-6 text-center sm:p-10">
+      <div className="mx-auto flex max-w-xl justify-between border-b border-[var(--color-border)] pb-5 text-left"><Metric label="Time" value={`${(elapsed / 1000).toFixed(2)}s`} /><Metric label="Mistakes" value={String(mistakes)} /><Metric label="Personal best" value={best ? `${(best / 1000).toFixed(2)}s` : '—'} /></div>
+      <p className="eyebrow mt-10">{finished ? 'Sprint complete' : 'Next letter'}</p>
+      <div className="mx-auto my-5 grid h-28 w-28 place-items-center border border-[var(--color-accent)] bg-[var(--color-highlight)] font-mono text-5xl text-[var(--color-accent)]">{finished ? '✓' : ALPHABET[index].toUpperCase()}</div>
+      <div className="mx-auto flex max-w-2xl flex-wrap justify-center gap-1.5">{ALPHABET.map((letter, letterIndex) => <span key={letter} className={`grid h-7 w-7 place-items-center rounded text-[10px] font-bold ${letterIndex < index || finished ? 'bg-[var(--color-correct)] text-[var(--bg-primary)]' : letterIndex === index ? 'bg-[var(--color-accent)] text-[var(--bg-primary)]' : 'border border-[var(--color-border)] text-[var(--text-muted)]'}`}>{letter.toUpperCase()}</span>)}</div>
+      <button onClick={restart} className="mt-9 inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-xs text-[var(--text-secondary)]"><RotateCcw className="h-3.5 w-3.5" />Reset sprint</button>
     </div>
   );
-};
-
-// ==========================================
-// GAME 2: WORD RAIN (TYPING DEFENSE)
-// ==========================================
-interface FallingWord {
-  id: number;
-  word: string;
-  x: number; // 5% to 85%
-  y: number; // 0% to 100%
-  speed: number;
 }
 
-const WordRainGame: React.FC<{ settings: UserSettings; onKeyPress: (key: string) => void }> = ({
-  onKeyPress
-}) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+interface FallingWord { id: number; word: string; x: number; y: number; speed: number; }
+
+function WordRain({ onKeyPress }: { onKeyPress: (key: string) => void }) {
+  const [playing, setPlaying] = useState(false);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
-  const [inputVal, setInputVal] = useState('');
+  const [input, setInput] = useState('');
   const [words, setWords] = useState<FallingWord[]>([]);
-  const nextWordId = useRef(0);
-  const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
+  const idRef = useRef(0);
+  const scoreRef = useRef(0);
+  const startRef = useRef(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const startGame = () => {
-    setIsPlaying(true);
-    setScore(0);
-    setLives(3);
-    setInputVal('');
-    setWords([]);
-  };
+  const finish = useCallback((finalScore: number, duration: number) => {
+    setPlaying(false);
+    void db.arcadeScores.add({ clientId: createClientId(), game: 'word-rain', score: finalScore, wpm: 0, accuracy: 100, timeMs: duration, timestamp: Date.now() });
+  }, []);
 
   useEffect(() => {
-    if (!isPlaying) return;
-
-    gameLoopRef.current = setInterval(() => {
-      // Spawn new word periodically
-      if (Math.random() < 0.35 && words.length < 6) {
-        const randomWord = COMMON_WORDS_200[Math.floor(Math.random() * COMMON_WORDS_200.length)];
-        const newWord: FallingWord = {
-          id: nextWordId.current++,
-          word: randomWord,
-          x: Math.floor(Math.random() * 75) + 5,
-          y: 0,
-          speed: 1.2 + Math.random() * 1.5
-        };
-        setWords(prev => [...prev, newWord]);
-      }
-
-      // Move existing words down
-      setWords(prev => {
-        const updated: FallingWord[] = [];
-        let lostLife = false;
-
-        prev.forEach(w => {
-          const nextY = w.y + w.speed;
-          if (nextY >= 90) {
-            lostLife = true;
-          } else {
-            updated.push({ ...w, y: nextY });
-          }
-        });
-
-        if (lostLife) {
-          setLives(l => {
-            if (l <= 1) {
-              setIsPlaying(false);
-              return 0;
-            }
-            return l - 1;
-          });
-        }
-
-        return updated;
-      });
-    }, 100);
-
-    return () => {
-      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
-    };
-  }, [isPlaying, words.length]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.trim().toLowerCase();
-    setInputVal(val);
-
-    const matchIdx = words.findIndex(w => w.word.toLowerCase() === val);
-    if (matchIdx !== -1) {
-      // Destroy word!
-      onKeyPress('Enter');
-      setWords(prev => prev.filter((_, idx) => idx !== matchIdx));
-      setScore(s => s + 100);
-      setInputVal('');
-    }
-  };
-
-  return (
-    <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--color-border)] shadow-xl relative overflow-hidden">
-      {/* Game Header */}
-      <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-border)]">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 text-rose-500">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Heart
-                key={i}
-                className={`w-5 h-5 ${i < lives ? 'fill-rose-500' : 'opacity-20'}`}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-[var(--text-muted)] font-medium">Lives</span>
-        </div>
-
-        <div className="text-right">
-          <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Score</span>
-          <div className="text-2xl font-black font-mono text-[var(--color-accent)]">{score}</div>
-        </div>
-      </div>
-
-      {/* Arcade Canvas Area */}
-      <div className="relative h-96 w-full rounded-2xl bg-[var(--bg-secondary)] border border-[var(--color-border)] overflow-hidden">
-        {!isPlaying ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-black/40 backdrop-blur-xs">
-            <h3 className="text-2xl font-bold text-white mb-2">Word Rain Defense</h3>
-            <p className="text-xs text-white/80 max-w-sm mb-6">
-              Type the falling words before they hit the bottom hazard line. Don&apos;t let 3 words slip past!
-            </p>
-            <button
-              onClick={startGame}
-              className="flex items-center gap-2 px-8 py-3 rounded-2xl font-bold text-sm text-white bg-[var(--color-accent)] hover:opacity-90 shadow-lg cursor-pointer transition-all"
-            >
-              <Play className="w-4 h-4 fill-white" />
-              <span>Start Game</span>
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Danger Line */}
-            <div className="absolute bottom-6 left-0 right-0 h-[2px] bg-rose-500/50 border-b border-dashed border-rose-500" />
-            <span className="absolute bottom-1 right-3 text-[10px] text-rose-400 font-mono">
-              HAZARD LINE
-            </span>
-
-            {/* Falling Words */}
-            {words.map(w => (
-              <div
-                key={w.id}
-                className="absolute px-3 py-1 rounded-lg text-xs font-mono font-bold bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--color-accent)] shadow-md transition-all duration-75"
-                style={{
-                  left: `${w.x}%`,
-                  top: `${w.y}%`
-                }}
-              >
-                {w.word}
-              </div>
-            ))}
-          </>
-        )}
-      </div>
-
-      {/* Input Field */}
-      {isPlaying && (
-        <div className="mt-4 flex justify-center">
-          <input
-            type="text"
-            value={inputVal}
-            onChange={handleInputChange}
-            placeholder="Type falling word..."
-            autoFocus
-            className="w-full max-w-md p-3 text-center rounded-xl bg-[var(--bg-secondary)] border border-[var(--color-accent)] text-[var(--text-primary)] font-mono text-base outline-none shadow-sm"
-          />
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ==========================================
-// GAME 3: GHOST RACER
-// ==========================================
-const GhostRacerGame: React.FC<{ settings: UserSettings; onKeyPress: (key: string) => void }> = ({
-  onKeyPress
-}) => {
-  const [ghostWpm, setGhostWpm] = useState(60);
-  const [userProgress, setUserProgress] = useState(0);
-  const [ghostProgress, setGhostProgress] = useState(0);
-  const [isRacing, setIsRacing] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
-  const [userWon, setUserWon] = useState(false);
-
-  const raceText = "In the middle of difficulty lies opportunity. Keep typing steadily and conquer the ghost.";
-  const raceWords = raceText.split(' ').length;
-  const [typedChars, setTypedChars] = useState('');
-  const raceStartRef = useRef<number | null>(null);
-  const ghostIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const startRace = () => {
-    setIsRacing(true);
-    setIsFinished(false);
-    setUserWon(false);
-    setUserProgress(0);
-    setGhostProgress(0);
-    setTypedChars('');
-    raceStartRef.current = performance.now();
-
-    // Ghost movement
-    const totalSecNeeded = (raceWords / ghostWpm) * 60;
-    const ghostIncrementPer100ms = (100 / (totalSecNeeded * 10));
-
-    ghostIntervalRef.current = setInterval(() => {
-      setGhostProgress(prev => {
-        const next = prev + ghostIncrementPer100ms;
-        if (next >= 100) {
-          if (ghostIntervalRef.current) clearInterval(ghostIntervalRef.current);
-          setIsFinished(true);
-          setUserWon(false);
-          return 100;
-        }
+    if (!playing) return;
+    const interval = window.setInterval(() => {
+      setWords(previous => {
+        const missed = previous.filter(word => word.y + word.speed >= 91).length;
+        let next = previous.filter(word => word.y + word.speed < 91).map(word => ({ ...word, y: word.y + word.speed }));
+        if (Math.random() < .22 && next.length < 7) next = [...next, { id: idRef.current++, word: COMMON_WORDS_200[Math.floor(Math.random() * COMMON_WORDS_200.length)], x: 5 + Math.random() * 78, y: 0, speed: .65 + Math.random() * .65 }];
+        if (missed) queueMicrotask(() => setLives(current => {
+          const remaining = Math.max(0, current - missed);
+          if (remaining === 0) finish(scoreRef.current, Date.now() - startRef.current);
+          return remaining;
+        }));
         return next;
       });
     }, 100);
+    const visibility = () => { if (document.hidden) setPlaying(false); };
+    document.addEventListener('visibilitychange', visibility);
+    return () => { window.clearInterval(interval); document.removeEventListener('visibilitychange', visibility); };
+  }, [finish, playing]);
+
+  const start = () => {
+    scoreRef.current = 0; startRef.current = Date.now();
+    setScore(0); setLives(3); setInput(''); setWords([]); setPlaying(true);
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!isRacing || isFinished) return;
-    const key = e.key;
-    if (key.length > 1 && key !== 'Backspace') return;
-
-    onKeyPress(key);
-
-    if (key === 'Backspace') {
-      setTypedChars(p => p.slice(0, -1));
-      return;
-    }
-
-    const next = typedChars + key;
-    setTypedChars(next);
-
-    const progress = Math.min(100, Math.round((next.length / raceText.length) * 100));
-    setUserProgress(progress);
-
-    if (next.length >= raceText.length) {
-      if (ghostIntervalRef.current) clearInterval(ghostIntervalRef.current);
-      setIsFinished(true);
-      setUserWon(true);
-      confetti({ particleCount: 60, spread: 70 });
-    }
+  const change = (value: string) => {
+    const normalized = value.trim().toLowerCase();
+    setInput(normalized);
+    const matched = words.find(word => word.word.toLowerCase() === normalized);
+    if (!matched) return;
+    const nextScore = scoreRef.current + 100;
+    scoreRef.current = nextScore; setScore(nextScore); setWords(previous => previous.filter(word => word.id !== matched.id)); setInput('');
   };
 
   return (
-    <div className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--color-border)] shadow-xl">
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-[var(--color-border)]">
-        <div>
-          <h3 className="text-xl font-bold text-[var(--text-primary)]">Ghost Racer Duel</h3>
-          <p className="text-xs text-[var(--text-secondary)]">Race head-to-head against an AI Ghost rival.</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[var(--text-muted)]">Ghost Speed:</span>
-          <select
-            value={ghostWpm}
-            onChange={e => setGhostWpm(parseInt(e.target.value))}
-            disabled={isRacing}
-            className="text-xs p-1.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-primary)] font-bold outline-none"
-          >
-            {[40, 60, 80, 100, 120].map(w => (
-              <option key={w} value={w}>
-                {w} WPM Ghost
-              </option>
-            ))}
-          </select>
-        </div>
+    <div className="editorial-panel overflow-hidden p-5 sm:p-7">
+      <div className="mb-4 flex items-center justify-between border-b border-[var(--color-border)] pb-4"><div className="flex gap-1 text-[var(--color-incorrect)]">{[0, 1, 2].map(value => <Heart key={value} className={`h-4 w-4 ${value < lives ? 'fill-current' : 'opacity-20'}`} />)}</div><Metric label="Score" value={String(score)} /></div>
+      <div className="relative h-[420px] overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--bg-secondary)]">
+        <div className="absolute inset-x-0 bottom-8 border-t border-dashed border-[var(--color-incorrect)] opacity-50" />
+        {words.map(word => <span key={word.id} style={{ left: `${word.x}%`, top: `${word.y}%` }} className={`absolute rounded-md border px-2.5 py-1 font-mono text-xs ${word.word.startsWith(input) && input ? 'border-[var(--color-accent)] bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--bg-card)]'}`}>{word.word}</span>)}
+        {!playing && <div className="absolute inset-0 grid place-items-center bg-[color-mix(in_srgb,var(--bg-primary)_78%,transparent)] p-6 text-center backdrop-blur-sm"><div><p className="eyebrow">Defend the archive</p><h2 className="mt-2 font-serif text-3xl">Word Rain</h2><p className="mx-auto mt-2 max-w-sm text-sm text-[var(--text-secondary)]">Type each word before it crosses the brass line. Three misses end the round.</p><button onClick={start} className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-xs font-bold text-[var(--bg-primary)]"><Play className="h-3.5 w-3.5 fill-current" />{score ? 'Play again' : 'Begin'}</button></div></div>}
       </div>
-
-      {/* Race Track */}
-      <div className="space-y-6 my-8">
-        {/* User Racer */}
-        <div>
-          <div className="flex justify-between text-xs font-semibold text-[var(--color-accent)] mb-1">
-            <span>You</span>
-            <span>{userProgress}%</span>
-          </div>
-          <div className="h-6 w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--color-border)] relative overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-accent-secondary)] transition-all duration-100 flex items-center justify-end pr-1 text-xs"
-              style={{ width: `${userProgress}%` }}
-            >
-              🏎️
-            </div>
-          </div>
-        </div>
-
-        {/* Ghost Racer */}
-        <div>
-          <div className="flex justify-between text-xs font-semibold text-purple-400 mb-1">
-            <span>Ghost ({ghostWpm} WPM)</span>
-            <span>{Math.round(ghostProgress)}%</span>
-          </div>
-          <div className="h-6 w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--color-border)] relative overflow-hidden">
-            <div
-              className="h-full bg-purple-600/60 transition-all duration-100 flex items-center justify-end pr-1 text-xs"
-              style={{ width: `${ghostProgress}%` }}
-            >
-              👻
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Race Canvas */}
-      {!isRacing ? (
-        <div className="text-center py-6">
-          <button
-            onClick={startRace}
-            className="px-8 py-3 rounded-2xl font-bold text-sm text-white bg-[var(--color-accent)] hover:opacity-90 shadow-lg cursor-pointer"
-          >
-            Start Race
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-[var(--bg-secondary)] font-mono text-sm text-[var(--text-secondary)]">
-            {raceText}
-          </div>
-          <input
-            type="text"
-            value={typedChars}
-            onChange={() => {}}
-            onKeyDown={handleKeyDown}
-            placeholder="Start typing the race text..."
-            autoFocus
-            disabled={isFinished}
-            className="w-full p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--color-accent)] font-mono text-base text-[var(--text-primary)] outline-none"
-          />
-        </div>
-      )}
-
-      {isFinished && (
-        <div className="mt-6 p-4 rounded-2xl text-center font-bold text-lg bg-[var(--bg-secondary)] border border-[var(--color-border)]">
-          {userWon ? (
-            <span className="text-[var(--color-correct)]">🏆 Victory! You beat the {ghostWpm} WPM Ghost!</span>
-          ) : (
-            <span className="text-[var(--color-incorrect)]">💀 Defeat! The Ghost was faster. Try again!</span>
-          )}
-          <div className="mt-3">
-            <button
-              onClick={startRace}
-              className="px-4 py-2 rounded-xl text-xs bg-[var(--color-accent)] text-white cursor-pointer"
-            >
-              Rematch
-            </button>
-          </div>
-        </div>
-      )}
+      {playing && <input ref={inputRef} value={input} onKeyDown={event => onKeyPress(event.key)} onChange={event => change(event.target.value)} autoCapitalize="off" autoComplete="off" spellCheck={false} placeholder="Type the falling word…" className="mx-auto mt-4 block w-full max-w-lg rounded-lg border border-[var(--color-accent)] bg-[var(--bg-secondary)] p-3 text-center font-mono text-sm outline-none" />}
     </div>
   );
-};
+}
+
+const RACE_TEXT = 'In the middle of difficulty lies opportunity. Keep typing steadily and conquer the ghost.';
+
+function GhostRacer({ settings, onKeyPress }: ArcadeViewProps) {
+  const [ghostWpm, setGhostWpm] = useState(60);
+  const [racing, setRacing] = useState(false);
+  const [ghostProgress, setGhostProgress] = useState(0);
+  const [result, setResult] = useState<'won' | 'lost' | null>(null);
+  const ghostRef = useRef(0);
+  const raceStartRef = useRef(0);
+
+  const complete = useCallback((stats: TypingStats) => {
+    const won = ghostRef.current < 100 && stats.missedChars === 0;
+    setRacing(false); setResult(won ? 'won' : 'lost');
+    if (won) confetti({ particleCount: 55, spread: 65 });
+    void db.arcadeScores.add({ clientId: createClientId(), game: 'ghost-racer', score: won ? Math.round(stats.wpm * stats.accuracy) : 0, wpm: stats.wpm, accuracy: stats.accuracy, timeMs: Math.round(stats.timeElapsed * 1000), timestamp: Date.now() });
+  }, []);
+
+  const engine = useTypingEngine({ targetText: RACE_TEXT, strictMode: true, sessionKey: `ghost-${ghostWpm}`, onComplete: complete, onKeyPress });
+  const finishRace = engine.finishTest;
+
+  useEffect(() => {
+    if (!racing) return;
+    const wordCount = RACE_TEXT.split(/\s+/).length;
+    const duration = (wordCount / ghostWpm) * 60_000;
+    const interval = window.setInterval(() => {
+      const progress = Math.min(100, ((performance.now() - raceStartRef.current) / duration) * 100);
+      ghostRef.current = progress; setGhostProgress(progress);
+      if (progress >= 100) { window.clearInterval(interval); finishRace(); }
+    }, 50);
+    return () => window.clearInterval(interval);
+  }, [finishRace, ghostWpm, racing]);
+
+  const start = () => {
+    engine.reset(); ghostRef.current = 0; raceStartRef.current = performance.now();
+    setGhostProgress(0); setResult(null); setRacing(true);
+  };
+  const userProgress = Math.min(100, (engine.typed.length / RACE_TEXT.length) * 100);
+  return (
+    <div className="editorial-panel p-5 sm:p-8">
+      <div className="flex flex-col justify-between gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-center"><div><p className="eyebrow">Head to head</p><h2 className="mt-1 font-serif text-3xl">Ghost Racer</h2></div><label className="text-xs text-[var(--text-secondary)]">Rival pace <select value={ghostWpm} disabled={racing} onChange={event => setGhostWpm(Number(event.target.value))} className="ml-2 rounded-md border border-[var(--color-border)] bg-[var(--bg-secondary)] px-2 py-1.5">{[40, 60, 80, 100, 120].map(wpm => <option key={wpm}>{wpm}</option>)}</select></label></div>
+      <RaceLane label="You" progress={userProgress} accent /><RaceLane label={`Ghost · ${ghostWpm} wpm`} progress={ghostProgress} />
+      {!racing && !result && <div className="py-8 text-center"><button onClick={start} className="rounded-lg bg-[var(--color-accent)] px-6 py-3 text-xs font-bold text-[var(--bg-primary)]">Start race</button></div>}
+      {(racing || result) && <TypingArea targetText={RACE_TEXT} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font="jetbrains" fontSize="sm" wrapMode="whole-word" onKeyDown={racing ? engine.handleKeyDown : event => event.preventDefault()} onReset={start} />}
+      {result && <div className="mt-5 flex items-center justify-between border-t border-[var(--color-border)] pt-5"><p className={`font-serif text-xl ${result === 'won' ? 'text-[var(--color-correct)]' : 'text-[var(--color-incorrect)]'}`}>{result === 'won' ? 'You outran the ghost.' : 'The ghost reached the line first.'}</p><button onClick={start} className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-xs">Race again</button></div>}
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) { return <div><span className="text-[9px] uppercase tracking-[.18em] text-[var(--text-muted)]">{label}</span><strong className="mt-1 block font-mono text-xl text-[var(--color-accent)]">{value}</strong></div>; }
+function RaceLane({ label, progress, accent = false }: { label: string; progress: number; accent?: boolean }) { return <div className="mt-6"><div className="mb-2 flex justify-between text-[10px] uppercase tracking-widest text-[var(--text-secondary)]"><span>{label}</span><span>{Math.round(progress)}%</span></div><div className="h-2 overflow-hidden rounded-full bg-[var(--bg-secondary)]"><div className={`h-full transition-[width] duration-75 ${accent ? 'bg-[var(--color-accent)]' : 'bg-[var(--text-muted)]'}`} style={{ width: `${progress}%` }} /></div></div>; }

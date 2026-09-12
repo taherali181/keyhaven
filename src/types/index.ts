@@ -8,17 +8,10 @@ export type TypingMode =
   | 'leaderboard'
   | 'profile';
 
-export type ThemeId = 
-  | 'zen-sand'
-  | 'paper-ink'
-  | 'midnight-slate'
-  | 'nord-deep'
-  | 'catppuccin'
-  | 'gruvbox'
-  | 'tokyo-night'
-  | 'cyberpunk'
-  | 'forest-canopy'
-  | 'high-contrast';
+export type ThemeId = 'reading-room' | 'daylight';
+
+export type WrapMode = 'literary' | 'whole-word';
+export type TypingSessionStatus = 'idle' | 'running' | 'finished';
 
 export type SwitchSound = 
   | 'off'
@@ -135,6 +128,7 @@ export interface TypingStats {
 
 export interface TestResultRecord {
   id?: number;
+  clientId: string;
   mode: TypingMode;
   subMode: string;
   title?: string;
@@ -146,19 +140,28 @@ export interface TestResultRecord {
   timestamp: number;
   errors: number;
   errorKeys: Record<string, number>;
+  totalChars?: number;
+  correctChars?: number;
+  incorrectChars?: number;
+  syncedAt?: number;
+  challengeId?: string;
+  visibility?: 'private' | 'public';
 }
 
 export interface BookProgressRecord {
   bookId: string;
+  chapterId?: string;
   chapterIndex: number;
   charOffset: number;
   percent: number;
   totalWordsTyped: number;
   lastRead: number;
+  syncedAt?: number;
 }
 
 export interface ArcadeScoreRecord {
   id?: number;
+  clientId: string;
   game: 'alphabet-sprint' | 'word-rain' | 'ghost-racer';
   score: number;
   wpm: number;
@@ -167,6 +170,10 @@ export interface ArcadeScoreRecord {
   timestamp: number;
   rank?: number;
   name?: string;
+  syncedAt?: number;
+  challengeId?: string;
+  visibility?: 'private' | 'public';
+  configuration?: Record<string, unknown>;
 }
 
 export interface UserSettings {
@@ -184,4 +191,11 @@ export interface UserSettings {
   zenMode: boolean;
   smoothCaret: boolean;
   strictMode: boolean;
+  leaderboardEnabled: boolean;
+  updatedAt: number;
+}
+
+export interface TypingSessionEvidence {
+  key: string;
+  atMs: number;
 }

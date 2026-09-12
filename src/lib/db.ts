@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings } from '@/types';
+import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId } from '@/types';
 
 export class KeyHavenDatabase extends Dexie {
   testResults!: Table<TestResultRecord, number>;
@@ -13,13 +13,25 @@ export class KeyHavenDatabase extends Dexie {
       bookProgress: 'bookId, lastRead',
       arcadeScores: '++id, game, score, wpm, timestamp'
     });
+    this.version(2).stores({
+      testResults: '++id, &clientId, mode, subMode, timestamp, wpm, accuracy, syncedAt',
+      bookProgress: 'bookId, chapterIndex, lastRead, syncedAt',
+      arcadeScores: '++id, &clientId, game, score, wpm, timestamp, syncedAt'
+    }).upgrade(async transaction => {
+      await transaction.table('testResults').toCollection().modify(record => {
+        record.clientId ||= crypto.randomUUID();
+      });
+      await transaction.table('arcadeScores').toCollection().modify(record => {
+        record.clientId ||= crypto.randomUUID();
+      });
+    });
   }
 }
 
 export const db = new KeyHavenDatabase();
 
 export const DEFAULT_SETTINGS: UserSettings = {
-  theme: 'zen-sand',
+  theme: 'reading-room',
   font: 'serif',
   caretStyle: 'smooth',
   fontSize: 'base',
@@ -32,7 +44,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
   showKeyboard: false,
   zenMode: false,
   smoothCaret: true,
-  strictMode: false
+  strictMode: false,
+  leaderboardEnabled: true,
+  updatedAt: 0
 };
 
 const SETTINGS_KEY = 'keyhaven_settings_v1';
@@ -42,10 +56,22 @@ export function loadSettings(): UserSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw) as Partial<UserSettings>;
+    const legacyLight = parsed.theme === ('zen-sand' as ThemeId) || parsed.theme === ('paper-ink' as ThemeId);
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      theme: parsed.theme === 'daylight' || legacyLight ? 'daylight' : 'reading-room'
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }
+}
+
+export function createClientId(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 export function saveSettings(settings: UserSettings): void {

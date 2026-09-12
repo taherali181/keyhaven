@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BookOpen, Sparkles, ChevronRight, ChevronLeft, Feather, RotateCcw, Volume2, CloudRain } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Feather } from 'lucide-react';
 import { STORIES } from '@/data/stories';
 import { Story, UserSettings, TypingStats } from '@/types';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
 import { LiveStatsBar } from '@/components/typing/LiveStatsBar';
 import { TestResultsModal } from '@/components/typing/TestResultsModal';
-import { db } from '@/lib/db';
+import { createClientId, db } from '@/lib/db';
 
 interface StoriesViewProps {
   settings: UserSettings;
@@ -18,8 +18,7 @@ interface StoriesViewProps {
 
 export const StoriesView: React.FC<StoriesViewProps> = ({
   settings,
-  onKeyPress,
-  onToggleAmbient
+  onKeyPress
 }) => {
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
   const [currentParagraphIndex, setCurrentParagraphIndex] = useState(0);
@@ -35,6 +34,7 @@ export const StoriesView: React.FC<StoriesViewProps> = ({
 
     // Save test result to local DB
     db.testResults.add({
+      clientId: createClientId(),
       mode: 'stories',
       subMode: activeStory.title,
       title: `${activeStory.title} - Para ${currentParagraphIndex + 1}`,
@@ -46,6 +46,7 @@ export const StoriesView: React.FC<StoriesViewProps> = ({
       timestamp: Date.now(),
       errors: stats.incorrectChars,
       errorKeys: stats.errorHeatmap
+      ,totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars
     }).catch(() => {});
   };
 
@@ -53,12 +54,13 @@ export const StoriesView: React.FC<StoriesViewProps> = ({
     typed,
     wpm,
     accuracy,
-    timeRemaining,
+    timeElapsed,
     isFinished,
     handleKeyDown,
     reset
   } = useTypingEngine({
     targetText: activeParagraph,
+    sessionKey: `${activeStory.id}-${currentParagraphIndex}`,
     strictMode: settings.strictMode,
     onComplete: handleParagraphComplete,
     onKeyPress
@@ -144,7 +146,7 @@ export const StoriesView: React.FC<StoriesViewProps> = ({
       <LiveStatsBar
         wpm={wpm}
         accuracy={accuracy}
-        timeElapsed={0}
+        timeElapsed={timeElapsed}
         onReset={() => reset()}
         showLiveWpm={settings.showLiveWpm}
         showLiveAccuracy={settings.showLiveAccuracy}
@@ -158,7 +160,9 @@ export const StoriesView: React.FC<StoriesViewProps> = ({
         caretStyle={settings.caretStyle}
         font={settings.font}
         fontSize={settings.fontSize}
+        wrapMode="literary"
         onKeyDown={handleKeyDown}
+        onReset={() => reset()}
       />
 
       {/* Paragraph Pagination Bar */}

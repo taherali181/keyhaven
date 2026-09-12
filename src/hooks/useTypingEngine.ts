@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { TypingStats, CharTiming, HistoryPoint } from '@/types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { TypingStats, CharTiming, HistoryPoint, TypingSessionStatus } from '@/types';
 import { calculateWPM, calculateRawWPM, calculateAccuracy, calculateConsistency } from '@/lib/metrics';
 
 interface UseTypingEngineOptions {
   targetText: string;
   isTimed?: boolean;
-  timeLimit?: number; // in seconds
+  timeLimit?: number;
   strictMode?: boolean;
+  initialOffset?: number;
+  sessionKey?: string;
   onComplete?: (stats: TypingStats) => void;
   onKeyPress?: (key: string) => void;
 }
@@ -18,213 +20,191 @@ export function useTypingEngine({
   isTimed = false,
   timeLimit = 30,
   strictMode = false,
+  initialOffset = 0,
+  sessionKey = targetText,
   onComplete,
   onKeyPress
 }: UseTypingEngineOptions) {
-  const [typed, setTyped] = useState<string>('');
+  const safeOffset = Math.min(Math.max(0, initialOffset), targetText.length);
+  const initialTyped = targetText.slice(0, safeOffset);
+  const [typed, setTyped] = useState(initialTyped);
+  const [status, setStatus] = useState<TypingSessionStatus>('idle');
   const [startTime, setStartTime] = useState<number | null>(null);
   const [endTime, setEndTime] = useState<number | null>(null);
-  const [isActive, setIsActive] = useState<boolean>(false);
-  const [isFinished, setIsFinished] = useState<boolean>(false);
-  const [timeRemaining, setTimeRemaining] = useState<number>(timeLimit);
+  const [timeRemaining, setTimeRemaining] = useState(timeLimit);
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [wpm, setWpm] = useState(0);
+  const [rawWpm, setRawWpm] = useState(0);
+  const [accuracy, setAccuracy] = useState(100);
 
-  // Live Metrics
-  const [wpm, setWpm] = useState<number>(0);
-  const [rawWpm, setRawWpm] = useState<number>(0);
-  const [accuracy, setAccuracy] = useState<number>(100);
-
+  const targetChars = useMemo(() => targetText.split(''), [targetText]);
+  const typedRef = useRef(initialTyped);
+  const statusRef = useRef<TypingSessionStatus>('idle');
+  const startRef = useRef<number | null>(null);
+  const baseOffsetRef = useRef(safeOffset);
   const charTimingsRef = useRef<CharTiming[]>([]);
   const historyRef = useRef<HistoryPoint[]>([]);
   const errorHeatmapRef = useRef<Record<string, number>>({});
-  const lastCharTimeRef = useRef<number>(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastCharTimeRef = useRef(0);
+  const lastHistorySecondRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
 
-  const targetChars = targetText.split('');
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
-  // Reset engine
-  const reset = useCallback((newTimeLimit?: number) => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setTyped('');
-    setStartTime(null);
-    setEndTime(null);
-    setIsActive(false);
-    setIsFinished(false);
-    setWpm(0);
-    setRawWpm(0);
-    setAccuracy(100);
-    setTimeRemaining(newTimeLimit !== undefined ? newTimeLimit : timeLimit);
+  const reset = useCallback((newTimeLimit = timeLimit, newOffset = initialOffset) => {
+    const offset = Math.min(Math.max(0, newOffset), targetText.length);
+    const prefix = targetText.slice(0, offset);
+    typedRef.current = prefix;
+    statusRef.current = 'idle';
+    startRef.current = null;
+    baseOffsetRef.current = offset;
     charTimingsRef.current = [];
     historyRef.current = [];
     errorHeatmapRef.current = {};
     lastCharTimeRef.current = 0;
-  }, [timeLimit]);
+    lastHistorySecondRef.current = 0;
+    setTyped(prefix);
+    setStatus('idle');
+    setStartTime(null);
+    setEndTime(null);
+    setTimeRemaining(newTimeLimit);
+    setTimeElapsed(0);
+    setWpm(0);
+    setRawWpm(0);
+    setAccuracy(100);
+  }, [initialOffset, targetText, timeLimit]);
 
-  // Finish test and compute final stats
-  const finishTest = useCallback(() => {
-    if (isFinished) return;
-    if (timerRef.current) clearInterval(timerRef.current);
+  useEffect(() => {
+    queueMicrotask(() => reset(timeLimit, initialOffset));
+  }, [sessionKey, targetText, timeLimit, initialOffset, reset]);
 
-    const finishNow = performance.now();
-    setEndTime(finishNow);
-    setIsActive(false);
-    setIsFinished(true);
-
-    const start = startTime || finishNow;
-    const durationSec = Math.max(0.5, (finishNow - start) / 1000);
-
-    // Calculate correct & incorrect
-    let correct = 0;
-    let incorrect = 0;
-    const typedChars = typed.split('');
-
-    for (let i = 0; i < typedChars.length; i++) {
-      if (typedChars[i] === targetChars[i]) {
-        correct++;
-      } else {
-        incorrect++;
-      }
-    }
-
-    const finalWpm = calculateWPM(correct, durationSec);
-    const finalRawWpm = calculateRawWPM(typedChars.length, durationSec);
-    const finalAccuracy = calculateAccuracy(correct, typedChars.length);
-    const finalConsistency = calculateConsistency(historyRef.current);
-
-    const finalStats: TypingStats = {
-      wpm: finalWpm,
-      rawWpm: finalRawWpm,
-      accuracy: finalAccuracy,
-      consistency: finalConsistency,
+  const calculateSnapshot = useCallback((finishAt: number, displayedTyped: string): TypingStats => {
+    const startedAt = startRef.current ?? finishAt;
+    const durationSec = Math.max(0.5, (finishAt - startedAt) / 1000);
+    const attempts = charTimingsRef.current;
+    const correct = attempts.filter(item => item.isCorrect).length;
+    const incorrect = attempts.length - correct;
+    const total = attempts.length;
+    return {
+      wpm: calculateWPM(correct, durationSec),
+      rawWpm: calculateRawWPM(total, durationSec),
+      accuracy: calculateAccuracy(correct, total),
+      consistency: calculateConsistency(historyRef.current),
       timeElapsed: Math.round(durationSec * 10) / 10,
-      totalChars: typedChars.length,
+      totalChars: total,
       correctChars: correct,
       incorrectChars: incorrect,
-      extraChars: Math.max(0, typedChars.length - targetChars.length),
-      missedChars: Math.max(0, targetChars.length - typedChars.length),
-      charTimings: charTimingsRef.current,
-      errorHeatmap: errorHeatmapRef.current,
-      history: historyRef.current
+      extraChars: Math.max(0, displayedTyped.length - targetText.length),
+      missedChars: Math.max(0, targetText.length - displayedTyped.length),
+      charTimings: [...attempts],
+      errorHeatmap: { ...errorHeatmapRef.current },
+      history: [...historyRef.current]
     };
+  }, [targetText.length]);
 
-    setWpm(finalWpm);
-    setRawWpm(finalRawWpm);
-    setAccuracy(finalAccuracy);
+  const finishTest = useCallback((displayedTyped = typedRef.current, finishAt = performance.now()) => {
+    if (statusRef.current === 'finished') return;
+    statusRef.current = 'finished';
+    const stats = calculateSnapshot(finishAt, displayedTyped);
+    setStatus('finished');
+    setEndTime(finishAt);
+    setTimeElapsed(stats.timeElapsed);
+    setTimeRemaining(0);
+    setWpm(stats.wpm);
+    setRawWpm(stats.rawWpm);
+    setAccuracy(stats.accuracy);
+    onCompleteRef.current?.(stats);
+  }, [calculateSnapshot]);
 
-    if (onCompleteRef.current) {
-      onCompleteRef.current(finalStats);
-    }
-  }, [isFinished, startTime, typed, targetChars]);
-
-  // Timer loop for timed tests and history logging
   useEffect(() => {
-    if (!isActive || isFinished) return;
-
-    timerRef.current = setInterval(() => {
+    if (status !== 'running') return;
+    const interval = window.setInterval(() => {
       const now = performance.now();
-      const elapsedSec = (now - (startTime || now)) / 1000;
+      const startedAt = startRef.current ?? now;
+      const elapsedSec = Math.max(0, (now - startedAt) / 1000);
+      const attempts = charTimingsRef.current;
+      const correct = attempts.filter(item => item.isCorrect).length;
+      const liveWpm = calculateWPM(correct, Math.max(0.5, elapsedSec));
+      const liveRawWpm = calculateRawWPM(attempts.length, Math.max(0.5, elapsedSec));
+      const liveAccuracy = calculateAccuracy(correct, attempts.length);
 
-      if (isTimed) {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            finishTest();
-            return 0;
-          }
-          return prev - 1;
+      setTimeElapsed(elapsedSec);
+      setWpm(liveWpm);
+      setRawWpm(liveRawWpm);
+      setAccuracy(liveAccuracy);
+
+      const historySecond = Math.floor(elapsedSec);
+      if (historySecond > lastHistorySecondRef.current) {
+        lastHistorySecondRef.current = historySecond;
+        historyRef.current.push({
+          second: historySecond,
+          wpm: liveWpm,
+          rawWpm: liveRawWpm,
+          errors: attempts.length - correct
         });
       }
 
-      // Compute live WPM & snapshot history
-      let currentCorrect = 0;
-      const currentTyped = typed.split('');
-      for (let i = 0; i < currentTyped.length; i++) {
-        if (currentTyped[i] === targetChars[i]) currentCorrect++;
+      if (isTimed) {
+        const remaining = Math.max(0, Math.ceil(timeLimit - elapsedSec));
+        setTimeRemaining(remaining);
+        if (elapsedSec >= timeLimit) finishTest(typedRef.current, now);
       }
+    }, 100);
+    return () => window.clearInterval(interval);
+  }, [finishTest, isTimed, status, timeLimit]);
 
-      const liveWpm = calculateWPM(currentCorrect, elapsedSec);
-      const liveRawWpm = calculateRawWPM(currentTyped.length, elapsedSec);
-      const liveAcc = calculateAccuracy(currentCorrect, currentTyped.length);
+  const handleKeyDown = useCallback((event: React.KeyboardEvent | KeyboardEvent) => {
+    if (statusRef.current === 'finished') return;
+    if (event.ctrlKey || event.altKey || event.metaKey || event.key === 'Tab' || event.key === 'Escape') return;
 
-      setWpm(liveWpm);
-      setRawWpm(liveRawWpm);
-      setAccuracy(liveAcc);
-
-      historyRef.current.push({
-        second: Math.round(elapsedSec),
-        wpm: liveWpm,
-        rawWpm: liveRawWpm,
-        errors: Object.values(errorHeatmapRef.current).reduce((a, b) => a + b, 0)
-      });
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isActive, isFinished, startTime, isTimed, finishTest, typed, targetChars]);
-
-  // Keystroke handler
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent | KeyboardEvent) => {
-      if (isFinished) return;
-      if (e.key === 'Tab' || e.key === 'Escape') return; // Handled by outer components
-
-      // Handle backspace
-      if (e.key === 'Backspace') {
-        e.preventDefault();
-        onKeyPress?.('Backspace');
-        setTyped(prev => (prev.length > 0 ? prev.slice(0, -1) : ''));
-        return;
+    if (event.key === 'Backspace') {
+      event.preventDefault();
+      onKeyPress?.('Backspace');
+      if (typedRef.current.length > baseOffsetRef.current) {
+        const next = typedRef.current.slice(0, -1);
+        typedRef.current = next;
+        setTyped(next);
       }
+      return;
+    }
 
-      // Ignore modifiers and non-character keys
-      if (e.key.length > 1 || e.ctrlKey || e.altKey || e.metaKey) {
-        return;
-      }
+    const targetChar = targetText[typedRef.current.length];
+    const key = targetChar === '\n' && event.key === 'Enter' ? '\n' : event.key;
+    if (key.length !== 1) return;
+    event.preventDefault();
 
-      e.preventDefault();
-      const key = e.key;
-      const now = performance.now();
-
-      // Start timer on first keypress
-      if (!isActive && !startTime) {
-        setStartTime(now);
-        setIsActive(true);
-        lastCharTimeRef.current = now;
-      }
-
-      onKeyPress?.(key);
-
-      const targetChar = targetChars[typed.length];
-      const isCorrect = key === targetChar;
-
-      // Track intra-character timing
-      const durationMs = lastCharTimeRef.current > 0 ? now - lastCharTimeRef.current : 0;
+    const now = performance.now();
+    if (statusRef.current === 'idle') {
+      statusRef.current = 'running';
+      startRef.current = now;
       lastCharTimeRef.current = now;
+      setStatus('running');
+      setStartTime(now);
+    }
 
-      charTimingsRef.current.push({
-        char: key,
-        timestamp: now,
-        durationMs,
-        isCorrect
-      });
+    onKeyPress?.(event.key);
+    const isCorrect = key === targetChar;
+    charTimingsRef.current.push({
+      char: key,
+      timestamp: now,
+      durationMs: lastCharTimeRef.current ? now - lastCharTimeRef.current : 0,
+      isCorrect
+    });
+    lastCharTimeRef.current = now;
 
-      // Track error heatmap
-      if (!isCorrect && targetChar) {
-        const keyLower = targetChar.toLowerCase();
-        errorHeatmapRef.current[keyLower] = (errorHeatmapRef.current[keyLower] || 0) + 1;
-      }
+    if (!isCorrect && targetChar) {
+      const expected = targetChar.toLowerCase();
+      errorHeatmapRef.current[expected] = (errorHeatmapRef.current[expected] || 0) + 1;
+      if (strictMode) return;
+    }
 
-      const nextTyped = typed + key;
-      setTyped(nextTyped);
-
-      // Check if finished by text completion
-      if (!isTimed && nextTyped.length >= targetText.length) {
-        finishTest();
-      }
-    },
-    [isFinished, isActive, startTime, onKeyPress, targetChars, typed, isTimed, targetText.length, finishTest]
-  );
+    const next = typedRef.current + key;
+    typedRef.current = next;
+    setTyped(next);
+    if (!isTimed && next.length >= targetText.length) finishTest(next, now);
+  }, [finishTest, isTimed, onKeyPress, strictMode, targetText]);
 
   return {
     typed,
@@ -234,8 +214,10 @@ export function useTypingEngine({
     rawWpm,
     accuracy,
     timeRemaining,
-    isActive,
-    isFinished,
+    timeElapsed,
+    isActive: status === 'running',
+    isFinished: status === 'finished',
+    status,
     startTime,
     endTime,
     handleKeyDown,

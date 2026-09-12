@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, Sparkles, CheckCircle2, ChevronRight, Target, Dumbbell } from 'lucide-react';
+import { GraduationCap, Dumbbell } from 'lucide-react';
 import { LESSONS } from '@/data/lessons';
 import { Lesson, UserSettings, TypingStats } from '@/types';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
@@ -9,7 +9,7 @@ import { TypingArea } from '@/components/typing/TypingArea';
 import { LiveStatsBar } from '@/components/typing/LiveStatsBar';
 import { VirtualKeyboardHeatmap } from '@/components/typing/VirtualKeyboardHeatmap';
 import { TestResultsModal } from '@/components/typing/TestResultsModal';
-import { db } from '@/lib/db';
+import { createClientId, db } from '@/lib/db';
 
 interface LearnViewProps {
   settings: UserSettings;
@@ -59,6 +59,7 @@ export const LearnView: React.FC<LearnViewProps> = ({
     setIsModalOpen(true);
 
     db.testResults.add({
+      clientId: createClientId(),
       mode: 'learn',
       subMode: isCustomDrill ? 'Weak Key Drill' : activeLesson.title,
       title: isCustomDrill ? 'Custom Weak-Key Practice' : `${activeLesson.title} - Ex ${activeExerciseIdx + 1}`,
@@ -70,6 +71,7 @@ export const LearnView: React.FC<LearnViewProps> = ({
       timestamp: Date.now(),
       errors: stats.incorrectChars,
       errorKeys: stats.errorHeatmap
+      ,totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars
     }).catch(() => {});
   };
 
@@ -77,11 +79,13 @@ export const LearnView: React.FC<LearnViewProps> = ({
     typed,
     wpm,
     accuracy,
+    timeElapsed,
     isFinished,
     handleKeyDown,
     reset
   } = useTypingEngine({
     targetText: activeExerciseText,
+    sessionKey: isCustomDrill ? `drill-${customDrillText}` : `${activeLesson.id}-${activeExerciseIdx}`,
     strictMode: settings.strictMode,
     onComplete: handleExerciseComplete,
     onKeyPress
@@ -179,7 +183,7 @@ export const LearnView: React.FC<LearnViewProps> = ({
       <LiveStatsBar
         wpm={wpm}
         accuracy={accuracy}
-        timeElapsed={0}
+        timeElapsed={timeElapsed}
         onReset={() => reset()}
         showLiveWpm={settings.showLiveWpm}
         showLiveAccuracy={settings.showLiveAccuracy}
@@ -193,7 +197,9 @@ export const LearnView: React.FC<LearnViewProps> = ({
         caretStyle={settings.caretStyle}
         font="jetbrains"
         fontSize="lg"
+        wrapMode="whole-word"
         onKeyDown={handleKeyDown}
+        onReset={() => reset()}
       />
 
       {/* Interactive Visual Keyboard Heatmap */}

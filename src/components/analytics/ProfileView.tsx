@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Zap, Target, Award, Clock, BookOpen, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { User, Zap, Target, Award, Clock, Trash2, Cloud, LogIn } from 'lucide-react';
 import { TestResultRecord } from '@/types';
 import { db } from '@/lib/db';
 import { VirtualKeyboardHeatmap } from '@/components/typing/VirtualKeyboardHeatmap';
@@ -72,6 +73,8 @@ export const ProfileView: React.FC = () => {
           </button>
         )}
       </div>
+
+      <AccountPanel />
 
       {/* Lifetime Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -170,3 +173,38 @@ export const ProfileView: React.FC = () => {
     </div>
   );
 };
+
+function AccountPanel() {
+  const cloudAvailable = process.env.NEXT_PUBLIC_KEYHAVEN_CLOUD === 'true';
+  const [email, setEmail] = useState<string | null>(null);
+  const [handle, setHandle] = useState('');
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (!cloudAvailable) return;
+    void fetch('/api/auth/session').then(response => response.json()).then(async session => {
+      if (!session?.user) return;
+      setEmail(session.user.email ?? 'Signed in');
+      const response = await fetch('/api/profile');
+      if (!response.ok) return;
+      const payload = await response.json();
+      if (payload.profile) { setHandle(payload.profile.handle); setLeaderboardEnabled(payload.profile.leaderboardEnabled); }
+    });
+  }, [cloudAvailable]);
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault(); setMessage('Saving…');
+    const response = await fetch('/api/profile', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ handle, leaderboardEnabled }) });
+    const payload = await response.json();
+    setMessage(response.ok ? 'Profile saved and sync enabled.' : payload.error ?? 'Could not save profile.');
+  };
+
+  return (
+    <section className="editorial-panel mb-8 flex flex-col justify-between gap-5 p-5 sm:flex-row sm:items-center">
+      <div className="flex items-start gap-3"><Cloud className="mt-0.5 h-5 w-5 text-[var(--color-accent)]" /><div><h3 className="text-sm font-bold">KeyHaven Cloud</h3><p className="mt-1 text-xs text-[var(--text-secondary)]">{email ? `Signed in as ${email}` : cloudAvailable ? 'Sign in to sync this local library across devices.' : 'Your progress is safely stored on this device. Cloud credentials can be connected at deployment.'}</p></div></div>
+      {cloudAvailable && !email && <Link href="/sign-in" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-xs font-bold text-[var(--bg-primary)]"><LogIn className="h-3.5 w-3.5" />Sign in</Link>}
+      {email && <form onSubmit={save} className="flex w-full max-w-sm flex-col gap-2"><div className="flex gap-2"><input aria-label="Public handle" value={handle} onChange={event => setHandle(event.target.value)} placeholder="public_handle" className="min-w-0 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] px-3 py-2 text-xs" /><button className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-bold">Save</button></div><label className="flex items-center gap-2 text-[10px] text-[var(--text-muted)]"><input type="checkbox" checked={leaderboardEnabled} onChange={event => setLeaderboardEnabled(event.target.checked)} className="accent-[var(--color-accent)]" />Publish verified test and arcade scores under this handle</label>{message && <span className="text-[10px] text-[var(--color-accent)]">{message}</span>}</form>}
+    </section>
+  );
+}

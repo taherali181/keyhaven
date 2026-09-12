@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Zap, Clock, Type, Hash, ShieldAlert } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Clock, Type } from 'lucide-react';
 import { generateRandomWords } from '@/data/word-lists';
 import { UserSettings, TypingStats } from '@/types';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
 import { LiveStatsBar } from '@/components/typing/LiveStatsBar';
 import { TestResultsModal } from '@/components/typing/TestResultsModal';
-import { db } from '@/lib/db';
+import { createClientId, db } from '@/lib/db';
 
 interface SpeedTestViewProps {
   settings: UserSettings;
@@ -27,21 +27,16 @@ export const SpeedTestView: React.FC<SpeedTestViewProps> = ({
   const [withPunctuation, setWithPunctuation] = useState<boolean>(false);
   const [withNumbers, setWithNumbers] = useState<boolean>(false);
 
-  const [generatedText, setGeneratedText] = useState<string>('');
+  const [testNonce, setTestNonce] = useState(0);
   const [completedStats, setCompletedStats] = useState<TypingStats | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // Regenerate test text whenever configs change
-  const refreshText = useMemo(() => {
-    return () => {
-      const count = testType === 'time' ? Math.max(50, timeConfig * 3) : wordConfig;
-      return generateRandomWords(count, withPunctuation, withNumbers);
-    };
-  }, [testType, timeConfig, wordConfig, withPunctuation, withNumbers]);
-
-  useEffect(() => {
-    setGeneratedText(refreshText());
-  }, [refreshText]);
+  const generatedText = useMemo(() => {
+    const count = testType === 'time' ? Math.max(100, Math.ceil(timeConfig * 6)) : wordConfig;
+    return generateRandomWords(count, withPunctuation, withNumbers);
+  // testNonce deliberately requests a fresh random passage.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testType, timeConfig, wordConfig, withPunctuation, withNumbers, testNonce]);
 
   const handleTestComplete = (stats: TypingStats) => {
     setCompletedStats(stats);
@@ -49,6 +44,7 @@ export const SpeedTestView: React.FC<SpeedTestViewProps> = ({
 
     const subMode = testType === 'time' ? `${timeConfig}s` : `${wordConfig} words`;
     db.testResults.add({
+      clientId: createClientId(),
       mode: 'speed-test',
       subMode,
       title: `Speed Test (${subMode})`,
@@ -60,6 +56,7 @@ export const SpeedTestView: React.FC<SpeedTestViewProps> = ({
       timestamp: Date.now(),
       errors: stats.incorrectChars,
       errorKeys: stats.errorHeatmap
+      ,totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars
     }).catch(() => {});
   };
 
@@ -70,6 +67,7 @@ export const SpeedTestView: React.FC<SpeedTestViewProps> = ({
     wpm,
     accuracy,
     timeRemaining,
+    timeElapsed,
     isFinished,
     handleKeyDown,
     reset
@@ -77,6 +75,7 @@ export const SpeedTestView: React.FC<SpeedTestViewProps> = ({
     targetText: generatedText,
     isTimed,
     timeLimit: timeConfig,
+    sessionKey: `${testType}-${timeConfig}-${wordConfig}-${withPunctuation}-${withNumbers}-${testNonce}`,
     strictMode: settings.strictMode,
     onComplete: handleTestComplete,
     onKeyPress
@@ -84,7 +83,7 @@ export const SpeedTestView: React.FC<SpeedTestViewProps> = ({
 
   const handleRestart = () => {
     setIsModalOpen(false);
-    setGeneratedText(refreshText());
+    setTestNonce(value => value + 1);
     reset(timeConfig);
   };
 
@@ -195,6 +194,7 @@ export const SpeedTestView: React.FC<SpeedTestViewProps> = ({
         wpm={wpm}
         accuracy={accuracy}
         timeRemaining={timeRemaining}
+        timeElapsed={timeElapsed}
         isTimed={isTimed}
         onReset={handleRestart}
         showLiveWpm={settings.showLiveWpm}
@@ -209,7 +209,9 @@ export const SpeedTestView: React.FC<SpeedTestViewProps> = ({
         caretStyle={settings.caretStyle}
         font="jetbrains"
         fontSize={settings.fontSize}
+        wrapMode="whole-word"
         onKeyDown={handleKeyDown}
+        onReset={handleRestart}
       />
 
       {/* Test Results Modal */}

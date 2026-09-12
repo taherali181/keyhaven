@@ -26,15 +26,15 @@ export const LiveStatsBar: React.FC<LiveStatsBarProps> = ({
   showLiveAccuracy = true
 }) => {
   return (
-    <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--color-border)] text-sm mb-4">
-      <div className="flex items-center gap-6">
+    <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--color-border)] text-sm mb-4 overflow-hidden">
+      <div className="flex min-w-0 items-center gap-3 sm:gap-6">
         {showLiveWpm && (
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-[var(--color-accent)]" />
             <span className="font-mono font-bold text-[var(--text-primary)] text-lg">
               {wpm}
             </span>
-            <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">
+            <span className="hidden sm:inline text-xs text-[var(--text-muted)] uppercase tracking-wider">
               wpm
             </span>
           </div>
@@ -46,7 +46,7 @@ export const LiveStatsBar: React.FC<LiveStatsBarProps> = ({
             <span className="font-mono font-bold text-[var(--text-primary)] text-lg">
               {accuracy}%
             </span>
-            <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">
+            <span className="hidden sm:inline text-xs text-[var(--text-muted)] uppercase tracking-wider">
               acc
             </span>
           </div>
@@ -58,7 +58,7 @@ export const LiveStatsBar: React.FC<LiveStatsBarProps> = ({
             {isTimed && timeRemaining !== undefined ? timeRemaining : formatTime(timeElapsed)}
           </span>
           {isTimed && (
-            <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">
+            <span className="hidden sm:inline text-xs text-[var(--text-muted)] uppercase tracking-wider">
               sec
             </span>
           )}
@@ -71,7 +71,7 @@ export const LiveStatsBar: React.FC<LiveStatsBarProps> = ({
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--color-border)] transition-all cursor-pointer"
       >
         <RotateCcw className="w-3.5 h-3.5" />
-        <span>Restart</span>
+        <span className="hidden sm:inline">Restart</span>
       </button>
     </div>
   );
