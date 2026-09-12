@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { JetBrains_Mono, Manrope, Newsreader } from 'next/font/google';
+import { Cormorant_Garamond, Geist, Geist_Mono, Literata } from 'next/font/google';
 import './globals.css';
 
-const newsreader = Newsreader({ subsets: ['latin'], variable: '--font-literary' });
-const manrope = Manrope({ subsets: ['latin'], variable: '--font-interface' });
-const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
+const wordmark = Cormorant_Garamond({ subsets: ['latin'], variable: '--font-wordmark' });
+const literary = Literata({ subsets: ['latin'], variable: '--font-literary' });
+const interfaceFont = Geist({ subsets: ['latin'], variable: '--font-interface' });
+const mono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono' });
 
 export const metadata: Metadata = {
   title: 'KeyHaven — Read deeply. Type beautifully.',
@@ -17,7 +18,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" data-theme="reading-room" suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: themeBootstrap }} /></head>
-      <body className={`${newsreader.variable} ${manrope.variable} ${mono.variable}`}>{children}</body>
+      <body className={`${wordmark.variable} ${literary.variable} ${interfaceFont.variable} ${mono.variable}`}>{children}</body>
     </html>
   );
 }

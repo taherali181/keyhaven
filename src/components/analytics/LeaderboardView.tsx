@@ -8,7 +8,7 @@ import { db } from '@/lib/db';
 type Board = 'speed-test' | 'alphabet-sprint' | 'word-rain' | 'ghost-racer';
 interface PublicEntry { handle: string; score: number; accuracy: number; occurredAt: string; }
 
-export const LeaderboardView = () => {
+export const LeaderboardView = ({ speedOnly = false, embedded = false }: { speedOnly?: boolean; embedded?: boolean }) => {
   const [board, setBoard] = useState<Board>('speed-test');
   const [period, setPeriod] = useState<'day' | 'week' | 'all'>('all');
   const [personal, setPersonal] = useState<Array<TestResultRecord | ArcadeScoreRecord>>([]);
@@ -41,10 +41,10 @@ export const LeaderboardView = () => {
     { id: 'speed-test', label: 'Speed' }, { id: 'alphabet-sprint', label: 'Alphabet' }, { id: 'word-rain', label: 'Word Rain' }, { id: 'ghost-racer', label: 'Ghost Racer' }
   ];
   return (
-    <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <header className="mb-8 border-b border-[var(--color-border)] pb-7"><p className="eyebrow">The record room</p><h1 className="mt-2 font-serif text-4xl font-medium">Leaderboards</h1><p className="mt-2 text-sm text-[var(--text-secondary)]">Verified public standings when connected; honest personal records everywhere.</p></header>
+    <section className={embedded ? '' : 'mx-auto max-w-5xl px-4 py-10 sm:px-6'}>
+      {!embedded && <header className="mb-8 border-b border-[var(--color-border)] pb-7"><p className="eyebrow">The record room</p><h1 className="mt-2 font-serif text-4xl font-medium">Leaderboards</h1><p className="mt-2 text-sm text-[var(--text-secondary)]">Verified public standings when connected; honest personal records everywhere.</p></header>}
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row">
-        <div className="flex gap-1 overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--bg-secondary)] p-1.5">{tabs.map(tab => <button key={tab.id} onClick={() => setBoard(tab.id)} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold ${board === tab.id ? 'bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}>{tab.label}</button>)}</div>
+        {!speedOnly && <div className="flex gap-1 overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--bg-secondary)] p-1.5">{tabs.map(tab => <button key={tab.id} onClick={() => setBoard(tab.id)} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold ${board === tab.id ? 'bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}>{tab.label}</button>)}</div>}
         <div className="flex gap-1">{(['day', 'week', 'all'] as const).map(value => <button key={value} onClick={() => setPeriod(value)} className={`px-3 py-2 text-[10px] uppercase tracking-widest ${period === value ? 'text-[var(--color-accent)]' : 'text-[var(--text-muted)]'}`}>{value}</button>)}</div>
       </div>
       <div className="grid gap-6 lg:grid-cols-2">

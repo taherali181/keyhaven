@@ -14,7 +14,7 @@ import { ArcadeView } from '@/components/arcade/ArcadeView';
 import { LeaderboardView } from '@/components/analytics/LeaderboardView';
 import { ProfileView } from '@/components/analytics/ProfileView';
 import { useCloudSync } from '@/hooks/useCloudSync';
-import { MODES } from '@/lib/navigation';
+import { modeFromPath, pathForMode } from '@/lib/navigation';
 
 export function KeyHavenApp({ initialMode = 'stories' }: { initialMode?: TypingMode }) {
   const [currentMode, setCurrentMode] = useState<TypingMode>(initialMode);
@@ -25,20 +25,20 @@ export function KeyHavenApp({ initialMode = 'stories' }: { initialMode?: TypingM
 
   useEffect(() => {
     const onBack = () => {
-      const mode = window.location.pathname.slice(1) as TypingMode;
-      if (MODES.includes(mode)) setCurrentMode(mode);
+      const mode = modeFromPath(window.location.pathname);
+      if (mode) setCurrentMode(mode);
     };
     window.addEventListener('popstate', onBack);
     return () => window.removeEventListener('popstate', onBack);
   }, []);
 
   const selectMode = (mode: TypingMode) => {
-    if (mode !== currentMode) window.history.pushState({}, '', `/${mode}`);
+    if (mode !== currentMode) window.history.pushState({}, '', pathForMode(mode));
     setCurrentMode(mode);
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen">
       <Navbar
         currentMode={currentMode}
         onSelectMode={selectMode}
@@ -53,7 +53,7 @@ export function KeyHavenApp({ initialMode = 'stories' }: { initialMode?: TypingM
         onUpdateSetting={settingsApi.updateSetting}
         onToggleZenMode={settingsApi.toggleZenMode}
       />
-      <main className="relative flex-1 pb-20">
+      <main className="app-content relative min-h-screen">
         {currentMode === 'stories' && <StoriesView settings={settings} onKeyPress={playKeyPress} />}
         {currentMode === 'speed-test' && <SpeedTestView settings={settings} onKeyPress={playKeyPress} />}
         {currentMode === 'quotes' && <QuotesView settings={settings} onKeyPress={playKeyPress} />}
@@ -62,15 +62,8 @@ export function KeyHavenApp({ initialMode = 'stories' }: { initialMode?: TypingM
         {currentMode === 'arcade' && <ArcadeView settings={settings} onKeyPress={playKeyPress} />}
         {currentMode === 'leaderboard' && <LeaderboardView />}
         {currentMode === 'profile' && <ProfileView />}
+        {!settings.zenMode && <span className="sync-indicator">{syncStatus === 'synced' ? 'Synced' : syncStatus === 'syncing' ? 'Syncing…' : syncStatus === 'error' ? 'Local · sync pending' : 'Saved locally'}</span>}
       </main>
-      {!settings.zenMode && (
-        <footer className="border-t border-[var(--color-border)] py-8 text-[11px] text-[var(--text-muted)]">
-          <div className="mx-auto flex max-w-7xl flex-col justify-between gap-3 px-6 sm:flex-row">
-            <span className="font-serif text-sm text-[var(--text-secondary)]">KeyHaven <i className="ml-2 font-normal">A quieter way to practice.</i></span>
-            <span className="uppercase tracking-[.16em]">{syncStatus === 'synced' ? 'Cloud synced' : syncStatus === 'syncing' ? 'Syncing…' : syncStatus === 'error' ? 'Saved locally · sync pending' : 'Saved locally · offline ready'}</span>
-          </div>
-        </footer>
-      )}
     </div>
   );
 }

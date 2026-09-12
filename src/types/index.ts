@@ -10,6 +10,8 @@ export type TypingMode =
 
 export type ThemeId = 'reading-room' | 'daylight';
 
+export type ReaderBackground = 'none' | 'cherry-blossoms' | 'misty-mountains' | 'quiet-lake' | 'soft-forest';
+
 export type WrapMode = 'literary' | 'whole-word';
 export type TypingSessionStatus = 'idle' | 'running' | 'finished';
 
@@ -124,6 +126,7 @@ export interface TypingStats {
   charTimings: CharTiming[];
   errorHeatmap: Record<string, number>;
   history: HistoryPoint[];
+  evidence: TypingSessionEvidence[];
 }
 
 export interface TestResultRecord {
@@ -192,10 +195,47 @@ export interface UserSettings {
   smoothCaret: boolean;
   strictMode: boolean;
   leaderboardEnabled: boolean;
+  readerLineHeight: number;
+  readerWidth: 'narrow' | 'balanced' | 'wide';
+  readerPaper: 'system' | 'paper' | 'sepia' | 'night';
+  readerBackground: ReaderBackground;
+  readerOverlay: number;
+  readerBlur: number;
   updatedAt: number;
 }
 
 export interface TypingSessionEvidence {
   key: string;
   atMs: number;
+}
+
+export interface ImportedSection {
+  id: string;
+  title: string;
+  text: string;
+}
+
+export interface ImportedDocumentRecord {
+  id: string;
+  title: string;
+  author: string;
+  format: 'epub' | 'pdf';
+  sections: ImportedSection[];
+  createdAt: number;
+  updatedAt: number;
+  syncedAt?: number;
+}
+
+export interface AcademyStateRecord {
+  id: 'academy';
+  placementComplete: boolean;
+  currentLessonId: string;
+  completedExercises: string[];
+  mastery: Record<string, number>;
+  dailyGoalMinutes: number;
+  weeklyGoalMinutes: number;
+  practiceDates: string[];
+  totalMinutes: number;
+  updatedAt: number;
+  syncedAt?: number;
 }

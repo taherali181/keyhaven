@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { TypingStats, CharTiming, HistoryPoint, TypingSessionStatus } from '@/types';
+import { TypingStats, CharTiming, HistoryPoint, TypingSessionStatus, TypingSessionEvidence } from '@/types';
 import { calculateWPM, calculateRawWPM, calculateAccuracy, calculateConsistency } from '@/lib/metrics';
 
 interface UseTypingEngineOptions {
@@ -45,6 +45,7 @@ export function useTypingEngine({
   const charTimingsRef = useRef<CharTiming[]>([]);
   const historyRef = useRef<HistoryPoint[]>([]);
   const errorHeatmapRef = useRef<Record<string, number>>({});
+  const evidenceRef = useRef<TypingSessionEvidence[]>([]);
   const lastCharTimeRef = useRef(0);
   const lastHistorySecondRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
@@ -63,6 +64,7 @@ export function useTypingEngine({
     charTimingsRef.current = [];
     historyRef.current = [];
     errorHeatmapRef.current = {};
+    evidenceRef.current = [];
     lastCharTimeRef.current = 0;
     lastHistorySecondRef.current = 0;
     setTyped(prefix);
@@ -101,6 +103,7 @@ export function useTypingEngine({
       charTimings: [...attempts],
       errorHeatmap: { ...errorHeatmapRef.current },
       history: [...historyRef.current]
+      ,evidence: [...evidenceRef.current]
     };
   }, [targetText.length]);
 
@@ -162,6 +165,7 @@ export function useTypingEngine({
     if (event.key === 'Backspace') {
       event.preventDefault();
       onKeyPress?.('Backspace');
+      if (statusRef.current === 'running' && startRef.current !== null) evidenceRef.current.push({ key: 'Backspace', atMs: Math.max(0, Math.round(performance.now() - startRef.current)) });
       if (typedRef.current.length > baseOffsetRef.current) {
         const next = typedRef.current.slice(0, -1);
         typedRef.current = next;
@@ -183,6 +187,8 @@ export function useTypingEngine({
       setStatus('running');
       setStartTime(now);
     }
+
+    evidenceRef.current.push({ key: event.key === 'Enter' ? '\n' : event.key, atMs: Math.max(0, Math.round(now - (startRef.current ?? now))) });
 
     onKeyPress?.(event.key);
     const isCorrect = key === targetChar;

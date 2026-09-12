@@ -1,10 +1,12 @@
 import Dexie, { type Table } from 'dexie';
-import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId } from '@/types';
+import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ImportedDocumentRecord, AcademyStateRecord } from '@/types';
 
 export class KeyHavenDatabase extends Dexie {
   testResults!: Table<TestResultRecord, number>;
   bookProgress!: Table<BookProgressRecord, string>;
   arcadeScores!: Table<ArcadeScoreRecord, number>;
+  importedDocuments!: Table<ImportedDocumentRecord, string>;
+  academyState!: Table<AcademyStateRecord, string>;
 
   constructor() {
     super('KeyHavenDB');
@@ -24,6 +26,13 @@ export class KeyHavenDatabase extends Dexie {
       await transaction.table('arcadeScores').toCollection().modify(record => {
         record.clientId ||= crypto.randomUUID();
       });
+    });
+    this.version(3).stores({
+      testResults: '++id, &clientId, mode, subMode, timestamp, wpm, accuracy, syncedAt',
+      bookProgress: 'bookId, chapterIndex, lastRead, syncedAt',
+      arcadeScores: '++id, &clientId, game, score, wpm, timestamp, syncedAt',
+      importedDocuments: 'id, title, format, updatedAt, syncedAt',
+      academyState: 'id, updatedAt, syncedAt'
     });
   }
 }
@@ -46,6 +55,12 @@ export const DEFAULT_SETTINGS: UserSettings = {
   smoothCaret: true,
   strictMode: false,
   leaderboardEnabled: true,
+  readerLineHeight: 1.8,
+  readerWidth: 'balanced',
+  readerPaper: 'system',
+  readerBackground: 'none',
+  readerOverlay: 82,
+  readerBlur: 0,
   updatedAt: 0
 };
 

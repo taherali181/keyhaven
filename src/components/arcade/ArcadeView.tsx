@@ -8,28 +8,31 @@ import { createClientId, db } from '@/lib/db';
 import { COMMON_WORDS_200 } from '@/data/word-lists';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
+import { LeaderboardView } from '@/components/analytics/LeaderboardView';
 
 interface ArcadeViewProps { settings: UserSettings; onKeyPress: (key: string) => void; }
 type ArcadeGame = 'alphabet' | 'word-rain' | 'ghost-racer';
 
 export const ArcadeView: React.FC<ArcadeViewProps> = ({ settings, onKeyPress }) => {
   const [activeGame, setActiveGame] = useState<ArcadeGame>('alphabet');
+  const [view, setView] = useState<'play' | 'daily' | 'leaderboard'>('play');
   const games: Array<{ id: ArcadeGame; label: string; icon: React.ReactNode }> = [
     { id: 'alphabet', label: 'Alphabet Sprint', icon: <Zap /> },
     { id: 'word-rain', label: 'Word Rain', icon: <Timer /> },
     { id: 'ghost-racer', label: 'Ghost Racer', icon: <Flag /> }
   ];
   return (
-    <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <header className="mb-8 flex flex-col justify-between gap-5 border-b border-[var(--color-border)] pb-7 sm:flex-row sm:items-end">
-        <div><p className="eyebrow">The lower floor</p><h1 className="mt-2 font-serif text-4xl font-medium tracking-tight">The Typing Arcade</h1><p className="mt-2 max-w-xl text-sm text-[var(--text-secondary)]">Three precise little contests. No broken clocks, no phantom inputs.</p></div>
-        <div className="flex flex-wrap gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--bg-secondary)] p-1.5">
+    <section className="speed-shell arcade-shell">
+      <header className="section-header academy-title"><div><p className="eyebrow">Play with purpose</p><h1>Arcade</h1></div><nav><button className={view === 'play' ? 'active' : ''} onClick={() => setView('play')}>Play</button><button className={view === 'daily' ? 'active' : ''} onClick={() => { setView('daily'); setActiveGame((['alphabet', 'word-rain', 'ghost-racer'] as ArcadeGame[])[new Date().getDate() % 3]); }}>Daily</button><button className={view === 'leaderboard' ? 'active' : ''} onClick={() => setView('leaderboard')}>Records</button></nav></header>
+      {view === 'leaderboard' ? <LeaderboardView embedded /> : <>
+        {view === 'daily' && <div className="daily-arcade"><span>Today’s challenge</span><strong>{games.find(game => game.id === activeGame)?.label}</strong><small>One focused round. Come back tomorrow for a different game.</small></div>}
+        {view === 'play' && <div className="flex flex-wrap gap-1 border-b border-[var(--color-border)] pb-5 mb-7">
           {games.map(game => <button key={game.id} onClick={() => setActiveGame(game.id)} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold [&_svg]:h-3.5 [&_svg]:w-3.5 ${activeGame === game.id ? 'bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}>{game.icon}{game.label}</button>)}
-        </div>
-      </header>
+        </div>}
       {activeGame === 'alphabet' && <AlphabetSprint onKeyPress={onKeyPress} />}
       {activeGame === 'word-rain' && <WordRain onKeyPress={onKeyPress} />}
       {activeGame === 'ghost-racer' && <GhostRacer settings={settings} onKeyPress={onKeyPress} />}
+      </>}
     </section>
   );
 };

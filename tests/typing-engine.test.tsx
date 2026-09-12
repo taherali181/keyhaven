@@ -22,6 +22,7 @@ describe('typing session engine', () => {
     fireEvent.keyDown(input, { key: 'b' });
     expect(complete).toHaveBeenCalledTimes(1);
     expect(complete.mock.calls[0][0]).toMatchObject({ totalChars: 2, correctChars: 2, missedChars: 0 });
+    expect(complete.mock.calls[0][0].evidence.map((event: { key: string }) => event.key)).toEqual(['a', 'b']);
   });
 
   it('does not advance on an error in strict mode', async () => {

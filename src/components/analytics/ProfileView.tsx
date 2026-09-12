@@ -2,18 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 import { User, Zap, Target, Award, Clock, Trash2, Cloud, LogIn } from 'lucide-react';
-import { TestResultRecord } from '@/types';
+import { AcademyStateRecord, ArcadeScoreRecord, BookProgressRecord, TestResultRecord } from '@/types';
 import { db } from '@/lib/db';
 import { VirtualKeyboardHeatmap } from '@/components/typing/VirtualKeyboardHeatmap';
 
 export const ProfileView: React.FC = () => {
   const [history, setHistory] = useState<TestResultRecord[]>([]);
   const [lifetimeErrors, setLifetimeErrors] = useState<Record<string, number>>({});
+  const [reading, setReading] = useState<BookProgressRecord[]>([]);
+  const [academy, setAcademy] = useState<AcademyStateRecord | null>(null);
+  const [arcade, setArcade] = useState<ArcadeScoreRecord[]>([]);
 
   const reloadData = () => {
-    db.testResults.toArray().then(records => {
+    Promise.all([db.testResults.toArray(), db.bookProgress.toArray(), db.academyState.get('academy'), db.arcadeScores.toArray()]).then(([records, readingRecords, academyRecord, arcadeRecords]) => {
       setHistory(records.reverse());
+      setReading(readingRecords); setAcademy(academyRecord ?? null); setArcade(arcadeRecords);
 
       const errMap: Record<string, number> = {};
       records.forEach(r => {
@@ -55,10 +60,10 @@ export const ProfileView: React.FC = () => {
           </div>
           <div>
             <h2 className="text-2xl font-serif font-bold text-[var(--text-primary)]">
-              Typist Profile & Analytics
+              My progress
             </h2>
             <p className="text-xs text-[var(--text-secondary)]">
-              Your typing journey, accuracy benchmarks, and lifetime keyboard heatmap.
+              Reading, learning, and typing history in one quiet place.
             </p>
           </div>
         </div>
@@ -75,6 +80,12 @@ export const ProfileView: React.FC = () => {
       </div>
 
       <AccountPanel />
+
+      <section className="mb-8 grid gap-px overflow-hidden border border-[var(--color-border)] bg-[var(--color-border)] sm:grid-cols-3">
+        <div className="bg-[var(--bg-primary)] p-5"><span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Reading</span><strong className="mt-2 block font-serif text-xl font-medium">{reading.length} {reading.length === 1 ? 'book' : 'books'} begun</strong><small className="mt-1 block text-[10px] text-[var(--text-muted)]">{reading.length ? `${Math.round(reading.reduce((sum, item) => sum + item.percent, 0) / reading.length)}% average progress` : 'Open Read to begin'}</small></div>
+        <div className="bg-[var(--bg-primary)] p-5"><span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Academy</span><strong className="mt-2 block font-serif text-xl font-medium">{academy?.completedExercises.length ?? 0} sessions</strong><small className="mt-1 block text-[10px] text-[var(--text-muted)]">{academy?.practiceDates.length ?? 0} active days</small></div>
+        <div className="bg-[var(--bg-primary)] p-5"><span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Arcade</span><strong className="mt-2 block font-serif text-xl font-medium">{arcade.length} rounds</strong><small className="mt-1 block text-[10px] text-[var(--text-muted)]">{arcade.length ? `${Math.max(...arcade.map(item => item.score))} best score` : 'No records yet'}</small></div>
+      </section>
 
       {/* Lifetime Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -203,8 +214,8 @@ function AccountPanel() {
   return (
     <section className="editorial-panel mb-8 flex flex-col justify-between gap-5 p-5 sm:flex-row sm:items-center">
       <div className="flex items-start gap-3"><Cloud className="mt-0.5 h-5 w-5 text-[var(--color-accent)]" /><div><h3 className="text-sm font-bold">KeyHaven Cloud</h3><p className="mt-1 text-xs text-[var(--text-secondary)]">{email ? `Signed in as ${email}` : cloudAvailable ? 'Sign in to sync this local library across devices.' : 'Your progress is safely stored on this device. Cloud credentials can be connected at deployment.'}</p></div></div>
-      {cloudAvailable && !email && <Link href="/sign-in" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-xs font-bold text-[var(--bg-primary)]"><LogIn className="h-3.5 w-3.5" />Sign in</Link>}
-      {email && <form onSubmit={save} className="flex w-full max-w-sm flex-col gap-2"><div className="flex gap-2"><input aria-label="Public handle" value={handle} onChange={event => setHandle(event.target.value)} placeholder="public_handle" className="min-w-0 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] px-3 py-2 text-xs" /><button className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-bold">Save</button></div><label className="flex items-center gap-2 text-[10px] text-[var(--text-muted)]"><input type="checkbox" checked={leaderboardEnabled} onChange={event => setLeaderboardEnabled(event.target.checked)} className="accent-[var(--color-accent)]" />Publish verified test and arcade scores under this handle</label>{message && <span className="text-[10px] text-[var(--color-accent)]">{message}</span>}</form>}
+      {!email && <div className="flex shrink-0 gap-2"><Link href="/sign-in" className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2.5 text-xs font-bold"><LogIn className="h-3.5 w-3.5" />Sign in</Link><Link href="/sign-up" className="inline-flex items-center justify-center rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-xs font-bold text-[var(--bg-primary)]">Create account</Link></div>}
+      {email && <div className="flex w-full max-w-sm flex-col gap-3"><form onSubmit={save} className="flex flex-col gap-2"><div className="flex gap-2"><input aria-label="Public handle" value={handle} onChange={event => setHandle(event.target.value)} placeholder="public_handle" className="min-w-0 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] px-3 py-2 text-xs" /><button className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-bold">Save</button></div><label className="flex items-center gap-2 text-[10px] text-[var(--text-muted)]"><input type="checkbox" checked={leaderboardEnabled} onChange={event => setLeaderboardEnabled(event.target.checked)} className="accent-[var(--color-accent)]" />Publish verified test and arcade scores under this handle</label>{message && <span className="text-[10px] text-[var(--color-accent)]">{message}</span>}</form><button onClick={() => signOut({ callbackUrl: '/sign-in' })} className="self-end text-[10px] text-[var(--text-muted)] underline">Sign out</button></div>}
     </section>
   );
 }

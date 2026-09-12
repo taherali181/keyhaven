@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  BookOpen, ChevronDown, Eye, EyeOff, Gamepad2, GraduationCap, Library,
-  Moon, Palette, Quote, SlidersHorizontal, Sun, Trophy, User, Volume2, Zap
+  BookOpen, ChevronLeft, ChevronRight, Focus, Gamepad2, GraduationCap,
+  Menu, Moon, Settings2, Sun, Timer, User, Volume2, X
 } from 'lucide-react';
-import { AmbientSound, CaretStyle, FontFamily, SwitchSound, ThemeId, TypingMode, UserSettings } from '@/types';
+import { AmbientSound, CaretStyle, FontFamily, ReaderBackground, SwitchSound, ThemeId, TypingMode, UserSettings } from '@/types';
 import { FONTS } from '@/lib/themes';
 
 interface NavbarProps {
@@ -23,129 +23,112 @@ interface NavbarProps {
   onToggleZenMode: () => void;
 }
 
-const destinations: Record<string, Array<{ mode: TypingMode; label: string; icon: React.ReactNode }>> = {
-  Practice: [
-    { mode: 'stories', label: 'Stories', icon: <BookOpen /> },
-    { mode: 'quotes', label: 'Quotes', icon: <Quote /> },
-    { mode: 'learn', label: 'Academy', icon: <GraduationCap /> }
-  ],
-  Compete: [
-    { mode: 'speed-test', label: 'Speed Test', icon: <Zap /> },
-    { mode: 'arcade', label: 'Arcade', icon: <Gamepad2 /> },
-    { mode: 'leaderboard', label: 'Leaderboards', icon: <Trophy /> }
-  ],
-  Progress: [{ mode: 'profile', label: 'My Progress', icon: <User /> }]
-};
+const sections: Array<{ label: string; mode: TypingMode; icon: React.ReactNode }> = [
+  { label: 'Read', mode: 'stories', icon: <BookOpen /> },
+  { label: 'Academy', mode: 'learn', icon: <GraduationCap /> },
+  { label: 'Speed', mode: 'speed-test', icon: <Timer /> },
+  { label: 'Arcade', mode: 'arcade', icon: <Gamepad2 /> }
+];
+
+const readModes: Array<{ label: string; mode: TypingMode }> = [
+  { label: 'Stories', mode: 'stories' },
+  { label: 'Quotes', mode: 'quotes' },
+  { label: 'Library', mode: 'library' }
+];
+
+const backgrounds: Array<{ id: ReaderBackground; label: string }> = [
+  { id: 'none', label: 'Quiet paper' },
+  { id: 'cherry-blossoms', label: 'Cherry blossoms' },
+  { id: 'misty-mountains', label: 'Misty mountains' },
+  { id: 'quiet-lake', label: 'Quiet lake' },
+  { id: 'soft-forest', label: 'Soft forest' }
+];
 
 export const Navbar: React.FC<NavbarProps> = props => {
   const { currentMode, onSelectMode, settings } = props;
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const shellRef = useRef<HTMLElement>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const readActive = ['stories', 'quotes', 'library'].includes(currentMode);
 
   useEffect(() => {
-    const close = (event: MouseEvent) => {
-      if (!shellRef.current?.contains(event.target as Node)) setOpenMenu(null);
-    };
-    const escape = (event: KeyboardEvent) => event.key === 'Escape' && setOpenMenu(null);
-    document.addEventListener('mousedown', close);
-    document.addEventListener('keydown', escape);
-    return () => {
-      document.removeEventListener('mousedown', close);
-      document.removeEventListener('keydown', escape);
-    };
-  }, []);
+    document.documentElement.dataset.sidebar = collapsed ? 'compact' : 'open';
+    return () => { delete document.documentElement.dataset.sidebar; };
+  }, [collapsed]);
 
-  if (settings.zenMode) {
-    return (
-      <button onClick={props.onToggleZenMode} className="fixed right-5 top-5 z-50 rounded-full border border-[var(--color-border)] bg-[var(--bg-card)] p-3 text-[var(--text-secondary)] shadow-xl" title="Exit focus mode">
-        <EyeOff className="h-4 w-4" />
-      </button>
-    );
-  }
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setMobileOpen(false); setSettingsOpen(false); }
+    };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, []);
 
   const choose = (mode: TypingMode) => {
     onSelectMode(mode);
-    setOpenMenu(null);
+    setMobileOpen(false);
+    setSettingsOpen(false);
   };
 
-  return (
-    <header ref={shellRef} className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--bg-primary)_88%,transparent)] backdrop-blur-xl">
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-5 px-4 sm:px-6">
-        <button onClick={() => choose('stories')} className="group flex shrink-0 items-center gap-3 text-left">
-          <span className="relative grid h-9 w-9 place-items-center border border-[var(--color-accent)] text-lg font-semibold text-[var(--color-accent)] before:absolute before:inset-1 before:border before:border-[var(--color-border)]">K</span>
-          <span>
-            <span className="block font-serif text-xl font-semibold leading-none tracking-[-.02em]">KeyHaven</span>
-            <span className="mt-1 hidden text-[9px] uppercase tracking-[.2em] text-[var(--text-muted)] sm:block">Read deeply · type beautifully</span>
-          </span>
-        </button>
+  if (settings.zenMode) {
+    return <button onClick={props.onToggleZenMode} className="focus-exit" title="Exit focus mode"><Focus /></button>;
+  }
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
-          {Object.entries(destinations).map(([group, items]) => {
-            const active = items.some(item => item.mode === currentMode);
-            return (
-              <div className="relative" key={group}>
-                <button onClick={() => setOpenMenu(openMenu === group ? null : group)} className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-colors ${active ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`} aria-expanded={openMenu === group}>
-                  {group}<ChevronDown className="h-3 w-3" />
-                </button>
-                {openMenu === group && (
-                  <div className="absolute left-0 top-full mt-3 min-w-52 rounded-xl border border-[var(--color-border)] bg-[var(--bg-card)] p-2 shadow-2xl">
-                    {items.map(item => (
-                      <button key={item.mode} onClick={() => choose(item.mode)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-xs transition-colors [&_svg]:h-4 [&_svg]:w-4 ${currentMode === item.mode ? 'bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'}`}>
-                        {item.icon}{item.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          <button onClick={() => choose('library')} className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold ${currentMode === 'library' ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
-            <Library className="h-4 w-4" />Library
-          </button>
-        </nav>
-
-        <div className="flex items-center gap-1.5">
-          <button onClick={() => props.onUpdateTheme(settings.theme === 'reading-room' ? 'daylight' : 'reading-room')} className="rounded-lg p-2.5 text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--color-accent)]" title="Toggle daylight">
-            {settings.theme === 'reading-room' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <div className="relative">
-            <button onClick={() => setOpenMenu(openMenu === 'settings' ? null : 'settings')} className="rounded-lg p-2.5 text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--color-accent)]" title="Reading and typing settings">
-              <SlidersHorizontal className="h-4 w-4" />
-            </button>
-            {openMenu === 'settings' && (
-              <div className="absolute right-0 top-full mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-[var(--color-border)] bg-[var(--bg-card)] p-5 shadow-2xl">
-                <div className="mb-5 flex items-center gap-2 border-b border-[var(--color-border)] pb-3"><Palette className="h-4 w-4 text-[var(--color-accent)]" /><span className="text-xs font-bold uppercase tracking-widest">Preferences</span></div>
-                <label className="mb-4 block text-[11px] text-[var(--text-secondary)]">Typeface
-                  <select value={settings.font} onChange={event => props.onUpdateFont(event.target.value as FontFamily)} className="mt-1.5 w-full rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] p-2 text-xs text-[var(--text-primary)]">
-                    {(Object.keys(FONTS) as FontFamily[]).filter(font => font !== 'fira').map(font => <option value={font} key={font}>{FONTS[font].name}</option>)}
-                  </select>
-                </label>
-                <label className="mb-4 block text-[11px] text-[var(--text-secondary)]">Caret
-                  <select value={settings.caretStyle} onChange={event => props.onUpdateCaretStyle(event.target.value as CaretStyle)} className="mt-1.5 w-full rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] p-2 text-xs text-[var(--text-primary)]">
-                    {(['smooth', 'bar', 'block', 'underline', 'glow'] as CaretStyle[]).map(value => <option key={value} value={value}>{value}</option>)}
-                  </select>
-                </label>
-                <label className="mb-4 block text-[11px] text-[var(--text-secondary)]"><span className="flex items-center gap-2"><Volume2 className="h-3.5 w-3.5" />Key sound</span>
-                  <select value={settings.switchSound} onChange={event => props.onUpdateSwitchSound(event.target.value as SwitchSound)} className="mt-1.5 w-full rounded-lg border border-[var(--color-border)] bg-[var(--bg-secondary)] p-2 text-xs text-[var(--text-primary)]">
-                    {['off', 'holy-panda', 'cherry-blue', 'gateron-brown', 'cherry-red', 'typewriter', 'raindrop'].map(value => <option key={value} value={value}>{value.replaceAll('-', ' ')}</option>)}
-                  </select>
-                </label>
-                <label className="flex items-center justify-between gap-4 border-t border-[var(--color-border)] py-3 text-xs text-[var(--text-secondary)]">Strict typing
-                  <input type="checkbox" checked={settings.strictMode} onChange={event => props.onUpdateSetting('strictMode', event.target.checked)} className="accent-[var(--color-accent)]" />
-                </label>
-                <button onClick={props.onToggleZenMode} className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Eye className="h-4 w-4" />Enter focus mode</button>
-              </div>
-            )}
-          </div>
-          <button onClick={() => choose('profile')} className="ml-1 grid h-9 w-9 place-items-center rounded-full border border-[var(--color-border)] bg-[var(--bg-card)] text-[var(--color-accent)]" title="Account and progress"><User className="h-4 w-4" /></button>
-        </div>
-      </div>
-
-      <nav className="flex w-full max-w-full gap-1 overflow-x-auto border-t border-[var(--color-border)] px-3 py-2 md:hidden" aria-label="Mobile navigation">
-        {[...Object.values(destinations).flat(), { mode: 'library' as TypingMode, label: 'Library', icon: <Library /> }].map(item => (
-          <button key={item.mode} onClick={() => choose(item.mode)} className={`flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] [&_svg]:h-3.5 [&_svg]:w-3.5 ${currentMode === item.mode ? 'bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}>{item.icon}{item.label}</button>
-        ))}
+  const sidebar = (
+    <>
+      <div className="sidebar-wordmark" aria-label="KeyHaven"><span>KeyHaven</span></div>
+      <nav className="sidebar-nav" aria-label="Primary navigation">
+        {sections.map(item => {
+          const active = item.mode === 'stories' ? readActive : currentMode === item.mode;
+          return (
+            <div key={item.label}>
+              <button className={`sidebar-link ${active ? 'active' : ''}`} onClick={() => choose(item.mode)} title={collapsed ? item.label : undefined}>
+                {item.icon}<span>{item.label}</span>
+              </button>
+              {item.mode === 'stories' && readActive && !collapsed && <div className="sidebar-subnav">{readModes.map(read => <button key={read.mode} className={currentMode === read.mode ? 'active' : ''} onClick={() => choose(read.mode)}>{read.label}</button>)}</div>}
+            </div>
+          );
+        })}
       </nav>
-    </header>
+      <div className="sidebar-footer">
+        <button className="sidebar-link" onClick={() => setSettingsOpen(true)} title="Settings"><Settings2 /><span>Settings</span></button>
+        <button className={`sidebar-link ${currentMode === 'profile' ? 'active' : ''}`} onClick={() => choose('profile')} title="Profile and progress"><User /><span>My progress</span></button>
+        <button className="sidebar-collapse" onClick={() => setCollapsed(value => !value)} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>{collapsed ? <ChevronRight /> : <ChevronLeft />}<span>{collapsed ? '' : 'Collapse'}</span></button>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      <aside className={`app-sidebar ${collapsed ? 'is-collapsed' : ''}`}>{sidebar}</aside>
+      <header className="mobile-bar"><button onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu /></button><span>KeyHaven</span><button onClick={() => choose('profile')} aria-label="Profile and progress"><User /></button></header>
+      {mobileOpen && <div className="mobile-scrim" onClick={() => setMobileOpen(false)}><aside className="mobile-drawer" onClick={event => event.stopPropagation()}><button className="drawer-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X /></button>{sidebar}</aside></div>}
+      {settingsOpen && <div className="panel-scrim" onClick={() => setSettingsOpen(false)}><aside className="settings-panel" onClick={event => event.stopPropagation()} aria-label="Settings"><SettingsPanel {...props} onClose={() => setSettingsOpen(false)} onProgress={() => choose('profile')} /></aside></div>}
+    </>
   );
 };
+
+function SettingsPanel(props: NavbarProps & { onClose: () => void; onProgress: () => void }) {
+  const { settings } = props;
+  return <div className="settings-stack">
+    <header><div><p className="eyebrow">Your space</p><h2>Settings</h2></div><button onClick={props.onClose} aria-label="Close settings"><X /></button></header>
+    <details open><summary>Reading</summary><div className="setting-group">
+      <label>Typeface<select value={settings.font} onChange={event => props.onUpdateFont(event.target.value as FontFamily)}>{(Object.keys(FONTS) as FontFamily[]).filter(font => font !== 'fira').map(font => <option value={font} key={font}>{FONTS[font].name}</option>)}</select></label>
+      <label>Text size<select value={settings.fontSize} onChange={event => props.onUpdateSetting('fontSize', event.target.value as UserSettings['fontSize'])}><option value="sm">Small</option><option value="base">Comfortable</option><option value="lg">Large</option><option value="xl">Extra large</option></select></label>
+      <label>Page width<select value={settings.readerWidth} onChange={event => props.onUpdateSetting('readerWidth', event.target.value as UserSettings['readerWidth'])}><option value="narrow">Narrow</option><option value="balanced">Balanced</option><option value="wide">Wide</option></select></label>
+      <label>Page tone<select value={settings.readerPaper} onChange={event => props.onUpdateSetting('readerPaper', event.target.value as UserSettings['readerPaper'])}><option value="system">Match theme</option><option value="paper">Soft paper</option><option value="sepia">Sepia</option><option value="night">Night</option></select></label>
+      <label>Line spacing<input type="range" min="1.5" max="2.2" step="0.1" value={settings.readerLineHeight} onChange={event => props.onUpdateSetting('readerLineHeight', Number(event.target.value))} /></label>
+      <label>Scenery<select value={settings.readerBackground} onChange={event => props.onUpdateSetting('readerBackground', event.target.value as ReaderBackground)}>{backgrounds.map(background => <option key={background.id} value={background.id}>{background.label}</option>)}</select></label>
+      {settings.readerBackground !== 'none' && <><label>Readability veil<input type="range" min="55" max="95" value={settings.readerOverlay} onChange={event => props.onUpdateSetting('readerOverlay', Number(event.target.value))} /></label><label>Soft focus<input type="range" min="0" max="8" value={settings.readerBlur} onChange={event => props.onUpdateSetting('readerBlur', Number(event.target.value))} /></label></>}
+    </div></details>
+    <details><summary>Typing</summary><div className="setting-group">
+      <label>Caret<select value={settings.caretStyle} onChange={event => props.onUpdateCaretStyle(event.target.value as CaretStyle)}>{(['smooth', 'bar', 'block', 'underline', 'glow'] as CaretStyle[]).map(value => <option key={value}>{value}</option>)}</select></label>
+      <label className="toggle-row">Strict typing<input type="checkbox" checked={settings.strictMode} onChange={event => props.onUpdateSetting('strictMode', event.target.checked)} /></label>
+      <label className="toggle-row">Show live WPM<input type="checkbox" checked={settings.showLiveWpm} onChange={event => props.onUpdateSetting('showLiveWpm', event.target.checked)} /></label>
+    </div></details>
+    <details><summary>Sound</summary><div className="setting-group"><label><span className="label-icon"><Volume2 />Key sound</span><select value={settings.switchSound} onChange={event => props.onUpdateSwitchSound(event.target.value as SwitchSound)}>{['off', 'holy-panda', 'cherry-blue', 'gateron-brown', 'cherry-red', 'typewriter', 'raindrop'].map(value => <option key={value} value={value}>{value.replaceAll('-', ' ')}</option>)}</select></label><label>Ambient<select value={settings.ambientSound} onChange={event => props.onUpdateAmbientSound(event.target.value as AmbientSound)}>{['none', 'rain', 'fireplace', 'cafe', 'forest', 'zen-river', 'alpha-waves'].map(value => <option key={value}>{value.replaceAll('-', ' ')}</option>)}</select></label></div></details>
+    <button className="quiet-action" onClick={props.onToggleZenMode}><Focus />Enter focus mode</button>
+    <button className="quiet-action" onClick={props.onProgress}><User />Open my progress</button>
+    <button className="theme-action" onClick={() => props.onUpdateTheme(settings.theme === 'reading-room' ? 'daylight' : 'reading-room')}>{settings.theme === 'reading-room' ? <Sun /> : <Moon />}Switch to {settings.theme === 'reading-room' ? 'light' : 'dark'}</button>
+  </div>;
+}

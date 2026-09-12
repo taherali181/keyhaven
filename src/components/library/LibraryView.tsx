@@ -1,350 +1,82 @@
 'use client';
 
-import React, { useCallback, useState, useEffect } from 'react';
-import { Bookmark, ChevronLeft, ChevronRight, CheckCircle, ArrowRight } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowLeft, BookOpen, FileUp, Trash2, X } from 'lucide-react';
 import { BOOKS } from '@/data/books';
-import { Book, BookChapter, UserSettings, TypingStats, BookProgressRecord } from '@/types';
+import { BookProgressRecord, ImportedDocumentRecord, TypingStats, UserSettings } from '@/types';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
 import { LiveStatsBar } from '@/components/typing/LiveStatsBar';
 import { TestResultsModal } from '@/components/typing/TestResultsModal';
 import { createClientId, db } from '@/lib/db';
+import { importDocument, ImportProgress } from '@/lib/document-import';
+import { readerStyle } from '@/lib/reader-style';
 
-interface LibraryViewProps {
-  settings: UserSettings;
-  onKeyPress: (key: string) => void;
-}
+interface ReaderBook { id: string; title: string; author: string; imported: boolean; chapters: Array<{ id: string; title: string; text: string }> }
 
-export const LibraryView: React.FC<LibraryViewProps> = ({
-  settings,
-  onKeyPress
-}) => {
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [currentChapterIdx, setCurrentChapterIdx] = useState<number>(0);
+const builtInBooks: ReaderBook[] = BOOKS.map(book => ({ id: book.id, title: book.title, author: book.author, imported: false, chapters: book.chapters.map(chapter => ({ id: chapter.id, title: chapter.title, text: chapter.text })) }));
+
+export const LibraryView = ({ settings, onKeyPress }: { settings: UserSettings; onKeyPress: (key: string) => void }) => {
+  const [imports, setImports] = useState<ImportedDocumentRecord[]>([]);
+  const [progress, setProgress] = useState<Record<string, BookProgressRecord>>({});
+  const [selected, setSelected] = useState<ReaderBook | null>(null);
+  const [chapterIndex, setChapterIndex] = useState(0);
   const [sessionOffset, setSessionOffset] = useState(0);
-  const [bookProgressMap, setBookProgressMap] = useState<Record<string, BookProgressRecord>>({});
-  const [completedStats, setCompletedStats] = useState<TypingStats | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [result, setResult] = useState<TypingStats | null>(null);
+  const [resultOpen, setResultOpen] = useState(false);
+  const [importState, setImportState] = useState<ImportProgress | null>(null);
+  const [importError, setImportError] = useState('');
+  const abortRef = useRef<AbortController | null>(null);
 
-  // Load progress for books from IndexedDB
-  useEffect(() => {
-    db.bookProgress.toArray().then(records => {
-      const map: Record<string, BookProgressRecord> = {};
-      records.forEach(r => {
-        map[r.bookId] = r;
-      });
-      setBookProgressMap(map);
-    }).catch(() => {});
+  const reload = useCallback(async () => {
+    const [documents, saved] = await Promise.all([db.importedDocuments.orderBy('updatedAt').reverse().toArray(), db.bookProgress.toArray()]);
+    setImports(documents); setProgress(Object.fromEntries(saved.map(item => [item.bookId, item])));
   }, []);
+  useEffect(() => { queueMicrotask(() => void reload()); }, [reload]);
 
-  const activeChapter: BookChapter | null = selectedBook
-    ? selectedBook.chapters[currentChapterIdx] || selectedBook.chapters[0]
-    : null;
+  const importedBooks: ReaderBook[] = imports.map(document => ({ id: document.id, title: document.title, author: document.author, imported: true, chapters: document.sections.map(section => ({ id: section.id, title: section.title, text: section.text })) }));
+  const active = selected?.chapters[chapterIndex] ?? null;
+  const text = active?.text ?? '';
 
-  const targetText = activeChapter ? activeChapter.text : '';
-  const resumeOffset = sessionOffset;
+  const persist = useCallback((offset: number) => {
+    if (!selected || !active) return;
+    const before = selected.chapters.slice(0, chapterIndex).reduce((sum, chapter) => sum + chapter.text.length, 0);
+    const total = selected.chapters.reduce((sum, chapter) => sum + chapter.text.length, 0);
+    const record: BookProgressRecord = { bookId: selected.id, chapterId: active.id, chapterIndex, charOffset: Math.min(offset, text.length), percent: Math.round(((before + Math.min(offset, text.length)) / Math.max(1, total)) * 100), totalWordsTyped: Math.round((before + offset) / 5), lastRead: Date.now() };
+    void db.bookProgress.put(record).then(() => { setProgress(previous => ({ ...previous, [selected.id]: record })); window.dispatchEvent(new Event('keyhaven:sync')); });
+  }, [active, chapterIndex, selected, text.length]);
 
-  const persistProgress = useCallback((offset: number, completed = false) => {
-    if (!selectedBook || !activeChapter) return;
-    const earlierCharacters = selectedBook.chapters
-      .slice(0, currentChapterIdx)
-      .reduce((sum, chapter) => sum + chapter.text.length, 0);
-    const totalCharacters = selectedBook.chapters.reduce((sum, chapter) => sum + chapter.text.length, 0);
-    const percent = Math.min(100, Math.round(((earlierCharacters + offset) / Math.max(1, totalCharacters)) * 100));
-    const record: BookProgressRecord = {
-      bookId: selectedBook.id,
-      chapterId: activeChapter.id,
-      chapterIndex: currentChapterIdx,
-      charOffset: offset,
-      percent,
-      totalWordsTyped: selectedBook.chapters.slice(0, currentChapterIdx).reduce((sum, chapter) => sum + chapter.wordCount, 0)
-        + activeChapter.text.slice(0, offset).trim().split(/\s+/).filter(Boolean).length,
-      lastRead: Date.now(),
-      syncedAt: undefined
-    };
-    if (completed) record.charOffset = targetText.length;
-    void db.bookProgress.put(record).then(() => {
-      setBookProgressMap(previous => ({ ...previous, [selectedBook.id]: record }));
-    });
-  }, [activeChapter, currentChapterIdx, selectedBook, targetText.length]);
+  const complete = (stats: TypingStats) => {
+    if (!selected || !active) return;
+    persist(text.length); setResult(stats); setResultOpen(true);
+    void db.testResults.add({ clientId: createClientId(), mode: 'library', subMode: selected.title, title: `${selected.title} · ${active.title}`, wpm: stats.wpm, rawWpm: stats.rawWpm, accuracy: stats.accuracy, consistency: stats.consistency, duration: stats.timeElapsed, timestamp: Date.now(), errors: stats.incorrectChars, errorKeys: stats.errorHeatmap, totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars });
+  };
+  const engine = useTypingEngine({ targetText: text, initialOffset: sessionOffset, sessionKey: selected && active ? `${selected.id}-${active.id}-${sessionOffset}` : 'library', strictMode: settings.strictMode, onComplete: complete, onKeyPress });
 
-  const handleChapterComplete = (stats: TypingStats) => {
-    if (!selectedBook || !activeChapter) return;
-    setCompletedStats(stats);
-    setIsModalOpen(true);
+  useEffect(() => { if (selected && active && engine.typed.length > sessionOffset && !engine.isFinished) { const timer = window.setTimeout(() => persist(engine.typed.length), 500); return () => window.clearTimeout(timer); } }, [active, engine.isFinished, engine.typed.length, persist, selected, sessionOffset]);
 
-    persistProgress(targetText.length, true);
+  const openBook = (book: ReaderBook) => {
+    const saved = progress[book.id]; const nextChapter = saved && saved.chapterIndex < book.chapters.length ? saved.chapterIndex : 0;
+    setSelected(book); setChapterIndex(nextChapter); setSessionOffset(saved?.chapterIndex === nextChapter ? saved.charOffset : 0); setResultOpen(false); engine.reset();
+  };
+  const moveChapter = (nextChapter: number) => { if (!selected || nextChapter < 0 || nextChapter >= selected.chapters.length) return; persist(engine.typed.length); setChapterIndex(nextChapter); const saved = progress[selected.id]; setSessionOffset(saved?.chapterIndex === nextChapter ? saved.charOffset : 0); setResultOpen(false); engine.reset(); };
 
-    // Save test result
-    db.testResults.add({
-      clientId: createClientId(),
-      mode: 'library',
-      subMode: selectedBook.title,
-      title: `${selectedBook.title} - ${activeChapter.title}`,
-      wpm: stats.wpm,
-      rawWpm: stats.rawWpm,
-      accuracy: stats.accuracy,
-      consistency: stats.consistency,
-      duration: stats.timeElapsed,
-      timestamp: Date.now(),
-      errors: stats.incorrectChars,
-      errorKeys: stats.errorHeatmap
-      ,totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars
-    }).catch(() => {});
+  const startImport = async (file?: File) => {
+    if (!file) return; setImportError(''); const controller = new AbortController(); abortRef.current = controller;
+    try { const document = await importDocument(file, setImportState, controller.signal); await db.importedDocuments.put(document); window.dispatchEvent(new Event('keyhaven:sync')); setImportState(null); await reload(); }
+    catch (error) { setImportState(null); if ((error as Error).name !== 'AbortError') setImportError((error as Error).message); }
   };
 
-  const {
-    typed,
-    wpm,
-    accuracy,
-    timeElapsed,
-    isFinished,
-    handleKeyDown,
-    reset
-  } = useTypingEngine({
-    targetText,
-    initialOffset: resumeOffset,
-    sessionKey: selectedBook && activeChapter ? `${selectedBook.id}-${activeChapter.id}-${resumeOffset}` : 'library-empty',
-    strictMode: settings.strictMode,
-    onComplete: handleChapterComplete,
-    onKeyPress
-  });
+  if (!selected) return <section className="reader-workspace" style={readerStyle(settings)}><div className="library-shell">
+    <header className="library-heading"><div><p className="eyebrow">Read</p><h1>Your library</h1><p>Classics and private imports, ready where you left them.</p></div><label className="import-button"><FileUp />Import EPUB or PDF<input type="file" accept=".epub,.pdf,application/epub+zip,application/pdf" onChange={event => { void startImport(event.target.files?.[0]); event.currentTarget.value = ''; }} /></label></header>
+    {importError && <div className="import-error"><span>{importError}</span><button onClick={() => setImportError('')}><X /></button></div>}
+    {importState && <div className="import-progress"><div><span>{importState.message}</span><strong>{Math.round((importState.current / Math.max(1, importState.total)) * 100)}%</strong></div><progress value={importState.current} max={importState.total} /><button onClick={() => abortRef.current?.abort()}>Cancel</button></div>}
+    <div className="book-grid">{[...importedBooks, ...builtInBooks].map(book => <article className="book-row" key={book.id}><button className="book-open" onClick={() => openBook(book)}><BookOpen /><span><strong>{book.title}</strong><small>{book.author} · {book.chapters.length} {book.chapters.length === 1 ? 'section' : 'sections'}</small></span><em>{progress[book.id]?.percent ?? 0}%</em></button>{book.imported && <button className="book-delete" aria-label={`Delete ${book.title}`} onClick={async () => { await db.importedDocuments.delete(book.id); await db.bookProgress.delete(book.id); await reload(); }}><Trash2 /></button>}</article>)}</div>
+  </div></section>;
 
-  useEffect(() => {
-    if (!selectedBook || !activeChapter || typed.length <= resumeOffset || isFinished) return;
-    const timeout = window.setTimeout(() => persistProgress(typed.length), 500);
-    return () => window.clearTimeout(timeout);
-  }, [activeChapter, isFinished, persistProgress, resumeOffset, selectedBook, typed.length]);
-
-  useEffect(() => {
-    const flush = () => {
-      if (selectedBook && activeChapter && typed.length > resumeOffset) persistProgress(typed.length);
-    };
-    window.addEventListener('pagehide', flush);
-    return () => window.removeEventListener('pagehide', flush);
-  }, [activeChapter, persistProgress, resumeOffset, selectedBook, typed.length]);
-
-  const handleOpenBook = (book: Book) => {
-    const saved = bookProgressMap[book.id];
-    const chIdx = saved && saved.chapterIndex < book.chapters.length ? saved.chapterIndex : 0;
-    setSelectedBook(book);
-    setCurrentChapterIdx(chIdx);
-    setSessionOffset(saved?.chapterIndex === chIdx ? saved.charOffset : 0);
-    setIsModalOpen(false);
-    reset();
-  };
-
-  const handleNextChapter = () => {
-    if (!selectedBook) return;
-    setIsModalOpen(false);
-    if (currentChapterIdx < selectedBook.chapters.length - 1) {
-      setCurrentChapterIdx(prev => prev + 1);
-      setSessionOffset(0);
-      reset();
-    }
-  };
-
-  // View: Bookshelf Gallery
-  if (!selectedBook) {
-    return (
-      <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 animate-in fade-in duration-300">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-wider font-semibold text-[var(--color-accent)]">
-                The Great Library
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--color-border)] text-[var(--text-muted)]">
-                Public Domain Classics
-              </span>
-            </div>
-            <h2 className="text-3xl font-serif font-bold text-[var(--text-primary)] mt-1">
-              Classic Books & Philosophy
-            </h2>
-            <p className="text-xs text-[var(--text-secondary)] mt-1">
-              Select a timeless masterwork to type chapter by chapter with automatic progress bookmarking.
-            </p>
-          </div>
-        </div>
-
-        {/* Books Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {BOOKS.map(book => {
-            const progress = bookProgressMap[book.id];
-            const percent = progress?.percent || 0;
-
-            return (
-              <div
-                key={book.id}
-                onClick={() => handleOpenBook(book)}
-                className="group relative flex flex-col justify-between p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-all duration-200 hover:shadow-xl cursor-pointer overflow-hidden"
-              >
-                {/* Top Book Header with Gradient Cover Badge */}
-                <div>
-                  <div className={`h-28 rounded-2xl bg-gradient-to-br ${book.coverGradient} p-4 flex flex-col justify-between text-white mb-4 shadow-md group-hover:scale-[1.02] transition-transform`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-black/30 backdrop-blur-xs">
-                        {book.category}
-                      </span>
-                      <Bookmark className="w-4 h-4 text-white/80" />
-                    </div>
-                    <div>
-                      <h3 className="font-serif font-bold text-lg leading-tight line-clamp-1">
-                        {book.title}
-                      </h3>
-                      <p className="text-xs text-white/80 font-sans">{book.author}</p>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-[var(--text-secondary)] line-clamp-3 mb-4 leading-relaxed">
-                    {book.synopsis}
-                  </p>
-                </div>
-
-                {/* Footer details */}
-                <div className="pt-4 border-t border-[var(--color-border)] flex items-center justify-between text-xs">
-                  <div className="text-[var(--text-muted)]">
-                    {book.chapters.length} Chapters • {book.totalWords} words
-                  </div>
-
-                  {percent > 0 ? (
-                    <div className="flex items-center gap-1.5 text-[var(--color-correct)] font-medium">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>{percent}% Read</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1 text-[var(--color-accent)] font-semibold group-hover:translate-x-1 transition-transform">
-                      <span>Start Book</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // View: Book Chapter Reader & Typing View
-  return (
-    <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 animate-in fade-in duration-300">
-      {/* Chapter Top Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--color-border)] mb-6">
-        <div>
-          <button
-            onClick={() => setSelectedBook(null)}
-            className="flex items-center gap-1 text-xs text-[var(--color-accent)] font-medium mb-1 hover:underline cursor-pointer"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-            <span>Back to Library Bookshelf</span>
-          </button>
-          <h2 className="text-xl font-serif font-bold text-[var(--text-primary)]">
-            {selectedBook.title}
-          </h2>
-          <p className="text-xs text-[var(--text-secondary)]">
-            {activeChapter?.title} • Chapter {currentChapterIdx + 1} of {selectedBook.chapters.length}
-          </p>
-        </div>
-
-        {/* Chapter Switcher */}
-        <div className="flex items-center gap-2">
-          <select
-            value={currentChapterIdx}
-            onChange={e => {
-              const nextIndex = parseInt(e.target.value);
-              setCurrentChapterIdx(nextIndex);
-              const saved = bookProgressMap[selectedBook.id];
-              setSessionOffset(saved?.chapterIndex === nextIndex ? saved.charOffset : 0);
-              reset();
-            }}
-            className="text-xs p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--color-border)] text-[var(--text-primary)] outline-none cursor-pointer"
-          >
-            {selectedBook.chapters.map((ch, idx) => (
-              <option key={ch.id} value={idx}>
-                Chapter {idx + 1}: {ch.title}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Live Stats */}
-      <LiveStatsBar
-        wpm={wpm}
-        accuracy={accuracy}
-        timeElapsed={timeElapsed}
-        onReset={() => reset()}
-        showLiveWpm={settings.showLiveWpm}
-        showLiveAccuracy={settings.showLiveAccuracy}
-      />
-
-      {/* Typing Canvas */}
-      <TypingArea
-        targetText={targetText}
-        typed={typed}
-        isFinished={isFinished}
-        caretStyle={settings.caretStyle}
-        font={settings.font}
-        fontSize={settings.fontSize}
-        wrapMode="literary"
-        onKeyDown={handleKeyDown}
-        onReset={() => {
-          setSessionOffset(0);
-          reset(undefined, 0);
-        }}
-      />
-
-      {/* Chapter Pagination */}
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-[var(--color-border)]">
-        <button
-          onClick={() => {
-            if (currentChapterIdx > 0) {
-              setCurrentChapterIdx(prev => prev - 1);
-              setSessionOffset(0);
-              reset();
-            }
-          }}
-          disabled={currentChapterIdx === 0}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] border border-[var(--color-border)] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Previous Chapter</span>
-        </button>
-
-        <span className="text-xs text-[var(--text-muted)]">
-          {Math.min(100, Math.round(((currentChapterIdx + 1) / selectedBook.chapters.length) * 100))}% Book Completed
-        </span>
-
-        <button
-          onClick={() => {
-            if (currentChapterIdx < selectedBook.chapters.length - 1) {
-              setCurrentChapterIdx(prev => prev + 1);
-              setSessionOffset(0);
-              reset();
-            }
-          }}
-          disabled={currentChapterIdx >= selectedBook.chapters.length - 1}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] border border-[var(--color-border)] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-        >
-          <span>Next Chapter</span>
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Results Modal */}
-      <TestResultsModal
-        stats={completedStats}
-        isOpen={isModalOpen}
-        title={`Completed Chapter ${currentChapterIdx + 1} of ${selectedBook.title}`}
-        onRetry={() => {
-          setIsModalOpen(false);
-          setSessionOffset(0);
-          reset(undefined, 0);
-        }}
-        onNext={currentChapterIdx < selectedBook.chapters.length - 1 ? handleNextChapter : undefined}
-      />
-    </div>
-  );
+  return <section className="reader-workspace" style={readerStyle(settings)}><div className="reader-shell">
+    <header className="reader-meta"><div><button className="reader-back" onClick={() => { persist(engine.typed.length); setSelected(null); }}><ArrowLeft />Library</button><p className="eyebrow">{active?.title} · {chapterIndex + 1} of {selected.chapters.length}</p><h1>{selected.title}</h1><p>{selected.author}</p></div><select className="reader-select" aria-label="Chapter" value={chapterIndex} onChange={event => moveChapter(Number(event.target.value))}>{selected.chapters.map((chapter, index) => <option key={chapter.id} value={index}>{chapter.title}</option>)}</select></header>
+    <TypingArea targetText={text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="literary" feedbackMode="reader" viewportLines={9} viewportMode="pages" lineHeight={settings.readerLineHeight} onKeyDown={engine.handleKeyDown} onReset={() => { setSessionOffset(0); engine.reset(undefined, 0); }} />
+    <nav className="reader-pagination"><button disabled={chapterIndex === 0} onClick={() => moveChapter(chapterIndex - 1)}>Previous</button><span>{progress[selected.id]?.percent ?? 0}% read</span><button disabled={chapterIndex === selected.chapters.length - 1} onClick={() => moveChapter(chapterIndex + 1)}>Next</button></nav>
+  </div><LiveStatsBar wpm={engine.wpm} accuracy={engine.accuracy} timeElapsed={engine.timeElapsed} onReset={() => engine.reset()} showLiveWpm={settings.showLiveWpm} showLiveAccuracy={settings.showLiveAccuracy} /><TestResultsModal stats={result} isOpen={resultOpen} title={`${selected.title} · ${active?.title}`} onRetry={() => { setResultOpen(false); engine.reset(); }} onNext={() => moveChapter(chapterIndex + 1)} /></section>;
 };

@@ -48,3 +48,35 @@ export const arcadeScores = pgTable('arcade_scores', {
 export const challenges = pgTable('challenges', {
   id: uuid('id').primaryKey().defaultRandom(), userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }), mode: text('mode').notNull(), configuration: jsonb('configuration').notNull(), seed: text('seed').notNull(), expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(), consumedAt: timestamp('consumed_at', { withTimezone: true }), createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
+
+export const credentials = pgTable('credentials', {
+  userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+}, table => [index('password_reset_user_idx').on(table.userId)]);
+
+export const importedDocuments = pgTable('imported_documents', {
+  id: uuid('id').notNull(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(), author: text('author').notNull(), format: text('format').notNull(), sections: jsonb('sections').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(), updatedAt: timestamp('updated_at', { withTimezone: true }).notNull()
+}, table => [primaryKey({ columns: [table.userId, table.id] }), index('imported_documents_user_idx').on(table.userId, table.updatedAt)]);
+
+export const academyStates = pgTable('academy_states', {
+  userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  state: jsonb('state').notNull(), updatedAt: timestamp('updated_at', { withTimezone: true }).notNull()
+});
+
+export const authRateLimits = pgTable('auth_rate_limits', {
+  key: text('key').primaryKey(), count: integer('count').notNull().default(0), windowStart: timestamp('window_start', { withTimezone: true }).notNull()
+});

@@ -132,5 +132,35 @@ export const LESSONS: Lesson[] = [
       'Why wait? Time is now, not later. "Never say never!"',
       '"Wisdom," wrote Seneca, "is the art of living well."'
     ]
+  },
+  {
+    id: 'lesson-8', tier: 6, title: 'Numbers & Symbols', subtitle: 'Confident reaches beyond letters',
+    description: 'Build accuracy on numbers and the symbols used in everyday writing.',
+    targetKeys: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], fingerAssignments: {},
+    exercises: ['1 2 3 4 5 6 7 8 9 0 10 20 30 40 50', 'Room 12 opens at 8:30, and table 7 seats 4.', 'In 2026, the goal rose from 45 to 60 words per minute.']
+  },
+  {
+    id: 'lesson-9', tier: 7, title: 'Capitalization', subtitle: 'Shift keys without breaking rhythm',
+    description: 'Coordinate both shift keys while preserving a relaxed cadence.',
+    targetKeys: ['Shift', 'A', 'T', 'M', 'S'], fingerAssignments: {},
+    exercises: ['Alice and Thomas met Maya beside the river.', 'Monday, Tuesday, Wednesday, Thursday, Friday.', 'The Quiet Garden opened beneath a Silver Moon.']
+  },
+  {
+    id: 'lesson-10', tier: 8, title: 'Natural Prose', subtitle: 'Sustained sentences and varied rhythm',
+    description: 'Join every key group in expressive, naturally punctuated prose.',
+    targetKeys: [], fingerAssignments: {},
+    exercises: ['Morning arrived slowly, lifting the mist from the lake until every reed stood clear against the water.', 'A patient typist does not chase each letter; the hands learn the path, and the eyes remain with the thought.', 'Beyond the window, rain moved softly through the trees, and the room settled into a deeper kind of quiet.']
+  },
+  {
+    id: 'lesson-11', tier: 9, title: 'Speed Control', subtitle: 'Increase pace without losing accuracy',
+    description: 'Practice short bursts, measured recovery, and an even return to pace.',
+    targetKeys: [], fingerAssignments: {},
+    exercises: ['clear steady motion clear steady motion calm accurate rhythm', 'Speed grows from easy movement, clean keystrokes, and the patience to remain precise.', 'Move quickly through familiar words, then soften the pace when punctuation asks for care.']
+  },
+  {
+    id: 'lesson-12', tier: 10, title: 'Endurance', subtitle: 'Comfort and consistency over longer work',
+    description: 'Sustain posture, rhythm, and concentration through longer passages.',
+    targetKeys: [], fingerAssignments: {},
+    exercises: ['The finest practice feels almost unhurried. Shoulders remain loose, wrists stay level, and each finger travels only as far as it needs to travel. Over time, this economy of motion becomes speed without strain.', 'Consistency is not the absence of difficult moments. It is the habit of returning to a calm rhythm after each hesitation, allowing attention to settle again on the sentence rather than the individual key.', 'When a long session begins to feel heavy, pause briefly, breathe, and notice where tension has gathered. Good endurance is built through awareness and repetition, never by forcing tired hands to continue.']
   }
 ];
