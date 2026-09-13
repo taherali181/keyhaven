@@ -43,6 +43,10 @@ export function useTypingEngine({
   const startRef = useRef<number | null>(null);
   const baseOffsetRef = useRef(safeOffset);
   const charTimingsRef = useRef<CharTiming[]>([]);
+  // Parallel to charTimingsRef: was this attempt actually appended to `typed`?
+  // Strict-mode errors are recorded but never committed, so backspace must skip them.
+  const committedRef = useRef<boolean[]>([]);
+  const composingRef = useRef(false);
   const historyRef = useRef<HistoryPoint[]>([]);
   const errorHeatmapRef = useRef<Record<string, number>>({});
   const evidenceRef = useRef<TypingSessionEvidence[]>([]);
@@ -62,6 +66,8 @@ export function useTypingEngine({
     startRef.current = null;
     baseOffsetRef.current = offset;
     charTimingsRef.current = [];
+    committedRef.current = [];
+    composingRef.current = false;
     historyRef.current = [];
     errorHeatmapRef.current = {};
     evidenceRef.current = [];
@@ -158,28 +164,34 @@ export function useTypingEngine({
     return () => window.clearInterval(interval);
   }, [finishTest, isTimed, status, timeLimit]);
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent | KeyboardEvent) => {
-    if (statusRef.current === 'finished') return;
-    if (event.ctrlKey || event.altKey || event.metaKey || event.key === 'Tab' || event.key === 'Escape') return;
-
-    if (event.key === 'Backspace') {
-      event.preventDefault();
-      onKeyPress?.('Backspace');
-      if (statusRef.current === 'running' && startRef.current !== null) evidenceRef.current.push({ key: 'Backspace', atMs: Math.max(0, Math.round(performance.now() - startRef.current)) });
-      if (typedRef.current.length > baseOffsetRef.current) {
-        const next = typedRef.current.slice(0, -1);
-        typedRef.current = next;
-        setTyped(next);
+  // Removes one committed character, undoing the error it recorded. Without this,
+  // mistype -> backspace -> retype counts the mistake permanently against accuracy.
+  const retractOne = useCallback(() => {
+    if (typedRef.current.length <= baseOffsetRef.current) return false;
+    const next = typedRef.current.slice(0, -1);
+    for (let index = committedRef.current.length - 1; index >= 0; index -= 1) {
+      if (!committedRef.current[index]) continue;
+      const removed = charTimingsRef.current[index];
+      if (removed && !removed.isCorrect) {
+        const expected = targetText[next.length]?.toLowerCase();
+        if (expected && errorHeatmapRef.current[expected]) {
+          errorHeatmapRef.current[expected] -= 1;
+          if (errorHeatmapRef.current[expected] <= 0) delete errorHeatmapRef.current[expected];
+        }
       }
-      return;
+      charTimingsRef.current.splice(index, 1);
+      committedRef.current.splice(index, 1);
+      break;
     }
+    typedRef.current = next;
+    return true;
+  }, [targetText]);
 
+  const commitCharacter = useCallback((rawKey: string, now: number) => {
     const targetChar = targetText[typedRef.current.length];
-    const key = targetChar === '\n' && event.key === 'Enter' ? '\n' : event.key;
+    const key = targetChar === '\n' && rawKey === 'Enter' ? '\n' : rawKey;
     if (key.length !== 1) return;
-    event.preventDefault();
 
-    const now = performance.now();
     if (statusRef.current === 'idle') {
       statusRef.current = 'running';
       startRef.current = now;
@@ -188,9 +200,9 @@ export function useTypingEngine({
       setStartTime(now);
     }
 
-    evidenceRef.current.push({ key: event.key === 'Enter' ? '\n' : event.key, atMs: Math.max(0, Math.round(now - (startRef.current ?? now))) });
+    evidenceRef.current.push({ key, atMs: Math.max(0, Math.round(now - (startRef.current ?? now))) });
+    onKeyPress?.(rawKey);
 
-    onKeyPress?.(event.key);
     const isCorrect = key === targetChar;
     charTimingsRef.current.push({
       char: key,
@@ -198,6 +210,7 @@ export function useTypingEngine({
       durationMs: lastCharTimeRef.current ? now - lastCharTimeRef.current : 0,
       isCorrect
     });
+    committedRef.current.push(!(!isCorrect && strictMode));
     lastCharTimeRef.current = now;
 
     if (!isCorrect && targetChar) {
@@ -211,6 +224,51 @@ export function useTypingEngine({
     setTyped(next);
     if (!isTimed && next.length >= targetText.length) finishTest(next, now);
   }, [finishTest, isTimed, onKeyPress, strictMode, targetText]);
+
+  const handleKeyDown = useCallback((event: React.KeyboardEvent | KeyboardEvent) => {
+    if (statusRef.current === 'finished') return;
+    // Autorepeat would otherwise multiply a single held-down mistake into dozens of errors.
+    if (event.repeat) { event.preventDefault(); return; }
+    // Let the IME own the keystroke; the composed text arrives via compositionend.
+    if (composingRef.current || (event as KeyboardEvent).isComposing || event.key === 'Dead') return;
+
+    if (event.key === 'Backspace') {
+      event.preventDefault();
+      onKeyPress?.('Backspace');
+      if (statusRef.current === 'running' && startRef.current !== null) evidenceRef.current.push({ key: 'Backspace', atMs: Math.max(0, Math.round(performance.now() - startRef.current)) });
+      if (event.ctrlKey || event.altKey) {
+        // Delete back through any trailing whitespace, then through the word itself.
+        const isSpace = (value: string) => /\s/.test(value);
+        while (typedRef.current.length > baseOffsetRef.current && isSpace(typedRef.current[typedRef.current.length - 1])) {
+          if (!retractOne()) break;
+        }
+        while (typedRef.current.length > baseOffsetRef.current && !isSpace(typedRef.current[typedRef.current.length - 1])) {
+          if (!retractOne()) break;
+        }
+      } else {
+        retractOne();
+      }
+      setTyped(typedRef.current);
+      return;
+    }
+
+    if (event.ctrlKey || event.altKey || event.metaKey || event.key === 'Tab' || event.key === 'Escape') return;
+    if (event.key.length !== 1 && event.key !== 'Enter') return;
+    event.preventDefault();
+    commitCharacter(event.key, performance.now());
+  }, [commitCharacter, onKeyPress, retractOne]);
+
+  const handleCompositionStart = useCallback(() => { composingRef.current = true; }, []);
+
+  // Dead keys and IME sequences never surface as a single keydown, so the composed
+  // result is fed in here instead.
+  const handleCompositionEnd = useCallback((event: React.CompositionEvent | CompositionEvent) => {
+    composingRef.current = false;
+    if (statusRef.current === 'finished') return;
+    const data = event.data ?? '';
+    const now = performance.now();
+    for (const character of data) commitCharacter(character, now);
+  }, [commitCharacter]);
 
   return {
     typed,
@@ -227,6 +285,8 @@ export function useTypingEngine({
     startTime,
     endTime,
     handleKeyDown,
+    handleCompositionStart,
+    handleCompositionEnd,
     reset,
     finishTest
   };

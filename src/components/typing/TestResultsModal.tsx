@@ -85,7 +85,7 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
             <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--color-border)]">
               <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] mb-1">
                 <Zap className="w-3.5 h-3.5 text-[var(--color-accent)]" />
-                <span>Net WPM</span>
+                <span>WPM</span>
               </div>
               <div className="text-3xl sm:text-4xl font-black font-mono text-[var(--color-accent)]">
                 {stats.wpm}

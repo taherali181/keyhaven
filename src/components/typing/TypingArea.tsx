@@ -18,54 +18,103 @@ interface TypingAreaProps {
   viewportMode?: 'centered' | 'pages';
   lineHeight?: number;
   onKeyDown: (event: React.KeyboardEvent) => void;
+  onCompositionStart?: () => void;
+  onCompositionEnd?: (event: React.CompositionEvent) => void;
   onReset?: () => void;
   onClickFocus?: () => void;
   customClassName?: string;
 }
 
+type CharacterState = 'pending' | 'correct' | 'error';
+
+interface TypingCharacterProps {
+  character: string;
+  state: CharacterState;
+  isCurrent: boolean;
+  caretStyle: CaretStyle;
+  index: number;
+  registerRef: (index: number, node: HTMLSpanElement | null) => void;
+}
+
+// Memoized so a keystroke re-renders only the one or two spans whose state changed,
+// rather than every character in the passage.
+const TypingCharacter = React.memo<TypingCharacterProps>(({ character, state, isCurrent, caretStyle, index, registerRef }) => (
+  <span
+    ref={node => registerRef(index, node)}
+    className={`typing-character ${state === 'pending' ? '' : 'is-typed'} ${state === 'correct' ? 'is-correct' : ''} ${state === 'error' ? 'is-error' : ''}`}
+  >
+    {isCurrent && <Caret style={caretStyle} />}
+    {character === '\n' ? <br /> : character}
+  </span>
+));
+TypingCharacter.displayName = 'TypingCharacter';
+
 export const TypingArea: React.FC<TypingAreaProps> = ({
   targetText, typed, isFinished, caretStyle = 'smooth', font = 'serif', fontSize = 'base',
   wrapMode = 'whole-word', feedbackMode = 'standard', viewportLines, viewportMode = 'centered',
-  lineHeight, onKeyDown, onReset, onClickFocus, customClassName = ''
+  lineHeight, onKeyDown, onCompositionStart, onCompositionEnd, onReset, onClickFocus, customClassName = ''
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const charRefs = useRef<Array<HTMLSpanElement | null>>([]);
-  const [hyphenAfter, setHyphenAfter] = useState<Set<number>>(new Set());
+  const topsRef = useRef<number[]>([]);
   const [lineMetrics, setLineMetrics] = useState({ active: 0, height: 42, total: 1 });
   const [browsedPage, setBrowsedPage] = useState<number | null>(null);
   const restartArmedRef = useRef(false);
   const currentIndex = typed.length;
+  // Kept in a ref so the ResizeObserver callback can read the caret position without
+  // taking currentIndex as a dependency — otherwise it re-attaches on every keystroke.
+  const currentIndexRef = useRef(currentIndex);
+  useEffect(() => { currentIndexRef.current = currentIndex; });
 
   useEffect(() => { inputRef.current?.focus(); }, [targetText]);
 
-  const measureLayout = useCallback(() => {
+  const registerRef = useCallback((index: number, node: HTMLSpanElement | null) => {
+    charRefs.current[index] = node;
+  }, []);
+
+  const probeIndex = useCallback(
+    () => Math.min(currentIndexRef.current, Math.max(0, targetText.length - 1)),
+    [targetText.length]
+  );
+
+  // Full pass over every span. Only line *positions* need this, and those change on
+  // resize / font / text change — never on a keystroke.
+  const measureLines = useCallback(() => {
     const nodes = charRefs.current;
     const tops = [...new Set(nodes.filter(Boolean).map(node => node!.offsetTop))].sort((a, b) => a - b);
-    const probe = nodes[Math.min(currentIndex, Math.max(0, targetText.length - 1))];
+    topsRef.current = tops;
+    const probe = nodes[probeIndex()];
     const active = probe ? Math.max(0, tops.indexOf(probe.offsetTop)) : 0;
     const height = tops.length > 1 ? Math.max(1, tops[1] - tops[0]) : (probe?.getBoundingClientRect().height ?? 42) * (lineHeight ?? 1.8);
-    setLineMetrics(previous => previous.active === active && previous.total === Math.max(1, tops.length) && Math.abs(previous.height - height) < .5 ? previous : { active, height, total: Math.max(1, tops.length) });
+    setLineMetrics(previous => previous.active === active && previous.total === Math.max(1, tops.length) && Math.abs(previous.height - height) < .5
+      ? previous
+      : { active, height, total: Math.max(1, tops.length) });
+  }, [lineHeight, probeIndex]);
 
-    if (wrapMode !== 'literary') { setHyphenAfter(previous => previous.size ? new Set() : previous); return; }
-    const breaks = new Set<number>();
-    for (let index = 0; index < targetText.length - 1; index += 1) {
-      const current = nodes[index];
-      const next = nodes[index + 1];
-      if (!current || !next || /[\s\-–—]/.test(targetText[index]) || /[\s\-–—]/.test(targetText[index + 1])) continue;
-      if (next.offsetTop > current.offsetTop) breaks.add(index);
-    }
-    setHyphenAfter(previous => previous.size === breaks.size && [...previous].every(value => breaks.has(value)) ? previous : breaks);
-  }, [currentIndex, lineHeight, targetText, wrapMode]);
+  // Per-keystroke path: read one node and look it up in the cached line tops, instead
+  // of walking the whole passage again.
+  const measureActive = useCallback(() => {
+    const probe = charRefs.current[probeIndex()];
+    if (!probe) return;
+    const tops = topsRef.current;
+    const found = tops.indexOf(probe.offsetTop);
+    if (found < 0) { measureLines(); return; }
+    setLineMetrics(previous => previous.active === found ? previous : { ...previous, active: found });
+  }, [measureLines, probeIndex]);
 
   useEffect(() => {
-    const frame = requestAnimationFrame(measureLayout);
-    const observer = new ResizeObserver(() => requestAnimationFrame(measureLayout));
+    const frame = requestAnimationFrame(measureLines);
+    const observer = new ResizeObserver(() => requestAnimationFrame(measureLines));
     if (containerRef.current) observer.observe(containerRef.current);
     return () => { cancelAnimationFrame(frame); observer.disconnect(); };
-  }, [measureLayout, fontSize, font]);
+  }, [measureLines, fontSize, font, targetText, wrapMode]);
 
-  useEffect(() => { requestAnimationFrame(measureLayout); }, [currentIndex, measureLayout]);
+  useEffect(() => {
+    const frame = requestAnimationFrame(measureActive);
+    return () => cancelAnimationFrame(frame);
+  }, [currentIndex, measureActive]);
+
   useEffect(() => { queueMicrotask(() => setBrowsedPage(null)); }, [targetText]);
 
   const characters = useMemo(() => targetText.split(''), [targetText]);
@@ -85,19 +134,22 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   } as React.CSSProperties;
 
   const renderCharacter = (character: string, index: number) => {
-    const isCurrent = index === currentIndex;
     const isTyped = index < currentIndex;
-    const isCorrect = isTyped && typed[index] === character;
-    return <span key={index} ref={node => { charRefs.current[index] = node; }} className={`typing-character ${isTyped ? 'is-typed' : ''} ${isCorrect ? 'is-correct' : ''} ${isTyped && !isCorrect ? 'is-error' : ''}`}>
-      {isCurrent && !isFinished && <Caret style={caretStyle} />}
-      {character === ' ' ? '\u00a0' : character === '\n' ? <br /> : character}
-      {hyphenAfter.has(index) && <span aria-hidden="true" className="wrap-hyphen">‐</span>}
-    </span>;
+    const state: CharacterState = !isTyped ? 'pending' : typed[index] === character ? 'correct' : 'error';
+    return <TypingCharacter
+      key={index}
+      index={index}
+      character={character}
+      state={state}
+      isCurrent={index === currentIndex && !isFinished}
+      caretStyle={caretStyle}
+      registerRef={registerRef}
+    />;
   };
 
   let tokenOffset = 0;
   return <div ref={containerRef} className={`typing-surface relative ${fontClass} ${sizeClass} ${viewportLines === 3 ? 'speed-window' : ''} ${customClassName}`} style={style} onClick={() => { inputRef.current?.focus(); onClickFocus?.(); }}>
-    <input ref={inputRef} type="text" className="typing-input" onKeyDown={event => {
+    <input ref={inputRef} type="text" className="typing-input" inputMode="text" enterKeyHint="enter" onCompositionStart={onCompositionStart} onCompositionEnd={onCompositionEnd} onKeyDown={event => {
       if (event.key === 'Escape' && onReset) { event.preventDefault(); onReset(); return; }
       if (event.key === 'Tab') { restartArmedRef.current = true; return; }
       if (event.key === 'Enter' && restartArmedRef.current && onReset) { event.preventDefault(); restartArmedRef.current = false; onReset(); return; }

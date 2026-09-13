@@ -1,11 +1,40 @@
 import { expect, test } from '@playwright/test';
 
-test('story mode renders the literary surface and visual wrap hyphens', async ({ page }) => {
+test('story mode renders the literary surface', async ({ page }) => {
   await page.goto('/read');
   await expect(page.getByRole('heading', { name: 'The Gift of the Magi' })).toBeVisible();
   await expect(page.locator('.typing-copy.literary')).toBeVisible();
-  await expect(page.locator('.wrap-hyphen').first()).toBeAttached();
 });
+
+for (const width of [1440, 900, 400]) {
+  test(`reader never breaks a word mid-way at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/read');
+    await page.locator('.typing-character').first().waitFor();
+    const broken = await page.locator('.typing-copy .typing-character').evaluateAll(nodes => {
+      const text = nodes.map(node => node.textContent ?? '').join('');
+      const lines = new Map<number, number[]>();
+      nodes.forEach((node, index) => {
+        const top = (node as HTMLElement).offsetTop;
+        if (!lines.has(top)) lines.set(top, []);
+        lines.get(top)!.push(index);
+      });
+      const ordered = [...lines.entries()].sort((a, b) => a[0] - b[0]).map(([, indexes]) => indexes);
+      const splits: string[] = [];
+      for (let line = 0; line < ordered.length - 1; line += 1) {
+        const last = ordered[line][ordered[line].length - 1];
+        const next = ordered[line + 1][0];
+        // A wrap is only legal where one side of the break is whitespace or a hyphen.
+        if (!/[\s\-–—]/.test(text[last] ?? '') && !/[\s\-–—]/.test(text[next] ?? '')) {
+          splits.push(`${text.slice(Math.max(0, last - 8), last + 1)} / ${text.slice(next, next + 8)}`);
+        }
+      }
+      return splits;
+    });
+    expect(broken).toEqual([]);
+    await expect(page.locator('.wrap-hyphen')).toHaveCount(0);
+  });
+}
 
 test('reader keeps upcoming prose prominent and completed prose quiet', async ({ page }) => {
   await page.goto('/read');
@@ -67,12 +96,12 @@ test('a 15 second speed test stops and opens one result', async ({ page }) => {
 
 test('speed viewport exposes exactly three measured lines', async ({ page }) => {
   await page.goto('/speed');
-  const ratio = await page.locator('.typing-viewport').evaluate(node => {
+  // Poll: the ratio is only meaningful once React has measured and set --typing-line-height.
+  await expect.poll(() => page.locator('.typing-viewport').evaluate(node => {
     const height = node.getBoundingClientRect().height;
     const line = Number.parseFloat(getComputedStyle(node.parentElement!).getPropertyValue('--typing-line-height'));
     return height / line;
-  });
-  expect(ratio).toBeCloseTo(3, 1);
+  })).toBeCloseTo(3, 1);
 });
 
 test('alphabet sprint accepts keyboard input without a manual focus click', async ({ page }) => {
