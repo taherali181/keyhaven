@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: 'A considered place for literary typing, focused practice, and thoughtful competition.'
 };
 
-const themeBootstrap = `try{const value=JSON.parse(localStorage.getItem('keyhaven_settings_v1')||'{}').theme;document.documentElement.dataset.theme=(value==='daylight'||value==='zen-sand'||value==='paper-ink')?'daylight':'reading-room'}catch(e){document.documentElement.dataset.theme='reading-room'}`;
+const themeBootstrap = `try{const value=JSON.parse(localStorage.getItem('keyhaven_settings_v1')||'{}').theme;document.documentElement.dataset.theme=(value==='daylight'||value==='zen-sand'||value==='paper-ink')?'daylight':'reading-room'}catch(e){document.documentElement.dataset.theme='reading-room'}try{document.documentElement.dataset.sidebar=localStorage.getItem('keyhaven_sidebar_v1')==='hidden'?'hidden':'open'}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  BookOpen, ChevronLeft, ChevronRight, Focus, Gamepad2, GraduationCap,
-  Menu, Moon, Settings2, Sun, Timer, User, Volume2, X
+  BookOpen, Focus, Gamepad2, GraduationCap, Menu, Moon, PanelLeftClose, PanelLeftOpen,
+  Settings2, Sun, Timer, User, Volume2, X
 } from 'lucide-react';
 import { AmbientSound, CaretStyle, FontFamily, ReaderBackground, SwitchSound, ThemeId, TypingMode, UserSettings } from '@/types';
 import { FONTS } from '@/lib/themes';
+import { useSidebarHidden } from '@/hooks/useSidebarHidden';
+import { ease, fade, slideInLeft, slideInRight, spring } from '@/lib/motion';
 
 interface NavbarProps {
   currentMode: TypingMode;
@@ -44,25 +47,30 @@ const backgrounds: Array<{ id: ReaderBackground; label: string }> = [
   { id: 'soft-forest', label: 'Soft forest' }
 ];
 
+const SHORTCUT_LABEL = 'Ctrl \\';
+
 export const Navbar: React.FC<NavbarProps> = props => {
   const { currentMode, onSelectMode, settings } = props;
-  const [collapsed, setCollapsed] = useState(false);
+  const [hidden, setHidden] = useSidebarHidden();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const readActive = ['stories', 'quotes', 'library'].includes(currentMode);
 
   useEffect(() => {
-    document.documentElement.dataset.sidebar = collapsed ? 'compact' : 'open';
-    return () => { delete document.documentElement.dataset.sidebar; };
-  }, [collapsed]);
+    document.documentElement.dataset.sidebar = settings.zenMode ? 'zen' : hidden ? 'hidden' : 'open';
+  }, [hidden, settings.zenMode]);
 
   useEffect(() => {
-    const close = (event: KeyboardEvent) => {
+    const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { setMobileOpen(false); setSettingsOpen(false); }
+      if ((event.ctrlKey || event.metaKey) && event.key === '\\' && !settings.zenMode) {
+        event.preventDefault();
+        setHidden(!hidden);
+      }
     };
-    document.addEventListener('keydown', close);
-    return () => document.removeEventListener('keydown', close);
-  }, []);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [hidden, setHidden, settings.zenMode]);
 
   const choose = (mode: TypingMode) => {
     onSelectMode(mode);
@@ -71,39 +79,95 @@ export const Navbar: React.FC<NavbarProps> = props => {
   };
 
   if (settings.zenMode) {
-    return <button onClick={props.onToggleZenMode} className="focus-exit" title="Exit focus mode"><Focus /></button>;
+    return <button onClick={props.onToggleZenMode} className="focus-exit glass" title="Exit focus mode"><Focus /></button>;
   }
 
-  const sidebar = (
+  // Rendered twice (desktop sidebar + mobile drawer); scope keeps their layoutIds apart.
+  const renderNav = (scope: 'desktop' | 'mobile') => (
     <>
-      <div className="sidebar-wordmark" aria-label="KeyHaven"><span>KeyHaven</span></div>
+      <div className="sidebar-brand">
+        <span className="brand-mark" aria-hidden="true">K</span>
+        <span className="brand-word" aria-label="KeyHaven">KeyHaven</span>
+        {scope === 'desktop' && <button className="sidebar-icon-button" onClick={() => setHidden(true)} aria-label="Hide sidebar" title={`Hide sidebar (${SHORTCUT_LABEL})`}><PanelLeftClose /></button>}
+      </div>
       <nav className="sidebar-nav" aria-label="Primary navigation">
+        <p className="sidebar-section-label">Practice</p>
         {sections.map(item => {
           const active = item.mode === 'stories' ? readActive : currentMode === item.mode;
           return (
             <div key={item.label}>
-              <button className={`sidebar-link ${active ? 'active' : ''}`} onClick={() => choose(item.mode)} title={collapsed ? item.label : undefined}>
+              <button className={`sidebar-link ${active ? 'active' : ''}`} onClick={() => choose(item.mode)} aria-current={active ? 'page' : undefined}>
+                {active && <motion.span layoutId={`${scope}-nav-pill`} className="sidebar-pill" transition={spring.snappy} />}
                 {item.icon}<span>{item.label}</span>
               </button>
-              {item.mode === 'stories' && readActive && !collapsed && <div className="sidebar-subnav">{readModes.map(read => <button key={read.mode} className={currentMode === read.mode ? 'active' : ''} onClick={() => choose(read.mode)}>{read.label}</button>)}</div>}
+              <AnimatePresence initial={false}>
+                {item.mode === 'stories' && readActive && (
+                  <motion.div className="sidebar-subnav" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.32, ease: ease.outExpo }}>
+                    <div className="sidebar-subnav-inner">
+                      {readModes.map(read => (
+                        <button key={read.mode} className={currentMode === read.mode ? 'active' : ''} onClick={() => choose(read.mode)}>
+                          {currentMode === read.mode && <motion.span layoutId={`${scope}-sub-dot`} className="sidebar-sub-dot" transition={spring.snappy} />}
+                          {read.label}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
       </nav>
       <div className="sidebar-footer">
         <button className="sidebar-link" onClick={() => setSettingsOpen(true)} title="Settings"><Settings2 /><span>Settings</span></button>
-        <button className={`sidebar-link ${currentMode === 'profile' ? 'active' : ''}`} onClick={() => choose('profile')} title="Profile and progress"><User /><span>My progress</span></button>
-        <button className="sidebar-collapse" onClick={() => setCollapsed(value => !value)} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>{collapsed ? <ChevronRight /> : <ChevronLeft />}<span>{collapsed ? '' : 'Collapse'}</span></button>
+        <button className={`sidebar-link ${currentMode === 'profile' ? 'active' : ''}`} onClick={() => choose('profile')} title="Profile and progress">
+          {currentMode === 'profile' && <motion.span layoutId={`${scope}-nav-pill`} className="sidebar-pill" transition={spring.snappy} />}
+          <User /><span>My progress</span>
+        </button>
+        <button className="sidebar-link" onClick={() => props.onUpdateTheme(settings.theme === 'reading-room' ? 'daylight' : 'reading-room')} aria-label={`Switch to ${settings.theme === 'reading-room' ? 'light' : 'dark'} theme`}>
+          {settings.theme === 'reading-room' ? <Sun /> : <Moon />}<span>{settings.theme === 'reading-room' ? 'Daylight' : 'Reading room'}</span>
+        </button>
       </div>
     </>
   );
 
   return (
     <>
-      <aside className={`app-sidebar ${collapsed ? 'is-collapsed' : ''}`}>{sidebar}</aside>
-      <header className="mobile-bar"><button onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu /></button><span>KeyHaven</span><button onClick={() => choose('profile')} aria-label="Profile and progress"><User /></button></header>
-      {mobileOpen && <div className="mobile-scrim" onClick={() => setMobileOpen(false)}><aside className="mobile-drawer" onClick={event => event.stopPropagation()}><button className="drawer-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X /></button>{sidebar}</aside></div>}
-      {settingsOpen && <div className="panel-scrim" onClick={() => setSettingsOpen(false)}><aside className="settings-panel" onClick={event => event.stopPropagation()} aria-label="Settings"><SettingsPanel {...props} onClose={() => setSettingsOpen(false)} onProgress={() => choose('profile')} /></aside></div>}
+      <aside className="app-sidebar glass glass-panel" inert={hidden} style={{ viewTransitionName: 'app-sidebar' }}>{renderNav('desktop')}</aside>
+
+      <AnimatePresence>
+        {hidden && (
+          <motion.div key="dock" className="sidebar-dock glass glass-pill" initial={{ opacity: 0, x: -16, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1, transition: { ...spring.soft, delay: 0.15 } }} exit={{ opacity: 0, x: -12, scale: 0.9, transition: { duration: 0.15 } }}>
+            <button onClick={() => setHidden(false)} aria-label="Show sidebar" title={`Show sidebar (${SHORTCUT_LABEL})`}><PanelLeftOpen /></button>
+            <button onClick={() => setSettingsOpen(true)} aria-label="Open settings" title="Settings"><Settings2 /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <header className="mobile-bar glass glass-pill">
+        <button onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu /></button>
+        <span className="brand-word">KeyHaven</span>
+        <button onClick={() => choose('profile')} aria-label="Profile and progress"><User /></button>
+      </header>
+
+      <AnimatePresence>
+        {mobileOpen && <motion.div key="mobile-scrim" className="mobile-scrim" variants={fade} initial="hidden" animate="show" exit="exit" onClick={() => setMobileOpen(false)} />}
+        {mobileOpen && (
+          <motion.aside key="mobile-drawer" className="mobile-drawer glass glass-panel" variants={slideInLeft} initial="hidden" animate="show" exit="exit">
+            <button className="drawer-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X /></button>
+            {renderNav('mobile')}
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {settingsOpen && <motion.div key="settings-scrim" className="panel-scrim" variants={fade} initial="hidden" animate="show" exit="exit" onClick={() => setSettingsOpen(false)} />}
+        {settingsOpen && (
+          <motion.aside key="settings-panel" className="settings-panel glass glass-panel" aria-label="Settings" variants={slideInRight} initial="hidden" animate="show" exit="exit">
+            <SettingsPanel {...props} onClose={() => setSettingsOpen(false)} onProgress={() => choose('profile')} />
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </>
   );
 };
@@ -127,8 +191,10 @@ function SettingsPanel(props: NavbarProps & { onClose: () => void; onProgress: (
       <label className="toggle-row">Show live WPM<input type="checkbox" checked={settings.showLiveWpm} onChange={event => props.onUpdateSetting('showLiveWpm', event.target.checked)} /></label>
     </div></details>
     <details><summary>Sound</summary><div className="setting-group"><label><span className="label-icon"><Volume2 />Key sound</span><select value={settings.switchSound} onChange={event => props.onUpdateSwitchSound(event.target.value as SwitchSound)}>{['off', 'holy-panda', 'cherry-blue', 'gateron-brown', 'cherry-red', 'typewriter', 'raindrop'].map(value => <option key={value} value={value}>{value.replaceAll('-', ' ')}</option>)}</select></label><label>Ambient<select value={settings.ambientSound} onChange={event => props.onUpdateAmbientSound(event.target.value as AmbientSound)}>{['none', 'rain', 'fireplace', 'cafe', 'forest', 'zen-river', 'alpha-waves'].map(value => <option key={value}>{value.replaceAll('-', ' ')}</option>)}</select></label></div></details>
-    <button className="quiet-action" onClick={props.onToggleZenMode}><Focus />Enter focus mode</button>
-    <button className="quiet-action" onClick={props.onProgress}><User />Open my progress</button>
-    <button className="theme-action" onClick={() => props.onUpdateTheme(settings.theme === 'reading-room' ? 'daylight' : 'reading-room')}>{settings.theme === 'reading-room' ? <Sun /> : <Moon />}Switch to {settings.theme === 'reading-room' ? 'light' : 'dark'}</button>
+    <div className="settings-actions">
+      <button className="quiet-action" onClick={props.onToggleZenMode}><Focus />Enter focus mode</button>
+      <button className="quiet-action" onClick={props.onProgress}><User />Open my progress</button>
+      <button className="theme-action" onClick={() => props.onUpdateTheme(settings.theme === 'reading-room' ? 'daylight' : 'reading-room')}>{settings.theme === 'reading-room' ? <Sun /> : <Moon />}Switch to {settings.theme === 'reading-room' ? 'light' : 'dark'}</button>
+    </div>
   </div>;
 }
