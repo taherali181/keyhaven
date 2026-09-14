@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/db';
 import { AcademyStateRecord, ImportedDocumentRecord, UserSettings } from '@/types';
-import { BOOKS } from '@/data/books';
 
 export type SyncStatus = 'local' | 'syncing' | 'synced' | 'error';
 
@@ -34,11 +33,9 @@ export function useCloudSync(settings: UserSettings, syncKey: string, applyRemot
         if (merged.settings) applyRemoteSettings({ ...merged.settings.settings, updatedAt: new Date(merged.settings.updatedAt).getTime() });
         for (const item of merged.progress) {
           const local = await db.bookProgress.get(item.bookId);
-          const book = BOOKS.find(candidate => candidate.id === item.bookId);
-          const earlier = book?.chapters.slice(0, item.chapterIndex).reduce((sum, chapter) => sum + chapter.text.length, 0) ?? 0;
-          const total = book?.chapters.reduce((sum, chapter) => sum + chapter.text.length, 0) ?? 1;
           const remoteUpdatedAt = new Date(item.updatedAt).getTime();
-          if (!local || remoteUpdatedAt > local.lastRead) await db.bookProgress.put({ bookId: item.bookId, chapterId: item.chapterId, chapterIndex: item.chapterIndex, charOffset: item.charOffset, percent: Math.min(100, Math.round(((earlier + item.charOffset) / total) * 100)), totalWordsTyped: local?.totalWordsTyped ?? 0, lastRead: remoteUpdatedAt, syncedAt: merged.syncedAt });
+          // The server stores only the position; keep what this device knows about the work (title, percent, shelves).
+          if (!local || remoteUpdatedAt > local.lastRead) await db.bookProgress.put({ ...local, bookId: item.bookId, chapterId: item.chapterId, chapterIndex: item.chapterIndex, charOffset: item.charOffset, percent: local?.percent ?? 0, totalWordsTyped: local?.totalWordsTyped ?? 0, lastRead: remoteUpdatedAt, syncedAt: merged.syncedAt });
         }
         for (const item of merged.results) {
           const clientId = String(item.id);

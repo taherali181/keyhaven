@@ -1,26 +1,23 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  BookOpen, Focus, Gamepad2, GraduationCap, Menu, Moon, PanelLeftClose, PanelLeftOpen,
-  Settings2, Sun, Timer, User, Volume2, X
+  BookOpen, Focus, Gamepad2, GraduationCap, Menu, Moon, PanelLeftClose,
+  Quote, Settings2, Sun, Timer, User, Volume2, X
 } from 'lucide-react';
-import { AmbientSound, CaretStyle, FontFamily, ReaderBackground, SwitchSound, ThemeId, TypingMode, UserSettings } from '@/types';
-import { FONTS } from '@/lib/themes';
-import { useSidebarHidden } from '@/hooks/useSidebarHidden';
-import { ease, fade, slideInLeft, slideInRight, spring } from '@/lib/motion';
+import { CaretStyle, SwitchSound, ThemeId, TypingMode, UserSettings } from '@/types';
+import { useSidebarPinned } from '@/hooks/useSidebarPinned';
+import { fade, slideInLeft, slideInRight, spring } from '@/lib/motion';
+import { BrandIcon, BrandLogo } from '@/components/ui/BrandLogo';
+import { GlassSelect } from '@/components/ui/GlassSelect';
 
 interface NavbarProps {
   currentMode: TypingMode;
   onSelectMode: (mode: TypingMode) => void;
   settings: UserSettings;
   onUpdateTheme: (theme: ThemeId) => void;
-  onUpdateFont: (font: FontFamily) => void;
   onUpdateSwitchSound: (sound: SwitchSound) => void;
-  onUpdateSoundVolume: (volume: number) => void;
-  onUpdateAmbientSound: (ambient: AmbientSound) => void;
-  onUpdateAmbientVolume: (volume: number) => void;
   onUpdateCaretStyle: (caret: CaretStyle) => void;
   onUpdateSetting: <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
   onToggleZenMode: () => void;
@@ -28,49 +25,60 @@ interface NavbarProps {
 
 const sections: Array<{ label: string; mode: TypingMode; icon: React.ReactNode }> = [
   { label: 'Read', mode: 'stories', icon: <BookOpen /> },
+  { label: 'Quotes', mode: 'quotes', icon: <Quote /> },
   { label: 'Academy', mode: 'learn', icon: <GraduationCap /> },
   { label: 'Speed', mode: 'speed-test', icon: <Timer /> },
   { label: 'Arcade', mode: 'arcade', icon: <Gamepad2 /> }
 ];
 
-const readModes: Array<{ label: string; mode: TypingMode }> = [
-  { label: 'Stories', mode: 'stories' },
-  { label: 'Quotes', mode: 'quotes' },
-  { label: 'Library', mode: 'library' }
-];
-
-const backgrounds: Array<{ id: ReaderBackground; label: string }> = [
-  { id: 'none', label: 'Quiet paper' },
-  { id: 'cherry-blossoms', label: 'Cherry blossoms' },
-  { id: 'misty-mountains', label: 'Misty mountains' },
-  { id: 'quiet-lake', label: 'Quiet lake' },
-  { id: 'soft-forest', label: 'Soft forest' }
-];
-
 const SHORTCUT_LABEL = 'Ctrl \\';
+// Hover intent: a short delay before peeking so a quick flick to the screen edge doesn't open it,
+// and a longer one before hiding so briefly overshooting the sidebar doesn't snap it shut.
+const PEEK_OPEN_DELAY = 70;
+const PEEK_CLOSE_DELAY = 320;
 
 export const Navbar: React.FC<NavbarProps> = props => {
   const { currentMode, onSelectMode, settings } = props;
-  const [hidden, setHidden] = useSidebarHidden();
+  // Pinned: the sidebar stays open and the content makes room for it.
+  // Unpinned (default): it hides, and "peeks" over the content while the pointer is at the left edge.
+  const [pinned, setPinned] = useSidebarPinned();
+  const [peek, setPeek] = useState(false);
+  const peekTimer = useRef<number | undefined>(undefined);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const readActive = ['stories', 'quotes', 'library'].includes(currentMode);
+  const peeking = !pinned && peek;
+  const hidden = !pinned && !peek;
 
+  const schedulePeek = (open: boolean, delay: number) => {
+    window.clearTimeout(peekTimer.current);
+    peekTimer.current = window.setTimeout(() => setPeek(open), delay);
+  };
+  const pin = (next: boolean) => {
+    window.clearTimeout(peekTimer.current);
+    setPeek(false);
+    setPinned(next);
+  };
+
+  useEffect(() => () => window.clearTimeout(peekTimer.current), []);
+
+  // Only pinning changes the layout; peeking overlays, so the content never moves on hover.
   useEffect(() => {
-    document.documentElement.dataset.sidebar = settings.zenMode ? 'zen' : hidden ? 'hidden' : 'open';
-  }, [hidden, settings.zenMode]);
+    document.documentElement.dataset.sidebar = settings.zenMode ? 'zen' : pinned ? 'open' : 'hidden';
+  }, [pinned, settings.zenMode]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setMobileOpen(false); setSettingsOpen(false); }
+      if (event.key === 'Escape') { setMobileOpen(false); setSettingsOpen(false); setPeek(false); }
       if ((event.ctrlKey || event.metaKey) && event.key === '\\' && !settings.zenMode) {
         event.preventDefault();
-        setHidden(!hidden);
+        window.clearTimeout(peekTimer.current);
+        setPeek(false);
+        setPinned(!pinned);
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [hidden, setHidden, settings.zenMode]);
+  }, [pinned, setPinned, settings.zenMode]);
 
   const choose = (mode: TypingMode) => {
     onSelectMode(mode);
@@ -86,35 +94,37 @@ export const Navbar: React.FC<NavbarProps> = props => {
   const renderNav = (scope: 'desktop' | 'mobile') => (
     <>
       <div className="sidebar-brand">
-        <span className="brand-mark" aria-hidden="true">K</span>
-        <span className="brand-word" aria-label="KeyHaven">KeyHaven</span>
-        {scope === 'desktop' && <button className="sidebar-icon-button" onClick={() => setHidden(true)} aria-label="Hide sidebar" title={`Hide sidebar (${SHORTCUT_LABEL})`}><PanelLeftClose /></button>}
+        <button className="brand-home" onClick={() => choose('stories')} aria-label="KeyHaven home"><BrandLogo /></button>
+        <div className="sidebar-brand-actions">
+          <button
+            className="sidebar-icon-button"
+            onClick={() => props.onUpdateTheme(settings.theme === 'reading-room' ? 'daylight' : 'reading-room')}
+            aria-label={`Switch to ${settings.theme === 'reading-room' ? 'light' : 'dark'} theme`}
+            title={settings.theme === 'reading-room' ? 'Switch to daylight' : 'Switch to reading room'}
+          >
+            {settings.theme === 'reading-room' ? <Sun /> : <Moon />}
+          </button>
+          {scope === 'desktop' && (
+            <button
+              className="sidebar-icon-button"
+              onClick={() => pin(false)}
+              aria-label="Hide sidebar"
+              title={`Hide sidebar (${SHORTCUT_LABEL})`}
+            >
+              <PanelLeftClose />
+            </button>
+          )}
+        </div>
       </div>
       <nav className="sidebar-nav" aria-label="Primary navigation">
         <p className="sidebar-section-label">Practice</p>
         {sections.map(item => {
-          const active = item.mode === 'stories' ? readActive : currentMode === item.mode;
+          const active = currentMode === item.mode;
           return (
-            <div key={item.label}>
-              <button className={`sidebar-link ${active ? 'active' : ''}`} onClick={() => choose(item.mode)} aria-current={active ? 'page' : undefined}>
-                {active && <motion.span layoutId={`${scope}-nav-pill`} className="sidebar-pill" transition={spring.snappy} />}
-                {item.icon}<span>{item.label}</span>
-              </button>
-              <AnimatePresence initial={false}>
-                {item.mode === 'stories' && readActive && (
-                  <motion.div className="sidebar-subnav" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.32, ease: ease.outExpo }}>
-                    <div className="sidebar-subnav-inner">
-                      {readModes.map(read => (
-                        <button key={read.mode} className={currentMode === read.mode ? 'active' : ''} onClick={() => choose(read.mode)}>
-                          {currentMode === read.mode && <motion.span layoutId={`${scope}-sub-dot`} className="sidebar-sub-dot" transition={spring.snappy} />}
-                          {read.label}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <button key={item.label} className={`sidebar-link ${active ? 'active' : ''}`} onClick={() => choose(item.mode)} aria-current={active ? 'page' : undefined}>
+              {active && <motion.span layoutId={`${scope}-nav-pill`} className="sidebar-pill" transition={spring.snappy} />}
+              {item.icon}<span>{item.label}</span>
+            </button>
           );
         })}
       </nav>
@@ -124,29 +134,51 @@ export const Navbar: React.FC<NavbarProps> = props => {
           {currentMode === 'profile' && <motion.span layoutId={`${scope}-nav-pill`} className="sidebar-pill" transition={spring.snappy} />}
           <User /><span>My progress</span>
         </button>
-        <button className="sidebar-link" onClick={() => props.onUpdateTheme(settings.theme === 'reading-room' ? 'daylight' : 'reading-room')} aria-label={`Switch to ${settings.theme === 'reading-room' ? 'light' : 'dark'} theme`}>
-          {settings.theme === 'reading-room' ? <Sun /> : <Moon />}<span>{settings.theme === 'reading-room' ? 'Daylight' : 'Reading room'}</span>
-        </button>
       </div>
     </>
   );
 
   return (
     <>
-      <aside className="app-sidebar glass glass-panel" inert={hidden} style={{ viewTransitionName: 'app-sidebar' }}>{renderNav('desktop')}</aside>
+      <aside
+        className="app-sidebar glass glass-panel"
+        inert={hidden}
+        data-peek={peeking ? 'true' : undefined}
+        style={{ viewTransitionName: 'app-sidebar' }}
+        onPointerEnter={() => { if (!pinned) schedulePeek(true, 0); }}
+        onPointerLeave={() => { if (!pinned) schedulePeek(false, PEEK_CLOSE_DELAY); }}
+      >{renderNav('desktop')}</aside>
+
+      {/* Invisible strip along the left edge: resting the pointer here peeks the sidebar in. */}
+      {!pinned && (
+        <div
+          className="sidebar-hotzone"
+          aria-hidden="true"
+          onPointerEnter={() => schedulePeek(true, PEEK_OPEN_DELAY)}
+          onPointerLeave={() => schedulePeek(false, peek ? PEEK_CLOSE_DELAY : 0)}
+        />
+      )}
 
       <AnimatePresence>
         {hidden && (
-          <motion.div key="dock" className="sidebar-dock glass glass-pill" initial={{ opacity: 0, x: -16, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1, transition: { ...spring.soft, delay: 0.15 } }} exit={{ opacity: 0, x: -12, scale: 0.9, transition: { duration: 0.15 } }}>
-            <button onClick={() => setHidden(false)} aria-label="Show sidebar" title={`Show sidebar (${SHORTCUT_LABEL})`}><PanelLeftOpen /></button>
-            <button onClick={() => setSettingsOpen(true)} aria-label="Open settings" title="Settings"><Settings2 /></button>
-          </motion.div>
+          <motion.button
+            key="sidebar-trigger"
+            className="sidebar-dock glass"
+            onClick={() => pin(true)}
+            aria-label="Pin sidebar"
+            title={`Pin sidebar open (${SHORTCUT_LABEL})`}
+            initial={{ opacity: 0, x: -12, scale: 0.88 }}
+            animate={{ opacity: 1, x: 0, scale: 1, transition: spring.snappy }}
+            exit={{ opacity: 0, x: -10, scale: 0.88, transition: { duration: 0.14 } }}
+          >
+            <BrandIcon size={22} />
+          </motion.button>
         )}
       </AnimatePresence>
 
       <header className="mobile-bar glass glass-pill">
         <button onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu /></button>
-        <span className="brand-word">KeyHaven</span>
+        <button className="brand-home" onClick={() => choose('stories')} aria-label="KeyHaven home"><BrandLogo /></button>
         <button onClick={() => choose('profile')} aria-label="Profile and progress"><User /></button>
       </header>
 
@@ -174,27 +206,52 @@ export const Navbar: React.FC<NavbarProps> = props => {
 
 function SettingsPanel(props: NavbarProps & { onClose: () => void; onProgress: () => void }) {
   const { settings } = props;
+  const caretOptions: Array<{ value: CaretStyle; label: string }> = [
+    { value: 'smooth', label: 'Smooth' },
+    { value: 'bar', label: 'Bar' },
+    { value: 'block', label: 'Block' },
+    { value: 'underline', label: 'Underline' },
+    { value: 'glow', label: 'Glow' }
+  ];
+
+  const soundOptions: Array<{ value: SwitchSound; label: string }> = [
+    { value: 'off', label: 'Off' },
+    { value: 'holy-panda', label: 'Holy Panda' },
+    { value: 'cherry-blue', label: 'Cherry Blue' },
+    { value: 'gateron-brown', label: 'Gateron Brown' },
+    { value: 'cherry-red', label: 'Cherry Red' },
+    { value: 'typewriter', label: 'Typewriter' },
+    { value: 'raindrop', label: 'Raindrop' }
+  ];
+
   return <div className="settings-stack">
     <header><div><p className="eyebrow">Your space</p><h2>Settings</h2></div><button onClick={props.onClose} aria-label="Close settings"><X /></button></header>
-    <details open><summary>Reading</summary><div className="setting-group">
-      <label>Typeface<select value={settings.font} onChange={event => props.onUpdateFont(event.target.value as FontFamily)}>{(Object.keys(FONTS) as FontFamily[]).filter(font => font !== 'fira').map(font => <option value={font} key={font}>{FONTS[font].name}</option>)}</select></label>
-      <label>Text size<select value={settings.fontSize} onChange={event => props.onUpdateSetting('fontSize', event.target.value as UserSettings['fontSize'])}><option value="sm">Small</option><option value="base">Comfortable</option><option value="lg">Large</option><option value="xl">Extra large</option></select></label>
-      <label>Page width<select value={settings.readerWidth} onChange={event => props.onUpdateSetting('readerWidth', event.target.value as UserSettings['readerWidth'])}><option value="narrow">Narrow</option><option value="balanced">Balanced</option><option value="wide">Wide</option></select></label>
-      <label>Page tone<select value={settings.readerPaper} onChange={event => props.onUpdateSetting('readerPaper', event.target.value as UserSettings['readerPaper'])}><option value="system">Match theme</option><option value="paper">Soft paper</option><option value="sepia">Sepia</option><option value="night">Night</option></select></label>
-      <label>Line spacing<input type="range" min="1.5" max="2.2" step="0.1" value={settings.readerLineHeight} onChange={event => props.onUpdateSetting('readerLineHeight', Number(event.target.value))} /></label>
-      <label>Scenery<select value={settings.readerBackground} onChange={event => props.onUpdateSetting('readerBackground', event.target.value as ReaderBackground)}>{backgrounds.map(background => <option key={background.id} value={background.id}>{background.label}</option>)}</select></label>
-      {settings.readerBackground !== 'none' && <><label>Readability veil<input type="range" min="55" max="95" value={settings.readerOverlay} onChange={event => props.onUpdateSetting('readerOverlay', Number(event.target.value))} /></label><label>Soft focus<input type="range" min="0" max="8" value={settings.readerBlur} onChange={event => props.onUpdateSetting('readerBlur', Number(event.target.value))} /></label></>}
-    </div></details>
-    <details><summary>Typing</summary><div className="setting-group">
-      <label>Caret<select value={settings.caretStyle} onChange={event => props.onUpdateCaretStyle(event.target.value as CaretStyle)}>{(['smooth', 'bar', 'block', 'underline', 'glow'] as CaretStyle[]).map(value => <option key={value}>{value}</option>)}</select></label>
+    <details open><summary>Typing</summary><div className="setting-group">
+      <label>Caret
+        <GlassSelect
+          value={settings.caretStyle}
+          options={caretOptions}
+          onChange={props.onUpdateCaretStyle}
+        />
+      </label>
       <label className="toggle-row">Strict typing<input type="checkbox" checked={settings.strictMode} onChange={event => props.onUpdateSetting('strictMode', event.target.checked)} /></label>
       <label className="toggle-row">Show live WPM<input type="checkbox" checked={settings.showLiveWpm} onChange={event => props.onUpdateSetting('showLiveWpm', event.target.checked)} /></label>
     </div></details>
-    <details><summary>Sound</summary><div className="setting-group"><label><span className="label-icon"><Volume2 />Key sound</span><select value={settings.switchSound} onChange={event => props.onUpdateSwitchSound(event.target.value as SwitchSound)}>{['off', 'holy-panda', 'cherry-blue', 'gateron-brown', 'cherry-red', 'typewriter', 'raindrop'].map(value => <option key={value} value={value}>{value.replaceAll('-', ' ')}</option>)}</select></label><label>Ambient<select value={settings.ambientSound} onChange={event => props.onUpdateAmbientSound(event.target.value as AmbientSound)}>{['none', 'rain', 'fireplace', 'cafe', 'forest', 'zen-river', 'alpha-waves'].map(value => <option key={value}>{value.replaceAll('-', ' ')}</option>)}</select></label></div></details>
+    <details><summary>Sound</summary><div className="setting-group">
+      <label>
+        <span className="label-icon"><Volume2 />Key sound</span>
+        <GlassSelect
+          value={settings.switchSound}
+          options={soundOptions}
+          onChange={props.onUpdateSwitchSound}
+        />
+      </label>
+      <label className="toggle-row">Mute all sound<input type="checkbox" checked={settings.muted} onChange={event => props.onUpdateSetting('muted', event.target.checked)} /></label>
+    </div></details>
+    <p className="settings-note">Themes, fonts, scenery and background sound are in <strong>Reading settings</strong> on any Read page.</p>
     <div className="settings-actions">
       <button className="quiet-action" onClick={props.onToggleZenMode}><Focus />Enter focus mode</button>
       <button className="quiet-action" onClick={props.onProgress}><User />Open my progress</button>
-      <button className="theme-action" onClick={() => props.onUpdateTheme(settings.theme === 'reading-room' ? 'daylight' : 'reading-room')}>{settings.theme === 'reading-room' ? <Sun /> : <Moon />}Switch to {settings.theme === 'reading-room' ? 'light' : 'dark'}</button>
     </div>
   </div>;
 }

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { KeyHavenApp } from '../page';
+import { KeyHavenApp } from '@/components/layout/KeyHavenApp';
 import { TypingMode } from '@/types';
 import { MODES, ROUTE_ALIASES } from '@/lib/navigation';
 

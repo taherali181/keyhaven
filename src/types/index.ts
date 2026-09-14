@@ -10,7 +10,18 @@ export type TypingMode =
 
 export type ThemeId = 'reading-room' | 'daylight';
 
-export type ReaderBackground = 'none' | 'cherry-blossoms' | 'misty-mountains' | 'quiet-lake' | 'soft-forest';
+export type ReaderBackground = 'none' | 'plain' | 'cherry-blossoms' | 'misty-mountains' | 'quiet-lake' | 'soft-forest' | 'mountain-valley' | 'alpine-lake' | 'forest-sunset' | 'twilight-peaks';
+
+export type ReaderToneId = 'paper' | 'sepia' | 'night' | 'bright' | 'pitch' | 'mist' | 'sage' | 'slate' | 'ocean' | 'rose' | 'espresso';
+
+/** A user-made page tone: three picked colors, the rest of the palette is derived. */
+export interface CustomReaderTone {
+  id: string;
+  name: string;
+  background: string;
+  text: string;
+  accent: string;
+}
 
 export type WrapMode = 'literary' | 'whole-word';
 export type TypingSessionStatus = 'idle' | 'running' | 'finished';
@@ -47,35 +58,71 @@ export type CaretStyle =
   | 'bar'
   | 'glow';
 
-export interface Story {
+/** Anything the reader can open: a catalog short story, a Project Gutenberg book, or an imported EPUB/PDF. */
+export type WorkKind = 'story' | 'book' | 'import';
+
+export interface WorkSection {
   id: string;
   title: string;
-  author: string;
-  year: number | string;
-  category: string;
-  synopsis: string;
   paragraphs: string[];
-  totalWords: number;
 }
 
-export interface BookChapter {
-  id: string;
+export interface Work {
+  /** Namespaced key: `story:<id>`, `pg:<gutenberg id>` or `import:<id>`. Also the bookProgress id. */
+  key: string;
+  kind: WorkKind;
   title: string;
-  chapterNumber: number;
-  text: string;
-  wordCount: number;
+  author: string;
+  year?: number | string;
+  /** A story has a single section; books have one per chapter. */
+  sections: WorkSection[];
+  updatedAt: number;
 }
 
-export interface Book {
+/** One entry of public/catalog/stories/index.json. */
+export interface StoryMeta {
   id: string;
   title: string;
   author: string;
-  year: number | string;
-  category: 'Philosophy' | 'Classic Fiction' | 'Non-Fiction' | 'Poetry';
-  coverGradient: string;
-  synopsis: string;
-  chapters: BookChapter[];
-  totalWords: number;
+  year: number;
+  words: number;
+  tags: string[];
+  popular?: boolean;
+  source: number;
+}
+
+export interface CatalogAuthorName {
+  name: string;
+  birth?: number;
+  death?: number;
+}
+
+/** One entry of public/catalog/books.json. */
+export interface CatalogBook {
+  id: number;
+  title: string;
+  subtitle?: string;
+  authors: CatalogAuthorName[];
+  cats: string[];
+  subjects: string[];
+  downloads: number;
+}
+
+export interface CatalogAuthor extends CatalogAuthorName {
+  downloads: number;
+  books: number[];
+}
+
+/** Library shelf entries: books saved for later and anything marked finished. */
+export interface ShelfRecord {
+  key: string;
+  kind: WorkKind;
+  title: string;
+  author: string;
+  want: boolean;
+  finishedAt?: number;
+  addedAt: number;
+  updatedAt: number;
 }
 
 export interface Quote {
@@ -152,14 +199,27 @@ export interface TestResultRecord {
 }
 
 export interface BookProgressRecord {
+  /** The work key (`story:…`, `pg:…`, `import:…`). */
   bookId: string;
   chapterId?: string;
+  /** Section (chapter) index. */
   chapterIndex: number;
+  /** Characters typed into the section, counting whole chunks before the current one. */
   charOffset: number;
   percent: number;
   totalWordsTyped: number;
   lastRead: number;
   syncedAt?: number;
+  kind?: WorkKind;
+  title?: string;
+  author?: string;
+  /** Typing chunk within the section. */
+  chunkIndex?: number;
+  /** Reading mode: how far through the section's pages (0–1). */
+  pageFraction?: number;
+  /** Sections read to their last page. */
+  readSections?: number[];
+  finishedAt?: number;
 }
 
 export interface ArcadeScoreRecord {
@@ -179,6 +239,23 @@ export interface ArcadeScoreRecord {
   configuration?: Record<string, unknown>;
 }
 
+/** Items the reader's bottom bar can show; see src/lib/reader-stats.ts. */
+export type ReaderStatId =
+  | 'chapterTimeLeft' | 'bookTimeLeft' | 'bookPage' | 'bookPercent' | 'chapterPercent' | 'wordsLeft'
+  | 'readingSpeed' | 'sessionTime' | 'finishBy' | 'chapterName' | 'clock'
+  | 'wpm' | 'accuracy' | 'rawWpm' | 'elapsed' | 'part';
+
+export interface ReaderBarStyle {
+  /** While the title bar auto-hides: keep a thin progress line in the bottom bar. */
+  compactProgress: boolean;
+  compactOpacity: 'soft' | 'faint';
+  /** "4 min chapter left" vs "4 min". */
+  labels: boolean;
+}
+
+/** Per-section typography and bottom bar (see src/lib/section-settings.ts). */
+export type SectionPrefs = Pick<UserSettings, 'font' | 'fontSize' | 'readerFontWeight' | 'readerLetterSpacing' | 'readerLineHeight' | 'readerWidth' | 'readerStats' | 'readerBarStyle'>;
+
 export interface UserSettings {
   theme: ThemeId;
   font: FontFamily;
@@ -196,11 +273,27 @@ export interface UserSettings {
   strictMode: boolean;
   leaderboardEnabled: boolean;
   readerLineHeight: number;
-  readerWidth: 'narrow' | 'balanced' | 'wide';
-  readerPaper: 'system' | 'paper' | 'sepia' | 'night';
+  readerWidth: 'narrow' | 'balanced' | 'wide' | 'full';
+  /** 'system' follows the theme; `custom:<id>` points into customTones. */
+  readerPaper: 'system' | ReaderToneId | `custom:${string}`;
+  customTones: CustomReaderTone[];
   readerBackground: ReaderBackground;
   readerOverlay: number;
   readerBlur: number;
+  readerFontWeight: 300 | 400 | 500 | 600;
+  readerLetterSpacing: 'tight' | 'normal' | 'wide';
+  /** Stories: type the passage, or just read it in pages. */
+  storyMode: 'type' | 'read';
+  /** Silences key sounds and background ambience without losing their settings. */
+  muted: boolean;
+  /** Floating motes and drifting scenery. Off by default: animated full-screen effects cost GPU. */
+  ambientMotion: boolean;
+  /** Reader title bar: always shown, or hidden until the pointer reaches the top. */
+  readerBarPinned: boolean;
+  readerStats: { read: ReaderStatId[]; type: ReaderStatId[] };
+  readerBarStyle: ReaderBarStyle;
+  /** Typography and bottom bar for sections other than Read; Read uses the top-level values. */
+  sectionPrefs: Partial<Record<TypingMode, Partial<SectionPrefs>>>;
   updatedAt: number;
 }
 

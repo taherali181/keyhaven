@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { AuthBrand } from '@/components/layout/AuthBrand';
 import { signIn } from 'next-auth/react';
 
 export default function SignUpPage() {
@@ -16,4 +17,4 @@ export default function SignUpPage() {
   return <AuthShell eyebrow="Begin quietly" title="Create your account" note="Sync reading, lessons, and verified records across your devices."><form onSubmit={submit} className="auth-form"><label>Name<input name="name" required minLength={2} autoComplete="name" /></label><label>Email<input name="email" required type="email" autoComplete="email" /></label><label>Password<input name="password" required type="password" minLength={10} autoComplete="new-password" /><small>At least 10 characters with a letter and number.</small></label>{message && <p className="auth-error">{message}</p>}<button disabled={pending}>{pending ? 'Creating…' : 'Create account'}</button></form><div className="auth-divider">or</div><button className="google-button" onClick={() => signIn('google', { callbackUrl: '/profile' })}>Continue with Google</button><p className="auth-link">Already have an account? <Link href="/sign-in">Sign in</Link></p></AuthShell>;
 }
 
-function AuthShell({ eyebrow, title, note, children }: { eyebrow: string; title: string; note: string; children: React.ReactNode }) { return <main className="auth-page"><section><Link href="/stories" className="auth-wordmark">KeyHaven</Link><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="auth-note">{note}</p>{children}</section></main>; }
+function AuthShell({ eyebrow, title, note, children }: { eyebrow: string; title: string; note: string; children: React.ReactNode }) { return <main className="auth-page"><section><AuthBrand /><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="auth-note">{note}</p>{children}</section></main>; }

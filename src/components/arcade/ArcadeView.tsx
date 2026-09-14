@@ -9,6 +9,7 @@ import { COMMON_WORDS_200 } from '@/data/word-lists';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
 import { LeaderboardView } from '@/components/analytics/LeaderboardView';
+import { GlassSelect } from '@/components/ui/GlassSelect';
 
 interface ArcadeViewProps { settings: UserSettings; onKeyPress: (key: string) => void; }
 type ArcadeGame = 'alphabet' | 'word-rain' | 'ghost-racer';
@@ -201,7 +202,25 @@ function GhostRacer({ settings, onKeyPress }: ArcadeViewProps) {
   const userProgress = Math.min(100, (engine.typed.length / RACE_TEXT.length) * 100);
   return (
     <div className="editorial-panel p-5 sm:p-8">
-      <div className="flex flex-col justify-between gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-center"><div><p className="eyebrow">Head to head</p><h2 className="mt-1 font-serif text-3xl">Ghost Racer</h2></div><label className="text-xs text-[var(--text-secondary)]">Rival pace <select value={ghostWpm} disabled={racing} onChange={event => setGhostWpm(Number(event.target.value))} className="ml-2 rounded-md border border-[var(--color-border)] bg-[var(--bg-secondary)] px-2 py-1.5">{[40, 60, 80, 100, 120].map(wpm => <option key={wpm}>{wpm}</option>)}</select></label></div>
+      <div className="flex flex-col justify-between gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-center">
+        <div>
+          <p className="eyebrow">Head to head</p>
+          <h2 className="mt-1 font-serif text-3xl">Ghost Racer</h2>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-[var(--text-secondary)]">Rival pace</span>
+          <GlassSelect
+            value={ghostWpm}
+            align="right"
+            disabled={racing}
+            onChange={val => setGhostWpm(Number(val))}
+            options={[40, 60, 80, 100, 120].map(wpm => ({
+              value: wpm,
+              label: `${wpm} WPM`
+            }))}
+          />
+        </div>
+      </div>
       <RaceLane label="You" progress={userProgress} accent /><RaceLane label={`Ghost · ${ghostWpm} wpm`} progress={ghostProgress} />
       {!racing && !result && <div className="py-8 text-center"><button onClick={start} className="rounded-lg bg-[var(--color-accent)] px-6 py-3 text-xs font-bold text-[var(--bg-primary)]">Start race</button></div>}
       {(racing || result) && <TypingArea targetText={RACE_TEXT} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font="jetbrains" fontSize="sm" wrapMode="whole-word" onKeyDown={racing ? engine.handleKeyDown : event => event.preventDefault()} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={racing ? engine.handleCompositionEnd : undefined} onReset={start} />}

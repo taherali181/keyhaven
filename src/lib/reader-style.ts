@@ -1,19 +1,148 @@
 import type { CSSProperties } from 'react';
-import type { UserSettings } from '@/types';
+import type { CustomReaderTone, ReaderBackground, ReaderToneId, UserSettings } from '@/types';
 
-const widths = { narrow: '640px', balanced: '780px', wide: '940px' } as const;
+const widths = { narrow: '640px', balanced: '780px', wide: '940px', full: '1400px' } as const;
+
+export const READER_TRACKING = { tight: '-0.012em', normal: '0.006em', wide: '0.045em' } as const;
+
+/** Passage text sizes, shared by the typing surface and the story reader so both set type identically. */
+export const READER_SIZE_CLASSES = {
+  sm: 'text-[1.05rem] md:text-[1.16rem]',
+  base: 'text-[1.22rem] md:text-[1.42rem]',
+  lg: 'text-[1.42rem] md:text-[1.66rem]',
+  xl: 'text-[1.65rem] md:text-[1.94rem]'
+} as const;
+
+export interface ToneRecipe { name: string; background: string; text: string; accent: string }
+
+/*
+ * Night and Soft paper carry no colors of their own: globals.css applies the Reading room and
+ * Daylight theme token blocks to [data-reader-tone="night"|"paper"], so they are identical to
+ * "Match theme" in those themes and can never drift from it.
+ */
+const THEME_TONE_NAMES = { night: 'Night', paper: 'Soft paper' } as const;
+
+/** Every other tone is a three-color recipe; the full token set is derived from it. */
+export const RECIPE_TONES: Record<Exclude<ReaderToneId, keyof typeof THEME_TONE_NAMES>, ToneRecipe> = {
+  sepia: { name: 'Sepia', background: '#e9dfca', text: '#332e25', accent: '#6f5d3e' },
+  bright: { name: 'Bright white', background: '#ffffff', text: '#121512', accent: '#3d5c43' },
+  pitch: { name: 'Pitch black', background: '#000000', text: '#e7e7e1', accent: '#a8b59c' },
+  mist: { name: 'Mist', background: '#e6ebee', text: '#1e2a31', accent: '#48687a' },
+  sage: { name: 'Sage', background: '#dfe6d9', text: '#222d22', accent: '#4c684c' },
+  slate: { name: 'Slate', background: '#1b222a', text: '#e4e9ee', accent: '#8fb0c6' },
+  ocean: { name: 'Deep ocean', background: '#0e1d25', text: '#d9e9ef', accent: '#76b3c5' },
+  rose: { name: 'Rose dusk', background: '#291e23', text: '#f1e4e9', accent: '#d69cb0' },
+  espresso: { name: 'Espresso', background: '#2a211b', text: '#eee2d1', accent: '#caa46e' }
+};
+
+export const MAIN_TONES: ReaderToneId[] = ['paper', 'sepia', 'night'];
+export const EXTRA_TONES: ReaderToneId[] = ['bright', 'pitch', 'mist', 'sage', 'slate', 'ocean', 'rose', 'espresso'];
+export const CUSTOM_TONE_PREFIX = 'custom:';
+
+export function isThemeTone(id: string): id is keyof typeof THEME_TONE_NAMES {
+  return id in THEME_TONE_NAMES;
+}
+
+export function toneName(id: ReaderToneId) {
+  return isThemeTone(id) ? THEME_TONE_NAMES[id] : RECIPE_TONES[id].name;
+}
+
+function channels(hex: string) {
+  const value = hex.replace('#', '');
+  const full = value.length === 3 ? value.split('').map(c => c + c).join('') : value.padEnd(6, '0');
+  return [0, 2, 4].map(i => Number.parseInt(full.slice(i, i + 2), 16) || 0);
+}
+
+function luminance(hex: string) {
+  const [r, g, b] = channels(hex).map(v => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG contrast ratio between two hex colors (1–21). */
+export function contrastRatio(a: string, b: string) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+export function isLightColor(hex: string) {
+  return luminance(hex) > 0.35;
+}
+
+const mix = (a: string, weight: number, b: string) => `color-mix(in srgb, ${a} ${weight}%, ${b})`;
+
+/**
+ * Derives every token the themes define from three colors, mirroring how the Reading room and
+ * Daylight palettes relate to their own page, text and accent colors.
+ */
+export function toneVariables({ background, text, accent }: Pick<ToneRecipe, 'background' | 'text' | 'accent'>): CSSProperties {
+  const light = isLightColor(background);
+  return {
+    '--bg-primary': background,
+    '--bg-secondary': light ? mix(background, 94, text) : mix(background, 80, '#000'),
+    '--bg-card': light ? mix(background, 70, '#fff') : mix(background, 94, text),
+    '--text-primary': text,
+    '--text-secondary': mix(text, 70, background),
+    '--text-muted': mix(text, light ? 62 : 56, background),
+    '--color-accent': accent,
+    '--color-accent-secondary': mix(accent, 62, background),
+    '--color-caret': light ? accent : mix(accent, 55, text),
+    '--color-correct': mix(text, light ? 52 : 72, background),
+    '--color-incorrect': light ? '#a44f45' : '#d98578',
+    '--color-extra': light ? '#7d332f' : '#9e5048',
+    '--color-border': mix(text, 12, background),
+    '--color-highlight': mix(text, 7, background),
+    '--glass-fill': `color-mix(in srgb, ${light ? mix(background, 70, '#fff') : background} 55%, transparent)`,
+    '--glass-fill-strong': `color-mix(in srgb, ${light ? mix(background, 60, '#fff') : mix(background, 80, '#000')} 80%, transparent)`,
+    '--glass-border': `color-mix(in srgb, ${text} ${light ? 10 : 9}%, transparent)`,
+    '--glass-highlight': light ? 'rgb(255 255 255 / .7)' : 'rgb(255 255 255 / .06)',
+    '--glow-accent': `color-mix(in srgb, ${accent} ${light ? 22 : 30}%, transparent)`,
+    '--elev-1': light ? '0 1px 2px rgb(39 48 40 / .06), 0 6px 18px -8px rgb(39 48 40 / .12)' : '0 1px 2px rgb(0 0 0 / .2), 0 6px 18px -8px rgb(0 0 0 / .35)',
+    '--elev-2': light ? '0 2px 6px rgb(39 48 40 / .05), 0 18px 40px -14px rgb(39 48 40 / .18)' : '0 2px 6px rgb(0 0 0 / .18), 0 18px 40px -14px rgb(0 0 0 / .5)',
+    '--elev-3': light ? '0 6px 14px rgb(39 48 40 / .06), 0 36px 80px -20px rgb(39 48 40 / .26)' : '0 6px 14px rgb(0 0 0 / .2), 0 36px 80px -20px rgb(0 0 0 / .65)',
+    '--ambient-opacity': light ? 0.28 : 0.34,
+    colorScheme: light ? 'light' : 'dark'
+  } as CSSProperties;
+}
+
+export interface ResolvedTone {
+  /** Value for data-reader-tone; undefined means "follow the theme". */
+  attr?: string;
+  vars: CSSProperties;
+}
+
+export function resolveTone(paper: UserSettings['readerPaper'], customTones: CustomReaderTone[] = []): ResolvedTone {
+  if (!paper || paper === 'system') return { vars: {} };
+  if (paper.startsWith(CUSTOM_TONE_PREFIX)) {
+    const custom = customTones.find(tone => `${CUSTOM_TONE_PREFIX}${tone.id}` === paper);
+    return custom ? { attr: 'custom', vars: toneVariables(custom) } : { vars: {} };
+  }
+  if (isThemeTone(paper)) return { attr: paper, vars: {} };
+  const recipe = RECIPE_TONES[paper as keyof typeof RECIPE_TONES];
+  return recipe ? { attr: paper, vars: toneVariables(recipe) } : { vars: {} };
+}
+
+/** 'none' (quiet atmosphere) and 'plain' draw no photo; only the rest map to an image. */
+export function hasSceneryImage(background: ReaderBackground) {
+  return background !== 'none' && background !== 'plain';
+}
 
 export function readerStyle(settings: UserSettings): CSSProperties {
-  const image = settings.readerBackground === 'none' ? 'none' : `url(/backgrounds/${settings.readerBackground}.webp)`;
-  const paper = settings.readerPaper === 'paper' ? { background: '#f5f3eb', text: '#283029', muted: '#7b8379', border: '#d8dbd1' }
-    : settings.readerPaper === 'sepia' ? { background: '#e9dfca', text: '#332e25', muted: '#817566', border: '#cfc2aa' }
-    : settings.readerPaper === 'night' ? { background: '#101411', text: '#e8e9df', muted: '#747d72', border: '#2d352f' }
-    : null;
+  const scenery = hasSceneryImage(settings.readerBackground);
   return {
-    '--reader-image': image,
-    '--reader-overlay': `${settings.readerBackground === 'none' ? 100 : settings.readerOverlay}%`,
+    '--reader-image': scenery ? `url(/backgrounds/${settings.readerBackground}.webp)` : 'none',
+    '--reader-overlay': `${scenery ? settings.readerOverlay : 100}%`,
     '--reader-blur': `${settings.readerBlur}px`,
-    '--reader-width': widths[settings.readerWidth],
-    ...(paper ? { '--bg-primary': paper.background, '--text-primary': paper.text, '--text-muted': paper.muted, '--color-border': paper.border } : {})
+    '--reader-width': widths[settings.readerWidth] ?? widths.balanced,
+    '--reader-weight': settings.readerFontWeight ?? 400,
+    '--reader-tracking': READER_TRACKING[settings.readerLetterSpacing] ?? READER_TRACKING.normal,
+    ...resolveTone(settings.readerPaper, settings.customTones).vars
   } as CSSProperties;
+}
+
+/** Spread onto every reader surface: the style plus the tone attribute that theme-mirroring tones need. */
+export function readerSurfaceProps(settings: UserSettings) {
+  return { style: readerStyle(settings), 'data-reader-tone': resolveTone(settings.readerPaper, settings.customTones).attr };
 }

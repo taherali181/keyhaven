@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { generateRandomWords } from '@/data/word-lists';
 import { TypingStats, UserSettings } from '@/types';
@@ -27,6 +28,19 @@ export const SpeedTestView = ({ settings, onKeyPress }: { settings: UserSettings
   const [completed, setCompleted] = useState<TypingStats | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
   const startedRef = useRef(false);
+  const configRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!configOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (configRef.current && !configRef.current.contains(e.target as Node)) {
+        setConfigOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [configOpen]);
+
   const localText = useMemo(() => { void nonce; return generateRandomWords(testType === 'time' ? Math.max(120, timeConfig * 7) : wordConfig, punctuation, numbers); }, [testType, timeConfig, wordConfig, punctuation, numbers, nonce]);
 
   useEffect(() => {
@@ -56,11 +70,38 @@ export const SpeedTestView = ({ settings, onKeyPress }: { settings: UserSettings
   return <section className="speed-shell">
     <header className="section-header"><div><p className="eyebrow">Practice against the clock</p><h1>Speed</h1></div><nav><button className={view === 'test' ? 'active' : ''} onClick={() => setView('test')}>Test</button><button className={view === 'leaderboard' ? 'active' : ''} onClick={() => setView('leaderboard')}>Leaderboard</button></nav></header>
     {view === 'leaderboard' ? <LeaderboardView speedOnly embedded /> : <div className="speed-stage">
-      <div className="speed-config-wrap"><button className="speed-config-trigger" onClick={() => setConfigOpen(value => !value)}><SlidersHorizontal />{testType === 'time' ? `${timeConfig} seconds` : `${wordConfig} words`}<ChevronDown /></button>{configOpen && <div className="speed-config-panel">
-        <div><span>Mode</span>{(['time', 'words'] as const).map(value => <button key={value} className={testType === value ? 'active' : ''} onClick={() => reconfigure(() => setTestType(value))}>{value}</button>)}</div>
-        <div><span>Length</span>{(testType === 'time' ? [15, 30, 60, 120] : [10, 25, 50, 100]).map(value => <button key={value} className={(testType === 'time' ? timeConfig : wordConfig) === value ? 'active' : ''} onClick={() => reconfigure(() => testType === 'time' ? setTimeConfig(value) : setWordConfig(value))}>{value}{testType === 'time' ? 's' : ''}</button>)}</div>
-        <div><span>Text</span><button className={punctuation ? 'active' : ''} onClick={() => reconfigure(() => setPunctuation(value => !value))}>Punctuation</button><button className={numbers ? 'active' : ''} onClick={() => reconfigure(() => setNumbers(value => !value))}>Numbers</button></div>
-      </div>}</div>
+      <div className="speed-config-wrap" ref={configRef}>
+        <button
+          className="speed-config-trigger"
+          onClick={() => setConfigOpen(value => !value)}
+          aria-expanded={configOpen}
+        >
+          <SlidersHorizontal />
+          <span>{testType === 'time' ? `${timeConfig} seconds` : `${wordConfig} words`}</span>
+          <motion.span
+            className="speed-config-chevron"
+            animate={{ rotate: configOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown />
+          </motion.span>
+        </button>
+        <AnimatePresence>
+          {configOpen && (
+            <motion.div
+              className="speed-config-panel"
+              initial={{ opacity: 0, scale: 0.96, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: -2 }}
+              transition={{ duration: 0.15 }}
+            >
+              <div><span>Mode</span>{(['time', 'words'] as const).map(value => <button key={value} className={testType === value ? 'active' : ''} onClick={() => reconfigure(() => setTestType(value))}>{value}</button>)}</div>
+              <div><span>Length</span>{(testType === 'time' ? [15, 30, 60, 120] : [10, 25, 50, 100]).map(value => <button key={value} className={(testType === 'time' ? timeConfig : wordConfig) === value ? 'active' : ''} onClick={() => reconfigure(() => testType === 'time' ? setTimeConfig(value) : setWordConfig(value))}>{value}{testType === 'time' ? 's' : ''}</button>)}</div>
+              <div><span>Text</span><button className={punctuation ? 'active' : ''} onClick={() => reconfigure(() => setPunctuation(value => !value))}>Punctuation</button><button className={numbers ? 'active' : ''} onClick={() => reconfigure(() => setNumbers(value => !value))}>Numbers</button></div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       <TypingArea targetText={targetText} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font="jetbrains" fontSize={settings.fontSize} wrapMode="whole-word" viewportLines={3} viewportMode="centered" lineHeight={1.8} onKeyDown={engine.handleKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={restart} />
       <p className="speed-note">Click the text and begin. The active line stays centered.</p>
       <LiveStatsBar wpm={engine.wpm} accuracy={engine.accuracy} timeRemaining={engine.timeRemaining} timeElapsed={engine.timeElapsed} isTimed={testType === 'time'} onReset={restart} showLiveWpm={settings.showLiveWpm} showLiveAccuracy={settings.showLiveAccuracy} />

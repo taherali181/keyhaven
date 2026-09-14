@@ -1,5 +1,7 @@
 import Dexie, { type Table } from 'dexie';
-import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ImportedDocumentRecord, AcademyStateRecord } from '@/types';
+import { DEFAULT_READER_BAR_STYLE, DEFAULT_READER_STATS, sanitizeReaderStats } from '@/lib/reader-stats';
+import { sanitizeSectionPrefs } from '@/lib/section-settings';
+import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ImportedDocumentRecord, AcademyStateRecord, ShelfRecord, Work } from '@/types';
 
 export class KeyHavenDatabase extends Dexie {
   testResults!: Table<TestResultRecord, number>;
@@ -7,6 +9,8 @@ export class KeyHavenDatabase extends Dexie {
   arcadeScores!: Table<ArcadeScoreRecord, number>;
   importedDocuments!: Table<ImportedDocumentRecord, string>;
   academyState!: Table<AcademyStateRecord, string>;
+  works!: Table<Work, string>;
+  shelf!: Table<ShelfRecord, string>;
 
   constructor() {
     super('KeyHavenDB');
@@ -34,6 +38,35 @@ export class KeyHavenDatabase extends Dexie {
       importedDocuments: 'id, title, format, updatedAt, syncedAt',
       academyState: 'id, updatedAt, syncedAt'
     });
+    // v4: one reader for stories, Gutenberg books and imports. Progress is keyed by work key, parsed books
+    // are cached for offline reading, and the shelf holds "want to read" and "finished" marks.
+    this.version(4).stores({
+      testResults: '++id, &clientId, mode, subMode, timestamp, wpm, accuracy, syncedAt',
+      bookProgress: 'bookId, kind, chapterIndex, lastRead, syncedAt',
+      arcadeScores: '++id, &clientId, game, score, wpm, timestamp, syncedAt',
+      importedDocuments: 'id, title, format, updatedAt, syncedAt',
+      academyState: 'id, updatedAt, syncedAt',
+      works: 'key, kind, updatedAt',
+      shelf: 'key, kind, want, finishedAt, updatedAt'
+    }).upgrade(async transaction => {
+      const imports = new Set((await transaction.table('importedDocuments').toCollection().primaryKeys()).map(String));
+      const progress = transaction.table('bookProgress');
+      const records = await progress.toArray() as BookProgressRecord[];
+      for (const record of records) {
+        if (record.bookId.includes(':')) continue;
+        await progress.delete(record.bookId);
+        // Imported documents keep their progress; the old built-in excerpt books no longer exist.
+        if (imports.has(record.bookId)) await progress.put({ ...record, bookId: `import:${record.bookId}`, kind: 'import' });
+      }
+      // Story reading positions used to live in localStorage.
+      try {
+        const positions = JSON.parse(localStorage.getItem('keyhaven_story_reading_v1') || '{}') as Record<string, number>;
+        for (const [id, fraction] of Object.entries(positions)) {
+          if (typeof fraction !== 'number') continue;
+          await progress.put({ bookId: `story:${id}`, kind: 'story', chapterIndex: 0, charOffset: 0, chunkIndex: 0, pageFraction: fraction, percent: Math.round(fraction * 100), totalWordsTyped: 0, lastRead: Date.now() });
+        }
+      } catch { /* no stored positions */ }
+    });
   }
 }
 
@@ -58,9 +91,19 @@ export const DEFAULT_SETTINGS: UserSettings = {
   readerLineHeight: 1.8,
   readerWidth: 'balanced',
   readerPaper: 'system',
+  customTones: [],
+  storyMode: 'type',
+  muted: false,
+  ambientMotion: false,
+  readerBarPinned: true,
+  readerStats: DEFAULT_READER_STATS,
+  readerBarStyle: DEFAULT_READER_BAR_STYLE,
+  sectionPrefs: {},
   readerBackground: 'none',
-  readerOverlay: 82,
-  readerBlur: 0,
+  readerOverlay: 65,
+  readerBlur: 2,
+  readerFontWeight: 400,
+  readerLetterSpacing: 'normal',
   updatedAt: 0
 };
 
@@ -76,7 +119,11 @@ export function loadSettings(): UserSettings {
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
-      theme: parsed.theme === 'daylight' || legacyLight ? 'daylight' : 'reading-room'
+      theme: parsed.theme === 'daylight' || legacyLight ? 'daylight' : 'reading-room',
+      customTones: Array.isArray(parsed.customTones) ? parsed.customTones : [],
+      readerStats: sanitizeReaderStats(parsed.readerStats),
+      readerBarStyle: { ...DEFAULT_READER_BAR_STYLE, ...(parsed.readerBarStyle ?? {}) },
+      sectionPrefs: sanitizeSectionPrefs(parsed.sectionPrefs)
     };
   } catch {
     return DEFAULT_SETTINGS;

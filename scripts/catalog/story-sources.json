@@ -1,0 +1,1656 @@
+{
+ "sources": [
+  {
+   "id": 2776,
+   "author": "O. Henry",
+   "year": 1906,
+   "tags": [
+    "humour",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "The Gift of the Magi",
+     "id": "gift-of-the-magi",
+     "popular": true,
+     "tags": [
+      "love"
+     ]
+    },
+    {
+     "title": "The Cop and the Anthem",
+     "popular": true
+    },
+    {
+     "title": "After Twenty Years",
+     "popular": true
+    },
+    "The Romance of a Busy Broker",
+    "The Furnished Room",
+    "Mammon and the Archer",
+    "A Service of Love",
+    "The Skylight Room",
+    "Springtime à la Carte",
+    "The Green Door",
+    "Tobin's Palm",
+    "Between Rounds",
+    "Memoirs of a Yellow Dog",
+    "An Unfinished Story",
+    "Lost on Dress Parade",
+    "The Brief Début of Tildy",
+    "A Cosmopolite in a Café"
+   ]
+  },
+  {
+   "id": 3707,
+   "author": "O. Henry",
+   "year": 1907,
+   "tags": [
+    "humour",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "The Last Leaf",
+     "popular": true
+    },
+    "The Pendulum",
+    "Two Thanksgiving Day Gentlemen",
+    "The Trimmed Lamp",
+    "A Harlem Tragedy",
+    "The Making of a New Yorker",
+    "The Purple Dress",
+    "The Count and the Wedding Guest"
+   ]
+  },
+  {
+   "id": 1595,
+   "author": "O. Henry",
+   "year": 1910,
+   "tags": [
+    "humour",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "The Ransom of Red Chief",
+     "popular": true
+    },
+    "The Roads We Take",
+    "Calloway's Code",
+    "The Whirligig of Life"
+   ]
+  },
+  {
+   "id": 1444,
+   "author": "O. Henry",
+   "year": 1908,
+   "tags": [
+    "humour",
+    "american"
+   ],
+   "stories": [
+    "While the Auto Waits",
+    "A Lickpenny Lover",
+    "One Thousand Dollars",
+    "Squaring the Circle",
+    "Transients in Arcadia",
+    "The Clarion Call",
+    "The Memento"
+   ]
+  },
+  {
+   "id": 2141,
+   "author": "O. Henry",
+   "year": 1910,
+   "tags": [
+    "humour",
+    "american"
+   ],
+   "stories": [
+    "A Municipal Report",
+    "The Duel",
+    "Proof of the Pudding",
+    "A Ramble in Aphasia"
+   ]
+  },
+  {
+   "id": 1732,
+   "author": "Anton Chekhov",
+   "year": 1889,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    {
+     "title": "The Bet",
+     "id": "the-bet",
+     "popular": true
+    },
+    "The Schoolmistress",
+    "In Exile",
+    "Sorrow",
+    "The Requiem",
+    "Small Fry",
+    "A Tragic Actor",
+    "The First-Class Passenger",
+    "The Head-Gardener's Story",
+    "The Shoemaker and the Devil",
+    "Panic Fears"
+   ]
+  },
+  {
+   "id": 13414,
+   "author": "Anton Chekhov",
+   "year": 1887,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    {
+     "title": "The Death of a Government Clerk",
+     "popular": true,
+     "tags": [
+      "humour"
+     ]
+    },
+    {
+     "title": "Fat and Thin",
+     "tags": [
+      "humour"
+     ]
+    },
+    "A Work of Art",
+    "A Joke",
+    "The Doctor",
+    "Too Early!",
+    "The Cossack",
+    "A Pink Stocking",
+    "At a Summer Villa",
+    "Nerves",
+    "Choristers",
+    "Love"
+   ]
+  },
+  {
+   "id": 13416,
+   "author": "Anton Chekhov",
+   "year": 1899,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    {
+     "title": "The Darling",
+     "popular": true,
+     "tags": [
+      "love"
+     ]
+    },
+    "Polinka",
+    "Anyuta",
+    "The Trousseau",
+    "The Helpmate",
+    "Talent"
+   ]
+  },
+  {
+   "id": 13415,
+   "author": "Anton Chekhov",
+   "year": 1899,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    {
+     "title": "The Lady with the Dog",
+     "popular": true,
+     "tags": [
+      "love"
+     ]
+    },
+    "A Doctor's Visit",
+    "The Husband"
+   ]
+  },
+  {
+   "id": 55307,
+   "author": "Anton Chekhov",
+   "year": 1894,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    {
+     "title": "The Black Monk",
+     "popular": true
+    },
+    "Rothschild's Fiddle",
+    "Sleepyhead",
+    "A Father",
+    "At Home"
+   ]
+  },
+  {
+   "id": 2148,
+   "author": "Edgar Allan Poe",
+   "year": 1843,
+   "tags": [
+    "gothic"
+   ],
+   "stories": [
+    {
+     "title": "The Tell-Tale Heart",
+     "id": "tell-tale-heart",
+     "popular": true
+    },
+    {
+     "title": "The Cask of Amontillado",
+     "popular": true
+    },
+    {
+     "title": "The Fall of the House of Usher",
+     "popular": true
+    },
+    {
+     "title": "The Masque of the Red Death",
+     "popular": true
+    },
+    {
+     "title": "The Black Cat",
+     "popular": true
+    },
+    {
+     "title": "The Purloined Letter",
+     "tags": [
+      "mystery"
+     ]
+    },
+    {
+     "title": "A Descent into the Maelström",
+     "match": "A Descent into the Maelstrom",
+     "tags": [
+      "adventure"
+     ]
+    },
+    "The Pit and the Pendulum",
+    "William Wilson",
+    "The Facts in the Case of M. Valdemar",
+    "The Imp of the Perverse",
+    "The Premature Burial",
+    "Berenice",
+    "Eleonora",
+    {
+     "title": "Silence — A Fable",
+     "match": "Silence—A Fable"
+    }
+   ]
+  },
+  {
+   "id": 2147,
+   "author": "Edgar Allan Poe",
+   "year": 1841,
+   "tags": [
+    "gothic"
+   ],
+   "stories": [
+    {
+     "title": "The Murders in the Rue Morgue",
+     "popular": true,
+     "tags": [
+      "mystery"
+     ]
+    },
+    {
+     "title": "The Gold-Bug",
+     "tags": [
+      "mystery",
+      "adventure"
+     ]
+    },
+    "The Oval Portrait",
+    "MS. Found in a Bottle"
+   ]
+  },
+  {
+   "id": 2150,
+   "author": "Edgar Allan Poe",
+   "year": 1845,
+   "tags": [
+    "gothic"
+   ],
+   "stories": [
+    "Metzengerstein",
+    "The Oblong Box",
+    {
+     "title": "The System of Doctor Tarr and Professor Fether",
+     "tags": [
+      "humour"
+     ]
+    },
+    {
+     "title": "Shadow — A Parable",
+     "match": "Shadow—A Parable"
+    }
+   ]
+  },
+  {
+   "id": 3090,
+   "author": "Guy de Maupassant",
+   "year": 1884,
+   "tags": [
+    "french"
+   ],
+   "stories": [
+    {
+     "title": "The Necklace",
+     "match": "The Diamond Necklace",
+     "popular": true
+    },
+    {
+     "title": "Boule de Suif",
+     "popular": true
+    },
+    {
+     "title": "Two Friends",
+     "popular": true
+    },
+    {
+     "title": "The Piece of String",
+     "popular": true
+    },
+    "Mother Sauvage",
+    "Mademoiselle Fifi",
+    "Moonlight",
+    "The Umbrella",
+    "My Uncle Jules",
+    "The Wreck",
+    "Clair de Lune",
+    {
+     "title": "The Hand",
+     "tags": [
+      "gothic"
+     ]
+    },
+    "A Vendetta",
+    "The False Gems",
+    "Toine",
+    "The Mask",
+    "Coco",
+    {
+     "title": "The Wolf",
+     "tags": [
+      "gothic"
+     ]
+    },
+    "Simon's Papa",
+    {
+     "title": "The Inn",
+     "tags": [
+      "gothic"
+     ]
+    },
+    "The Beggar",
+    "A Duel",
+    "The Christening",
+    "Julie Romain",
+    "The Blind Man",
+    "The Devil"
+   ]
+  },
+  {
+   "id": 1661,
+   "author": "Arthur Conan Doyle",
+   "year": 1892,
+   "tags": [
+    "mystery"
+   ],
+   "stories": [
+    {
+     "title": "A Scandal in Bohemia",
+     "id": "scandal-in-bohemia",
+     "popular": true
+    },
+    {
+     "title": "The Red-Headed League",
+     "popular": true
+    },
+    {
+     "title": "The Adventure of the Speckled Band",
+     "popular": true
+    },
+    {
+     "title": "The Adventure of the Blue Carbuncle",
+     "popular": true
+    },
+    "A Case of Identity",
+    "The Boscombe Valley Mystery",
+    "The Five Orange Pips",
+    "The Man with the Twisted Lip",
+    "The Adventure of the Engineer's Thumb",
+    "The Adventure of the Noble Bachelor",
+    "The Adventure of the Beryl Coronet",
+    "The Adventure of the Copper Beeches"
+   ]
+  },
+  {
+   "id": 834,
+   "author": "Arthur Conan Doyle",
+   "year": 1894,
+   "tags": [
+    "mystery"
+   ],
+   "stories": [
+    {
+     "title": "Silver Blaze",
+     "popular": true
+    },
+    {
+     "title": "The Final Problem",
+     "popular": true
+    },
+    "The Yellow Face",
+    "The Musgrave Ritual",
+    "The Greek Interpreter",
+    "The Crooked Man"
+   ]
+  },
+  {
+   "id": 108,
+   "author": "Arthur Conan Doyle",
+   "year": 1905,
+   "tags": [
+    "mystery"
+   ],
+   "stories": [
+    "The Adventure of the Empty House",
+    "The Adventure of the Dancing Men",
+    "The Adventure of Charles Augustus Milverton",
+    "The Adventure of the Six Napoleons",
+    "The Adventure of the Norwood Builder"
+   ]
+  },
+  {
+   "id": 537,
+   "author": "Arthur Conan Doyle",
+   "year": 1922,
+   "tags": [
+    "gothic"
+   ],
+   "stories": [
+    {
+     "title": "The Horror of the Heights",
+     "tags": [
+      "adventure"
+     ]
+    },
+    "The Leather Funnel",
+    "The Brazilian Cat",
+    {
+     "title": "The Lost Special",
+     "tags": [
+      "mystery"
+     ]
+    },
+    "The Terror of Blue John Gap"
+   ]
+  },
+  {
+   "id": 902,
+   "author": "Oscar Wilde",
+   "year": 1888,
+   "tags": [
+    "fairy"
+   ],
+   "stories": [
+    {
+     "title": "The Happy Prince",
+     "id": "the-happy-prince",
+     "popular": true
+    },
+    {
+     "title": "The Nightingale and the Rose",
+     "popular": true,
+     "tags": [
+      "love"
+     ]
+    },
+    {
+     "title": "The Selfish Giant",
+     "popular": true
+    },
+    "The Devoted Friend",
+    "The Remarkable Rocket"
+   ]
+  },
+  {
+   "id": 873,
+   "author": "Oscar Wilde",
+   "year": 1891,
+   "tags": [
+    "fairy"
+   ],
+   "stories": [
+    "The Young King",
+    "The Birthday of the Infanta",
+    "The Star-Child"
+   ]
+  },
+  {
+   "id": 773,
+   "author": "Oscar Wilde",
+   "year": 1891,
+   "tags": [
+    "humour"
+   ],
+   "stories": [
+    {
+     "title": "The Model Millionaire",
+     "match": "The Model Millionaire A Note of Admiration"
+    },
+    {
+     "title": "The Sphinx Without a Secret",
+     "match": "The Sphinx Without a Secret An Etching",
+     "tags": [
+      "mystery"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 508,
+   "author": "Nathaniel Hawthorne",
+   "year": 1837,
+   "tags": [
+    "gothic",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "The Minister's Black Veil",
+     "match": "The Minister's Black Veil A Parable",
+     "popular": true
+    },
+    {
+     "title": "Dr. Heidegger's Experiment",
+     "popular": true
+    },
+    "Wakefield",
+    "The Ambitious Guest",
+    "David Swan",
+    "The Hollow of the Three Hills",
+    "The Wedding Knell",
+    "The Gray Champion",
+    "The Great Carbuncle",
+    "The Maypole of Merry Mount"
+   ]
+  },
+  {
+   "id": 512,
+   "author": "Nathaniel Hawthorne",
+   "year": 1846,
+   "tags": [
+    "gothic",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "Young Goodman Brown",
+     "popular": true
+    },
+    {
+     "title": "The Birthmark",
+     "popular": true
+    },
+    "Rappaccini's Daughter",
+    {
+     "title": "Feathertop",
+     "match": "Feathertop: A Moralized Legend"
+    },
+    "Drowne's Wooden Image",
+    "The Artist of the Beautiful",
+    "The Celestial Railroad",
+    "Roger Malvin's Burial",
+    "Mrs. Bullfrog"
+   ]
+  },
+  {
+   "id": 142,
+   "author": "Mark Twain",
+   "year": 1906,
+   "tags": [
+    "humour",
+    "american"
+   ],
+   "stories": [
+    "Extract from Adam's Diary",
+    "The Californian's Tale",
+    "Edward Mills and George Benton: A Tale"
+   ]
+  },
+  {
+   "id": 3251,
+   "author": "Mark Twain",
+   "year": 1900,
+   "tags": [
+    "humour",
+    "american"
+   ],
+   "stories": [
+    "Luck",
+    "The Captain's Story",
+    "Is He Living or Is He Dead?"
+   ]
+  },
+  {
+   "id": 2806,
+   "author": "Rudyard Kipling",
+   "year": 1888,
+   "tags": [
+    "adventure"
+   ],
+   "stories": [
+    {
+     "title": "The Man Who Would Be King",
+     "popular": true
+    },
+    {
+     "title": "The Phantom 'Rickshaw",
+     "tags": [
+      "gothic"
+     ]
+    },
+    {
+     "title": "My Own True Ghost Story",
+     "tags": [
+      "gothic"
+     ]
+    },
+    "The Strange Ride of Morrowbie Jukes"
+   ]
+  },
+  {
+   "id": 2781,
+   "author": "Rudyard Kipling",
+   "year": 1902,
+   "tags": [
+    "fairy"
+   ],
+   "stories": [
+    {
+     "title": "The Elephant's Child",
+     "popular": true
+    },
+    {
+     "title": "The Cat That Walked by Himself",
+     "popular": true
+    },
+    {
+     "title": "How the Whale Got His Throat",
+     "minWords": 600
+    },
+    "How the Rhinoceros Got His Skin",
+    "How the Leopard Got His Spots",
+    "The Sing-Song of Old Man Kangaroo",
+    "The Beginning of the Armadillos",
+    "The Crab That Played with the Sea",
+    "The Butterfly That Stamped",
+    "How the First Letter Was Written"
+   ]
+  },
+  {
+   "id": 1858,
+   "author": "Rudyard Kipling",
+   "year": 1888,
+   "tags": [],
+   "stories": [
+    "Lispeth",
+    "Thrown Away",
+    "False Dawn",
+    "The Rescue of Pluffles",
+    "His Chance in Life",
+    "The Other Man",
+    "Beyond the Pale",
+    "In the Pride of His Youth",
+    "The Gate of a Hundred Sorrows",
+    "The Story of Muhammad Din",
+    "Wressley of the Foreign Office",
+    "By Word of Mouth",
+    "To Be Held for Reference",
+    "The House of Suddhoo"
+   ]
+  },
+  {
+   "id": 3688,
+   "author": "Saki",
+   "year": 1911,
+   "tags": [
+    "humour"
+   ],
+   "stories": [
+    {
+     "title": "Sredni Vashtar",
+     "popular": true,
+     "tags": [
+      "gothic"
+     ]
+    },
+    {
+     "title": "Tobermory",
+     "popular": true
+    },
+    "Esmé",
+    "Mrs. Packletide's Tiger",
+    "The Unrest-Cure",
+    {
+     "title": "The Music on the Hill",
+     "tags": [
+      "gothic"
+     ]
+    },
+    "The Easter Egg",
+    "The Background",
+    "The Hounds of Fate",
+    "The Quest"
+   ]
+  },
+  {
+   "id": 269,
+   "author": "Saki",
+   "year": 1914,
+   "tags": [
+    "humour"
+   ],
+   "stories": [
+    {
+     "title": "The Open Window",
+     "popular": true
+    },
+    {
+     "title": "The Story-Teller",
+     "popular": true
+    },
+    {
+     "title": "The Lumber Room",
+     "popular": true
+    },
+    "The She-Wolf",
+    "Laura",
+    "The Cobweb",
+    "Dusk",
+    "The Stalled Ox",
+    "The Seventh Pullet",
+    "Fur",
+    "The Name-Day",
+    "The Byzantine Omelette",
+    "The Quince Tree"
+   ]
+  },
+  {
+   "id": 1429,
+   "author": "Katherine Mansfield",
+   "year": 1922,
+   "tags": [
+    "modernist"
+   ],
+   "stories": [
+    {
+     "title": "The Garden Party",
+     "match": "The Garden-Party",
+     "popular": true
+    },
+    {
+     "title": "Miss Brill",
+     "popular": true
+    },
+    {
+     "title": "Her First Ball",
+     "tags": [
+      "love"
+     ]
+    },
+    "The Voyage",
+    "The Singing Lesson",
+    "Life of Ma Parker",
+    "Marriage à la Mode",
+    "The Stranger",
+    "An Ideal Family",
+    "The Lady's Maid",
+    "Mr. and Mrs. Dove",
+    "The Young Girl"
+   ]
+  },
+  {
+   "id": 44385,
+   "author": "Katherine Mansfield",
+   "year": 1920,
+   "tags": [
+    "modernist"
+   ],
+   "stories": [
+    {
+     "title": "Bliss",
+     "popular": true
+    },
+    "A Dill Pickle",
+    "The Little Governess",
+    "The Wind Blows",
+    "Psychology",
+    "Pictures",
+    "Revelations",
+    "The Escape",
+    "Sun and Moon",
+    "Feuille d'Album"
+   ]
+  },
+  {
+   "id": 2814,
+   "author": "James Joyce",
+   "year": 1914,
+   "tags": [
+    "modernist"
+   ],
+   "stories": [
+    {
+     "title": "Araby",
+     "popular": true,
+     "tags": [
+      "love"
+     ]
+    },
+    {
+     "title": "Eveline",
+     "popular": true
+    },
+    {
+     "title": "The Dead",
+     "popular": true
+    },
+    "The Sisters",
+    "An Encounter",
+    "After the Race",
+    "Two Gallants",
+    "The Boarding House",
+    "A Little Cloud",
+    "Counterparts",
+    "Clay",
+    "A Painful Case",
+    "Ivy Day in the Committee Room",
+    "A Mother",
+    "Grace"
+   ]
+  },
+  {
+   "id": 46650,
+   "author": "Kate Chopin",
+   "year": 1894,
+   "tags": [
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "Désirée's Baby",
+     "popular": true
+    },
+    "Beyond the Bayou",
+    "The Return of Alcibiade",
+    "A Rude Awakening",
+    "Madame Célestin's Divorce",
+    {
+     "title": "Love on the Bon-Dieu",
+     "tags": [
+      "love"
+     ]
+    },
+    "Loka",
+    "For Marse Chouchoute",
+    "A Wizard from Gettysburg",
+    "Ma'ame Pélagie",
+    {
+     "title": "At the 'Cadian Ball",
+     "tags": [
+      "love"
+     ]
+    },
+    "La Belle Zoraïde",
+    "A Gentleman of Bayou Têche",
+    "A Lady of Bayou St. John"
+   ]
+  },
+  {
+   "id": 710,
+   "author": "Jack London",
+   "year": 1907,
+   "tags": [
+    "adventure",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "Love of Life",
+     "popular": true
+    },
+    "Brown Wolf",
+    "The Story of Keesh",
+    "A Day's Lodging",
+    "The Unexpected",
+    "The White Man's Way",
+    "The Sun-Dog Trail"
+   ]
+  },
+  {
+   "id": 2429,
+   "author": "Jack London",
+   "year": 1910,
+   "tags": [
+    "adventure",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "To Build a Fire",
+     "popular": true
+    },
+    "The Wit of Porportuk"
+   ]
+  },
+  {
+   "id": 1029,
+   "author": "Jack London",
+   "year": 1913,
+   "tags": [
+    "adventure",
+    "american"
+   ],
+   "stories": [
+    "The Mexican",
+    "War",
+    "The Night-Born",
+    "To Kill a Man",
+    "Winged Blackmail"
+   ]
+  },
+  {
+   "id": 1597,
+   "author": "Hans Christian Andersen",
+   "year": 1845,
+   "tags": [
+    "fairy"
+   ],
+   "stories": [
+    {
+     "title": "The Little Match Girl",
+     "id": "the-little-match-girl",
+     "popular": true
+    },
+    {
+     "title": "The Emperor's New Clothes",
+     "popular": true
+    },
+    {
+     "title": "The Red Shoes",
+     "popular": true
+    },
+    "The Fir Tree",
+    "The Swineherd",
+    "The Shadow",
+    "The Story of a Mother",
+    "The Bell",
+    "The Old House",
+    "The Happy Family",
+    "The False Collar",
+    "The Dream of Little Tuk"
+   ]
+  },
+  {
+   "id": 27200,
+   "author": "Hans Christian Andersen",
+   "year": 1845,
+   "tags": [
+    "fairy"
+   ],
+   "stories": [
+    {
+     "title": "The Ugly Duckling",
+     "popular": true
+    },
+    {
+     "title": "The Little Mermaid",
+     "popular": true
+    },
+    "The Nightingale"
+   ]
+  },
+  {
+   "id": 2591,
+   "author": "Brothers Grimm",
+   "year": 1812,
+   "tags": [
+    "fairy"
+   ],
+   "stories": [
+    {
+     "title": "Hansel and Gretel",
+     "popular": true
+    },
+    {
+     "title": "Rumpelstiltskin",
+     "popular": true
+    },
+    {
+     "title": "Rapunzel",
+     "popular": true
+    },
+    {
+     "title": "Little Red Riding Hood",
+     "match": "Little Red-Cap [Little Red Riding Hood]",
+     "popular": true
+    },
+    "The Frog-Prince",
+    "The Goose-Girl",
+    "The Twelve Dancing Princesses",
+    "The Fisherman and His Wife",
+    "Briar Rose",
+    "The Valiant Little Tailor",
+    "Snowdrop",
+    "Ashputtel",
+    "The Elves and the Shoemaker",
+    "The Juniper-Tree",
+    "The Golden Goose",
+    "The Water of Life",
+    "Iron Hans",
+    "Snow-White and Rose-Red",
+    "The Story of the Youth Who Went Forth to Learn What Fear Was",
+    "The Golden Bird",
+    "Hans in Luck",
+    "The Travelling Musicians",
+    "Mother Holle",
+    "King Grisly-Beard",
+    "The Seven Ravens",
+    "The Robber Bridegroom"
+   ]
+  },
+  {
+   "id": 36238,
+   "author": "Nikolai Gogol",
+   "year": 1842,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    {
+     "title": "The Overcoat",
+     "match": "The Mantle",
+     "popular": true
+    }
+   ]
+  },
+  {
+   "id": 6157,
+   "author": "Leo Tolstoy",
+   "year": 1885,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    {
+     "title": "Three Questions",
+     "popular": true
+    }
+   ]
+  },
+  {
+   "id": 55024,
+   "author": "Alexander Pushkin",
+   "year": 1834,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    {
+     "title": "The Queen of Spades",
+     "popular": true,
+     "tags": [
+      "gothic"
+     ]
+    },
+    "The Snowstorm",
+    "The Undertaker",
+    "The Postmaster",
+    "Kirdjali"
+   ]
+  },
+  {
+   "id": 8486,
+   "author": "M. R. James",
+   "year": 1904,
+   "tags": [
+    "gothic"
+   ],
+   "stories": [
+    {
+     "title": "Oh, Whistle, and I'll Come to You, My Lad",
+     "popular": true
+    },
+    {
+     "title": "The Mezzotint",
+     "popular": true
+    },
+    "Lost Hearts",
+    "Canon Alberic's Scrap-Book",
+    "The Ash-Tree",
+    "Number 13",
+    "Count Magnus"
+   ]
+  },
+  {
+   "id": 20387,
+   "author": "M. R. James",
+   "year": 1919,
+   "tags": [
+    "gothic"
+   ],
+   "stories": [
+    "The Diary of Mr. Poynter",
+    "Two Doctors"
+   ]
+  },
+  {
+   "id": 13334,
+   "author": "Ambrose Bierce",
+   "year": 1891,
+   "tags": [
+    "war",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "An Occurrence at Owl Creek Bridge",
+     "popular": true
+    },
+    {
+     "title": "Chickamauga",
+     "popular": true
+    },
+    "A Horseman in the Sky",
+    "A Son of the Gods",
+    "One of the Missing",
+    "Killed at Resaca",
+    "The Coup de Grâce",
+    "Parker Adderson, Philosopher",
+    "The Mocking-Bird",
+    {
+     "title": "The Man and the Snake",
+     "tags": [
+      "gothic"
+     ]
+    },
+    {
+     "title": "The Boarded Window",
+     "tags": [
+      "gothic"
+     ]
+    },
+    {
+     "title": "The Eyes of the Panther",
+     "tags": [
+      "gothic"
+     ]
+    },
+    {
+     "title": "A Watcher by the Dead",
+     "tags": [
+      "gothic"
+     ]
+    },
+    {
+     "title": "The Suitable Surroundings",
+     "tags": [
+      "gothic"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 4366,
+   "author": "Ambrose Bierce",
+   "year": 1893,
+   "tags": [
+    "gothic",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "Moxon's Master",
+     "popular": true,
+     "tags": [
+      "scifi"
+     ]
+    },
+    "The Secret of Macarger's Gulch",
+    "One of Twins",
+    "A Jug of Sirup",
+    "Beyond the Wall",
+    "An Inhabitant of Carcosa",
+    "Haïta the Shepherd"
+   ]
+  },
+  {
+   "id": 1952,
+   "author": "Charlotte Perkins Gilman",
+   "year": 1892,
+   "tags": [
+    "gothic",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "The Yellow Wallpaper",
+     "match": "By Charlotte Perkins Gilman",
+     "popular": true
+    }
+   ]
+  },
+  {
+   "id": 329,
+   "author": "Robert Louis Stevenson",
+   "year": 1893,
+   "tags": [
+    "adventure"
+   ],
+   "stories": [
+    {
+     "title": "The Bottle Imp",
+     "popular": true,
+     "tags": [
+      "gothic"
+     ],
+     "skipFirst": 1
+    },
+    "The Isle of Voices"
+   ]
+  },
+  {
+   "id": 344,
+   "author": "Robert Louis Stevenson",
+   "year": 1887,
+   "tags": [
+    "gothic"
+   ],
+   "stories": [
+    {
+     "title": "Markheim",
+     "popular": true
+    },
+    "Thrawn Janet"
+   ]
+  },
+  {
+   "id": 11870,
+   "author": "H. G. Wells",
+   "year": 1911,
+   "tags": [
+    "scifi"
+   ],
+   "stories": [
+    {
+     "title": "The Country of the Blind",
+     "popular": true
+    },
+    {
+     "title": "The Door in the Wall",
+     "popular": true
+    },
+    {
+     "title": "The Red Room",
+     "popular": true,
+     "tags": [
+      "gothic"
+     ]
+    },
+    {
+     "title": "The Star",
+     "popular": true
+    },
+    {
+     "title": "The Magic Shop",
+     "popular": true
+    },
+    "The Stolen Bacillus",
+    "The New Accelerator",
+    "The Truth About Pyecraft",
+    "The Crystal Egg",
+    "The Flowering of the Strange Orchid",
+    "Aepyornis Island",
+    "The Remarkable Case of Davidson's Eyes",
+    "The Lord of the Dynamos",
+    "The Sea Raiders",
+    "The Plattner Story",
+    "The Story of the Late Mr. Elvesham",
+    "The Empire of the Ants",
+    "The Valley of Spiders",
+    "The Cone",
+    "Under the Knife",
+    "The Purple Pileus",
+    "In the Avu Observatory",
+    "The Treasure in the Forest",
+    "The Moth"
+   ]
+  },
+  {
+   "id": 3056,
+   "author": "Thomas Hardy",
+   "year": 1888,
+   "tags": [],
+   "stories": [
+    {
+     "title": "The Three Strangers",
+     "popular": true
+    },
+    "An Imaginative Woman"
+   ]
+  },
+  {
+   "id": 45524,
+   "author": "Stephen Crane",
+   "year": 1898,
+   "tags": [
+    "adventure",
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "The Open Boat",
+     "popular": true
+    },
+    {
+     "title": "The Bride Comes to Yellow Sky",
+     "popular": true
+    },
+    "A Man and Some Others",
+    "The Five White Mice",
+    "An Experiment in Misery",
+    "The Men in the Storm",
+    "A Detail",
+    "The Pace of Youth"
+   ]
+  },
+  {
+   "id": 6373,
+   "author": "Bret Harte",
+   "year": 1870,
+   "tags": [
+    "american",
+    "adventure"
+   ],
+   "stories": [
+    {
+     "title": "The Luck of Roaring Camp",
+     "popular": true
+    },
+    {
+     "title": "The Outcasts of Poker Flat",
+     "popular": true
+    },
+    "Tennessee's Partner",
+    "Miggles",
+    "Brown of Calaveras",
+    "High-Water Mark",
+    "A Lonely Ride",
+    "A Night at Wingdam"
+   ]
+  },
+  {
+   "id": 15859,
+   "author": "Herman Melville",
+   "year": 1853,
+   "tags": [
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "Bartleby, the Scrivener",
+     "match": "Bartleby",
+     "popular": true
+    },
+    "The Lightning-Rod Man",
+    {
+     "title": "The Bell-Tower",
+     "tags": [
+      "gothic"
+     ]
+    }
+   ]
+  },
+  {
+   "id": 29220,
+   "author": "Virginia Woolf",
+   "year": 1921,
+   "tags": [
+    "modernist"
+   ],
+   "stories": [
+    {
+     "title": "The Mark on the Wall",
+     "id": "the-mark-on-the-wall",
+     "popular": true
+    },
+    {
+     "title": "Kew Gardens",
+     "popular": true
+    },
+    "An Unwritten Novel",
+    "The String Quartet",
+    "A Society"
+   ]
+  },
+  {
+   "id": 4368,
+   "author": "F. Scott Fitzgerald",
+   "year": 1920,
+   "tags": [
+    "american",
+    "love"
+   ],
+   "stories": [
+    {
+     "title": "Bernice Bobs Her Hair",
+     "popular": true
+    },
+    {
+     "title": "The Ice Palace",
+     "popular": true
+    },
+    "The Offshore Pirate",
+    "Head and Shoulders",
+    "The Cut-Glass Bowl",
+    "The Four Fists",
+    "Benediction",
+    "Dalyrimple Goes Wrong"
+   ]
+  },
+  {
+   "id": 6695,
+   "author": "F. Scott Fitzgerald",
+   "year": 1922,
+   "tags": [
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "The Curious Case of Benjamin Button",
+     "popular": true,
+     "tags": [
+      "scifi"
+     ]
+    },
+    {
+     "title": "The Diamond as Big as the Ritz",
+     "popular": true,
+     "tags": [
+      "scifi"
+     ]
+    },
+    "The Jelly-Bean",
+    "The Camel's Back",
+    "May Day",
+    "The Lees of Happiness",
+    {
+     "title": "O Russet Witch!",
+     "match": "“O Russet Witch!”"
+    }
+   ]
+  },
+  {
+   "id": 12122,
+   "author": "W. W. Jacobs",
+   "year": 1902,
+   "tags": [
+    "gothic"
+   ],
+   "stories": [
+    {
+     "title": "The Monkey's Paw",
+     "match": "I",
+     "popular": true
+    }
+   ]
+  },
+  {
+   "id": 204,
+   "author": "G. K. Chesterton",
+   "year": 1911,
+   "tags": [
+    "mystery"
+   ],
+   "stories": [
+    {
+     "title": "The Blue Cross",
+     "popular": true
+    },
+    {
+     "title": "The Invisible Man",
+     "popular": true
+    },
+    "The Secret Garden",
+    "The Queer Feet",
+    "The Flying Stars",
+    "The Honour of Israel Gow",
+    "The Wrong Shape",
+    "The Sins of Prince Saradine",
+    "The Hammer of God",
+    "The Eye of Apollo",
+    "The Sign of the Broken Sword",
+    "The Three Tools of Death"
+   ]
+  },
+  {
+   "id": 2518,
+   "author": "Rabindranath Tagore",
+   "year": 1916,
+   "tags": [],
+   "stories": [
+    {
+     "title": "The Cabuliwallah",
+     "popular": true,
+     "ignoreHeadings": [
+      "(THE FRUITSELLER FROM CABUL)"
+     ]
+    },
+    "The Hungry Stones",
+    "The Victory",
+    "The Home-Coming",
+    "We Crown Thee King"
+   ]
+  },
+  {
+   "id": 41,
+   "author": "Washington Irving",
+   "year": 1820,
+   "tags": [
+    "american",
+    "gothic"
+   ],
+   "stories": [
+    {
+     "title": "The Legend of Sleepy Hollow",
+     "match": "Found Among the Papers of the Late Diedrich Knickerbocker",
+     "popular": true
+    }
+   ]
+  },
+  {
+   "id": 396,
+   "author": "Frank R. Stockton",
+   "year": 1882,
+   "tags": [
+    "american"
+   ],
+   "stories": [
+    {
+     "title": "The Lady, or the Tiger?",
+     "popular": true
+    }
+   ]
+  },
+  {
+   "id": 68283,
+   "author": "H. P. Lovecraft",
+   "year": 1928,
+   "tags": [
+    "gothic",
+    "scifi"
+   ],
+   "stories": [
+    {
+     "title": "The Call of Cthulhu",
+     "match": "By H.P. Lovecraft",
+     "popular": true
+    }
+   ]
+  },
+  {
+   "id": 7471,
+   "author": "P. G. Wodehouse",
+   "year": 1917,
+   "tags": [
+    "humour"
+   ],
+   "stories": [
+    {
+     "title": "Extricating Young Gussie",
+     "popular": true
+    },
+    "The Man with Two Left Feet",
+    "Bill the Bloodhound",
+    "Wilton's Holiday",
+    "Crowned Heads",
+    "One Touch of Nature",
+    "Black for Luck",
+    "The Romance of an Ugly Policeman",
+    "A Sea of Troubles"
+   ]
+  },
+  {
+   "id": 6340,
+   "author": "Stephen Leacock",
+   "year": 1910,
+   "tags": [
+    "humour"
+   ],
+   "stories": [
+    {
+     "title": "My Financial Career",
+     "popular": true
+    },
+    "The Awful Fate of Melpomenus Jones",
+    "Lord Oxhead's Secret",
+    "How to Live to be 200",
+    "Number Fifty-Six",
+    "Hoodoo McFiggin's Christmas",
+    "A, B, and C",
+    "Men Who Have Shaved Me"
+   ]
+  }
+ ]
+}

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Caret } from './Caret';
 import { CaretStyle, FontFamily, WrapMode } from '@/types';
 import { FONTS } from '@/lib/themes';
+import { READER_SIZE_CLASSES } from '@/lib/reader-style';
 
 interface TypingAreaProps {
   targetText: string;
@@ -23,6 +24,8 @@ interface TypingAreaProps {
   onReset?: () => void;
   onClickFocus?: () => void;
   customClassName?: string;
+  /** Change when CSS-driven typography (weight, letter spacing) changes, so line positions are re-measured. */
+  layoutKey?: string;
 }
 
 type CharacterState = 'pending' | 'correct' | 'error';
@@ -52,7 +55,7 @@ TypingCharacter.displayName = 'TypingCharacter';
 export const TypingArea: React.FC<TypingAreaProps> = ({
   targetText, typed, isFinished, caretStyle = 'smooth', font = 'serif', fontSize = 'base',
   wrapMode = 'whole-word', feedbackMode = 'standard', viewportLines, viewportMode = 'centered',
-  lineHeight, onKeyDown, onCompositionStart, onCompositionEnd, onReset, onClickFocus, customClassName = ''
+  lineHeight, onKeyDown, onCompositionStart, onCompositionEnd, onReset, onClickFocus, customClassName = '', layoutKey
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -86,11 +89,12 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     topsRef.current = tops;
     const probe = nodes[probeIndex()];
     const active = probe ? Math.max(0, tops.indexOf(probe.offsetTop)) : 0;
-    const height = tops.length > 1 ? Math.max(1, tops[1] - tops[0]) : (probe?.getBoundingClientRect().height ?? 42) * (lineHeight ?? 1.8);
+    const copy = containerRef.current?.querySelector('.typing-copy');
+    const height = (copy ? Number.parseFloat(getComputedStyle(copy).lineHeight) : 0) || 42;
     setLineMetrics(previous => previous.active === active && previous.total === Math.max(1, tops.length) && Math.abs(previous.height - height) < .5
       ? previous
       : { active, height, total: Math.max(1, tops.length) });
-  }, [lineHeight, probeIndex]);
+  }, [probeIndex]);
 
   // Per-keystroke path: read one node and look it up in the cached line tops, instead
   // of walking the whole passage again.
@@ -108,7 +112,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     const observer = new ResizeObserver(() => requestAnimationFrame(measureLines));
     if (containerRef.current) observer.observe(containerRef.current);
     return () => { cancelAnimationFrame(frame); observer.disconnect(); };
-  }, [measureLines, fontSize, font, targetText, wrapMode]);
+  }, [measureLines, fontSize, font, targetText, wrapMode, layoutKey, lineHeight]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(measureActive);
@@ -120,7 +124,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   const characters = useMemo(() => targetText.split(''), [targetText]);
   const tokens = useMemo(() => targetText.match(/\S+\s*|\s+/g) ?? [], [targetText]);
   const fontClass = FONTS[font]?.class ?? 'font-serif';
-  const sizeClass = { sm: 'text-[1.05rem] md:text-[1.16rem]', base: 'text-[1.22rem] md:text-[1.42rem]', lg: 'text-[1.42rem] md:text-[1.66rem]', xl: 'text-[1.65rem] md:text-[1.94rem]' }[fontSize];
+  const sizeClass = READER_SIZE_CLASSES[fontSize];
   const currentPage = viewportLines ? Math.floor(lineMetrics.active / viewportLines) : 0;
   const pageCount = viewportLines ? Math.max(1, Math.ceil(lineMetrics.total / viewportLines)) : 1;
   const visiblePage = Math.min(pageCount - 1, browsedPage ?? currentPage);
@@ -163,6 +167,6 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     </div>
     {viewportLines && viewportMode === 'pages' && pageCount > 1 && <div className="typing-page-controls" aria-label="Reader pages"><button disabled={visiblePage === 0} onClick={event => { event.stopPropagation(); setBrowsedPage(Math.max(0, visiblePage - 1)); }}>Previous page</button><span>{visiblePage + 1} / {pageCount}</span><button disabled={visiblePage >= pageCount - 1} onClick={event => { event.stopPropagation(); setBrowsedPage(Math.min(pageCount - 1, visiblePage + 1)); }}>Next page</button></div>}
     <p className="sr-only" aria-live="polite">{isFinished ? 'Typing complete.' : `${currentIndex} of ${targetText.length} characters complete.`}</p>
-    {!typed && <p className="typing-hint">Begin typing · Escape restarts</p>}
+    {!typed && <p className="typing-hint">Begin typing · <kbd aria-label="Escape">Esc</kbd> restarts</p>}
   </div>;
 };

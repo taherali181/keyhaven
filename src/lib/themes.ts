@@ -48,11 +48,11 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
 };
 
 export const FONTS: Record<FontFamily, { name: string; class: string; description: string }> = {
-  jetbrains: { name: 'JetBrains Mono', class: 'font-mono', description: 'Precise competition type' },
-  fira: { name: 'JetBrains Mono', class: 'font-mono', description: 'Precise competition type' },
-  serif: { name: 'Newsreader', class: 'font-serif', description: 'Literary and easy on the eyes' },
-  playfair: { name: 'Newsreader Display', class: 'font-serif', description: 'Expressive editorial type' },
-  sans: { name: 'Manrope', class: 'font-sans', description: 'Clean interface type' }
+  jetbrains: { name: 'Geist Mono', class: 'font-mono', description: 'Even typewriter rhythm' },
+  fira: { name: 'Geist Mono', class: 'font-mono', description: 'Even typewriter rhythm' },
+  serif: { name: 'Literata', class: 'font-serif', description: 'Literary, easy on the eyes' },
+  playfair: { name: 'Cormorant', class: 'font-wordmark', description: 'Elegant, high contrast' },
+  sans: { name: 'Geist', class: 'font-sans', description: 'Clean and modern' }
 };
 
 export function normalizeTheme(value: unknown): ThemeId {

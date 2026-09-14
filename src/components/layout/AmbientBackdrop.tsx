@@ -1,11 +1,5 @@
-// Slowly drifting light behind the whole app — gives the glass surfaces something to frost.
+// Soft light behind the whole app, painted once as static gradients so the glass has something to frost
+// without the GPU cost of animated, blurred layers.
 export function AmbientBackdrop() {
-  return (
-    <div className="ambient" aria-hidden="true">
-      <span className="ambient-blob a" />
-      <span className="ambient-blob b" />
-      <span className="ambient-blob c" />
-      <span className="ambient-grain" />
-    </div>
-  );
+  return <div className="ambient" aria-hidden="true" />;
 }
