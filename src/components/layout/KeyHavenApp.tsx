@@ -7,6 +7,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useSoundEngine } from '@/hooks/useSoundEngine';
 import { Navbar } from '@/components/layout/Navbar';
 import { AmbientBackdrop } from '@/components/layout/AmbientBackdrop';
+import { Tooltips } from '@/components/ui/Tooltips';
 import { ReaderSettings } from '@/components/reader/ReaderSettings';
 import { ReaderHome } from '@/components/reader/ReaderHome';
 import { LibraryWindow } from '@/components/library/LibraryWindow';
@@ -59,6 +60,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
       {/* Reading preferences (page tone, scenery, type) apply to the whole site, not just the reader. */}
       <div className="min-h-screen app-surface" data-motion={settings.ambientMotion ? 'on' : 'off'} {...readerSurfaceProps(sectionSettings)}>
         <AmbientBackdrop />
+        <Tooltips />
         {!READER_VIEWS.includes(currentMode) && hasSceneryImage(settings.readerBackground) && <div className="app-scenery" aria-hidden="true" />}
         <Navbar
           currentMode={currentMode}

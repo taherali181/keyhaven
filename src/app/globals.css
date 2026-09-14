@@ -40,6 +40,8 @@
 
   --glass-fill: rgb(29 36 31 / .55);
   --glass-fill-strong: rgb(21 27 23 / .8);
+  /* Large glass surfaces (sidebar, settings, library): see-through enough to read as glass, frosted enough to read on. */
+  --glass-fill-panel: rgb(21 27 23 / .5);
   --glass-border: rgb(232 233 223 / .09);
   --glass-highlight: rgb(255 255 255 / .06);
   --glow-accent: rgb(168 181 156 / .3);
@@ -69,6 +71,7 @@
 
   --glass-fill: rgb(252 251 245 / .55);
   --glass-fill-strong: rgb(250 249 243 / .8);
+  --glass-fill-panel: rgb(250 249 243 / .52);
   --glass-border: rgb(39 48 40 / .1);
   --glass-highlight: rgb(255 255 255 / .7);
   --glow-accent: rgb(83 107 84 / .22);
@@ -132,7 +135,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
   backdrop-filter: blur(var(--g-blur)) saturate(140%);
 
 }
-.glass-panel { --g-bg: var(--glass-fill-strong); --g-blur: var(--blur-lg); border-radius: var(--r-lg); box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-2); }
+.glass-panel { --g-bg: var(--glass-fill-panel); --g-blur: var(--blur-lg); border-radius: var(--r-lg); box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-2); backdrop-filter: blur(var(--g-blur)) saturate(165%); }
 .glass-card { border-radius: var(--r-md); }
 .glass-pill { --g-bg: var(--glass-fill-strong); border-radius: 999px; }
 .glass-popover { --g-bg: color-mix(in oklab, var(--bg-card) 85%, transparent); --g-blur: var(--blur-lg); border-radius: var(--r-md); box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-3); backdrop-filter: blur(22px) saturate(160%); }
@@ -233,7 +236,8 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .focus-exit svg { width: 16px; }
 
 /* ── Overlays & settings ───────────────────────────────────────────────── */
-.panel-scrim, .mobile-scrim { position: fixed; inset: 0; z-index: 70; background: color-mix(in oklab, var(--bg-primary) 35%, rgb(0 0 0 / .3)); backdrop-filter: blur(6px); }
+/* A light dim only: blurring behind the panel would leave its glass nothing to frost. */
+.panel-scrim, .mobile-scrim { position: fixed; inset: 0; z-index: 70; background: color-mix(in oklab, var(--bg-primary) 22%, transparent); }
 .settings-panel { position: fixed; top: 12px; right: 12px; bottom: 12px; z-index: 71; width: min(400px, calc(100vw - 24px)); overflow-y: auto; padding: 22px 20px 18px; box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-3); }
 .settings-stack > header { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 20px; }
 .settings-stack h2 { margin: 4px 0 0; font: 500 2.1rem/1 var(--font-wordmark); letter-spacing: -.02em; }
@@ -970,11 +974,11 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .story-segments.is-continuous i.is-current { background: color-mix(in oklab, var(--text-primary) 12%, transparent); }
 
 /* ── Library window ── */
-.library-scrim { position: fixed; inset: 0; z-index: 80; background: color-mix(in oklab, var(--bg-primary) 40%, rgb(0 0 0 / .35)); backdrop-filter: blur(8px); }
+.library-scrim { position: fixed; inset: 0; z-index: 80; background: color-mix(in oklab, var(--bg-primary) 26%, transparent); }
 .library-window {
   position: fixed; inset: 0; z-index: 81; display: grid; width: min(1120px, calc(100vw - 48px)); height: min(760px, calc(100dvh - 48px));
   grid-template-columns: 220px minmax(0, 1fr); margin: auto; overflow: hidden;
-  --g-bg: color-mix(in oklab, var(--bg-card) 92%, transparent);
+  --g-bg: var(--glass-fill-panel);
   box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-3);
 }
 .library-rail { display: flex; flex-direction: column; gap: 4px; padding: 20px 12px; border-right: 1px solid var(--glass-border); background: color-mix(in oklab, var(--text-primary) 3%, transparent); }
@@ -1117,7 +1121,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .library-empty strong { color: var(--text-primary); font-size: 1rem; }
 .library-empty .library-primary { margin-top: 8px; }
 
-.library-detail { position: absolute; top: 0; right: 0; bottom: 0; z-index: 3; display: flex; width: min(440px, 100%); flex-direction: column; gap: 20px; overflow-y: auto; overscroll-behavior: contain; padding: 20px 24px 28px; border-left: 1px solid var(--glass-border); background: var(--bg-card); box-shadow: var(--elev-3); }
+.library-detail { position: absolute; top: 0; right: 0; bottom: 0; z-index: 3; display: flex; width: min(440px, 100%); flex-direction: column; gap: 20px; overflow-y: auto; overscroll-behavior: contain; padding: 20px 24px 28px; border-left: 1px solid var(--glass-border); background: color-mix(in oklab, var(--bg-card) 72%, transparent); backdrop-filter: blur(var(--blur-lg)) saturate(160%); box-shadow: var(--elev-3); }
 .library-detail-back { align-self: flex-start; margin-left: -6px; }
 .library-detail-head { display: flex; gap: 20px; }
 .library-detail-head h3 { margin: 0; color: var(--text-primary); font: 500 1.6rem/1.1 var(--font-wordmark); letter-spacing: -.015em; }
@@ -1360,3 +1364,14 @@ select option { background: var(--bg-card); color: var(--text-primary); }
      evenly up and down from where it sits instead of pushing it downward. */
   .stories-shell[data-titlebar="auto"] > .reader-bar-dock { height: 46px; bottom: calc(var(--gap) - 8px); }
 }
+
+/* ── Tooltips: solid, on-brand labels for hover and keyboard focus (replaces the browser's own) ── */
+.kh-tooltip { position: fixed; top: -9999px; left: -9999px; z-index: 200; display: inline-flex; max-width: min(280px, calc(100vw - 16px)); align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid color-mix(in oklab, var(--text-primary) 14%, var(--bg-card)); border-radius: 9px; background: var(--bg-card); color: var(--text-primary); font: 500 .75rem/1.35 var(--font-interface); letter-spacing: .005em; white-space: normal; box-shadow: inset 0 1px 0 var(--glass-highlight), 0 1px 2px rgb(0 0 0 / .12), 0 10px 28px -12px rgb(0 0 0 / .45); pointer-events: none; opacity: 0; }
+.kh-tooltip[data-ready="true"] { opacity: 1; animation: kh-tip-in 150ms var(--ease-out-expo) both; }
+.kh-tooltip[data-ready="true"][data-place="bottom"] { animation-name: kh-tip-in-down; }
+.kh-tooltip-keys { display: inline-flex; gap: 3px; }
+.kh-tooltip kbd { min-width: 18px; padding: 1px 5px 0; border: 1px solid color-mix(in oklab, var(--text-primary) 16%, var(--bg-card)); border-bottom-width: 2px; border-radius: 5px; background: color-mix(in oklab, var(--text-primary) 6%, var(--bg-card)); color: var(--text-secondary); font: 600 .6875rem/1.35 var(--font-mono); text-align: center; }
+:root[data-theme="daylight"] .kh-tooltip { box-shadow: inset 0 1px 0 var(--glass-highlight), 0 1px 2px rgb(39 48 40 / .08), 0 10px 28px -12px rgb(39 48 40 / .28); }
+@keyframes kh-tip-in { from { opacity: 0; transform: translateY(4px) scale(.97); } }
+@keyframes kh-tip-in-down { from { opacity: 0; transform: translateY(-4px) scale(.97); } }
+@media (prefers-reduced-motion: reduce) { .kh-tooltip[data-ready="true"] { animation: none; } }

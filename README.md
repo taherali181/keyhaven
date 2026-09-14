@@ -4,7 +4,7 @@
 
 ### A quiet place to read, type, and improve.
 
-KeyHaven is a minimalist typing workspace built around focused reading. Practice with literature, build technique through an adaptive academy, measure speed, or unwind in the arcade—all without turning the screen into a dashboard.
+KeyHaven is a minimalist typing workspace built around focused reading. Read or type through thousands of public-domain stories and books, practice with quotations, build technique through an adaptive academy, measure speed, or unwind in the arcade—all without turning the screen into a dashboard.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-111512?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-111512?style=flat-square&logo=react)](https://react.dev/)
@@ -17,38 +17,54 @@ KeyHaven is a minimalist typing workspace built around focused reading. Practice
 
 ## What makes KeyHaven different
 
-Most typing apps place controls, charts, and live metrics at the center of the experience. KeyHaven keeps the prose there instead. Its interface uses a restrained sidebar, literary typography, page-like reading surfaces, and a tiny optional stats display so attention stays on the next character.
+Most typing apps place controls, charts, and live metrics at the center of the experience. KeyHaven keeps the prose there instead. Frosted-glass controls float over calm scenery, literary typography sits on page-like surfaces, and everything else—title bar, stats, navigation—can fade into a thin strip so attention stays on the next character.
 
 | Space | Purpose |
 | --- | --- |
-| **Read** | Type through stories, quotations, built-in books, EPUBs, and PDFs in a distraction-free reader. |
+| **Read** | Open a full short story on arrival, then read or type through stories, public-domain books, EPUBs, and PDFs in one reader. |
+| **Quotes** | Type a single quotation at a time, filtered by category, in the same reader layout. |
 | **Academy** | Follow an adaptive beginner-to-advanced curriculum shaped by placement and weak-key analysis. |
 | **Speed** | Run timed or word-count tests in a stable three-line viewport and compare verified results. |
 | **Arcade** | Practice through Alphabet Sprint, Word Rain, Ghost Racer, and a rotating daily challenge. |
 
 ## Highlights
 
-### A reader designed for typing
+### One reader for reading and typing
 
-- Page-by-page presentation for stories, quotations, and books
-- Upcoming prose remains clear while completed text gently recedes
+- Arrives on a story: resumes the one you left unfinished, otherwise picks a random unread story
+- **Read / Type** toggle sharing one position—read page by page, or type the same text in paragraph-sized parts
+- Title bar with the work, author, and chapter, plus a control box for Library, contents, full screen, mute, and reading settings
+- **Auto-hide title bar**: collapses to a small indicator pill with the chapter name beneath it; point at the top edge to bring it back
+- **Bottom bar** that combines previous/next, segmented progress (one segment per page in Read, per part in Type), and the stats you choose
+- A compact, translucent strip in auto-hide mode that grows on hover without moving the text
+- A separate **Random story** button beside the bar, and a turn-pages hint in the corner
+- Stable page numbers across a whole book, with even spacing around the text in every layout
 - Stable overlay caret that never shifts line wrapping while you type
-- Literary line-break hyphens in reading modes and atomic whole words in competitive modes
-- Adjustable typeface, text size, line spacing, margins, page tone, and caret style
-- Optional cherry blossom, misty mountain, quiet lake, and soft forest scenery
-- Readability veil and soft-focus controls for scenic backgrounds
-- Persistent book, chapter, and character-level reading progress
 
-### Bring your own library
+### Library
 
-Import EPUB or PDF files directly in the browser. KeyHaven extracts and normalizes their text into typing-ready sections, with OCR fallback for scanned PDF pages.
+Press the Library button or <kbd>Ctrl</kbd> <kbd>K</kbd> to open a large library window:
 
-- EPUB spine-order and metadata extraction
-- Native PDF text extraction
-- English OCR for image-only pages
-- Import progress, cancellation, and clear error states
-- 50 MB file limit and 500-page PDF limit
-- Original files remain on the device; only normalized text can be synced
+- **My library** — books you have started or imported, with saved progress
+- **Stories** — 320 hand-picked short stories from classic collections, cleaned so every character is typeable
+- **Discover** — the 5,000 most-downloaded English books on Project Gutenberg, browsable by category and searchable across the full English catalog
+- Book text is fetched on demand through a small server route (`/api/gutenberg/[id]`) that only contacts gutenberg.org and caches responses
+- Import EPUB or PDF files directly in the browser, with spine-order and metadata extraction, native PDF text, and English OCR fallback for scanned pages (50 MB and 500-page limits; original files stay on the device)
+
+### Make it yours, per section
+
+Read and Quotes each keep their own typography and bottom bar, while theme, scenery, sound, and other reading preferences apply across the whole site.
+
+- **Appearance** — page tone, scenery (misty mountains, quiet lake, soft forest, twilight peaks, forest sunset, cherry blossoms, mountain valley, alpine lake, or a quiet atmosphere), readability veil, and optional background motion
+- **Typography** — typeface, size, weight, line spacing, letter spacing, margins, and caret style
+- **Ambience** — rain, forest, river, fireplace, café, or alpha waves, plus switch sounds and a one-click mute
+- **Bottom bar** — choose up to six stats (time left in chapter or book, page in book, WPM, accuracy, raw WPM, elapsed time, clock, and more), labels, and how faint the compact strip should be
+
+### Designed to stay light
+
+- Glass surfaces (sidebar, settings, library window, title and bottom bars) use a shared set of design tokens and blur only where content sits behind them
+- The ambient light is static gradients; animated motes and drifting scenery are opt-in
+- Custom tooltips across the site show keyboard shortcuts as key chips, appear on hover or keyboard focus, and stay out of the way on touch screens
 
 ### Practice that grows with you
 
@@ -57,6 +73,15 @@ The Academy includes a placement assessment, adaptive daily plan, weak-key drill
 ### Tests that behave like tests
 
 Speed mode supports 15, 30, 60, and 120-second sessions or 10, 25, 50, and 100-word sessions. Punctuation and numbers are optional. The active line stays centered inside an exact three-line viewport, timers end once at their real deadline, and results include WPM, raw WPM, accuracy, consistency, and error data.
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| <kbd>Ctrl</kbd> <kbd>K</kbd> | Open or close the Library |
+| <kbd>Ctrl</kbd> <kbd>\\</kbd> | Hide or show the sidebar |
+| <kbd>←</kbd> <kbd>→</kbd> / <kbd>Space</kbd> / <kbd>Home</kbd> <kbd>End</kbd> | Turn pages, or jump to the first or last page, in Read mode |
+| <kbd>Esc</kbd> | Restart the current part while typing; close windows |
 
 ## Local-first by default
 
@@ -81,7 +106,7 @@ npm ci
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). No environment variables are required for guest, local-first use.
+Open [http://localhost:3000](http://localhost:3000). No environment variables are required for guest, local-first use. Opening Discover books needs internet access so the server can fetch text from Project Gutenberg; bundled stories work offline.
 
 ### Useful commands
 
@@ -96,6 +121,17 @@ npm start                   # Serve the production build
 ```
 
 Playwright is configured to use Google Chrome at `/usr/bin/google-chrome`. Change `launchOptions.executablePath` in `playwright.config.ts` if Chrome is installed elsewhere.
+
+### Rebuilding the catalog
+
+The story and book catalogs in `public/catalog/` are generated and checked in. To rebuild them:
+
+```bash
+node scripts/catalog/build-stories.mjs                        # Stories from scripts/catalog/story-sources.json
+node scripts/catalog/build-books.mjs path/to/rdf-files.tar.bz2  # Discover catalog from Gutenberg's offline catalogs
+```
+
+Downloads are cached in `node_modules/.cache/keyhaven-catalog` (override with `CATALOG_CACHE`) so Project Gutenberg is only contacted once per file.
 
 ## Optional accounts and cloud sync
 
@@ -131,19 +167,24 @@ Google OAuth and Resend are optional. Email/password registration and database-b
 ```text
 keyhaven/
 ├── drizzle/                    # Versioned PostgreSQL migrations
-├── public/backgrounds/         # Reader scenery assets
+├── public/
+│   ├── backgrounds/            # Reader scenery
+│   ├── brand/                  # Logo, icons, and preview images
+│   └── catalog/                # Generated story and book catalogs
+├── scripts/catalog/            # Catalog build scripts for Project Gutenberg
 ├── src/
-│   ├── app/                    # Next.js routes, auth pages, and API handlers
+│   ├── app/                    # Next.js routes, auth pages, and API handlers (incl. Gutenberg proxy)
 │   ├── components/
-│   │   ├── reader/             # Stories and quotations
-│   │   ├── library/            # Books, imports, and saved progress
+│   │   ├── reader/             # Unified reader, quotes, title and bottom bars, reading settings
+│   │   ├── library/            # Library window: my library, stories, discover, imports
 │   │   ├── learn/              # Adaptive Academy
 │   │   ├── speed-test/         # Timed and word-count tests
 │   │   ├── arcade/             # Typing games and daily challenge
 │   │   ├── analytics/          # Progress and leaderboards
-│   │   └── typing/             # Shared typing surface, caret, and results
+│   │   ├── typing/             # Shared typing surface, caret, and results
+│   │   └── ui/                 # Shared controls, brand, and tooltips
 │   ├── hooks/                  # Typing engine, settings, sound, and sync
-│   ├── lib/                    # Browser storage, metrics, imports, and styles
+│   ├── lib/                    # Browser storage, metrics, parsing, reader stats, and styles
 │   └── server/                 # Drizzle schema, challenges, and rate limits
 └── tests/                      # Unit, integration, and browser acceptance tests
 ```
@@ -155,22 +196,27 @@ keyhaven/
 - **Local data:** Dexie and IndexedDB
 - **Cloud data:** PostgreSQL, Neon serverless driver, Drizzle ORM
 - **Authentication:** Auth.js, Google OAuth, bcrypt credentials
-- **Documents:** JSZip, PDF.js, Tesseract.js
+- **Content:** Project Gutenberg catalogs and texts, JSZip, PDF.js, Tesseract.js
 - **Quality:** Vitest, Testing Library, Playwright, ESLint
 
 ## Quality and accessibility
 
-The automated suite covers typing-engine completion semantics, strict mode, absolute timer deadlines, challenge validation, document importing, responsive overflow, reader contrast, stable line layout, speed-test viewport behavior, and core navigation flows.
+The automated suite covers typing-engine completion semantics, strict mode, absolute timer deadlines, challenge validation, document importing, Gutenberg parsing, story chunking and catalog integrity, reader stats, per-section settings, reader layout spacing, responsive overflow, reader contrast, stable line layout, speed-test viewport behavior, and core navigation flows.
 
-The interface also includes visible keyboard focus, reduced-motion support, semantic labels, keyboard-first typing input, responsive mobile navigation, and a distraction-free Zen mode.
+The interface also includes visible keyboard focus, tooltips on keyboard focus, reduced-motion support, semantic labels, keyboard-first typing input, responsive mobile navigation, and a distraction-free Zen mode.
 
 ## Data and privacy notes
 
 - Guest data stays in the browser unless cloud mode is enabled and the user signs in.
 - Imported EPUB and PDF binaries are not uploaded by the application.
+- Discover books are fetched from Project Gutenberg through the app's server route; no user data is sent with those requests.
 - Cloud sync stores extracted plain-text sections when enabled.
 - OCR runs in the browser and may download Tesseract language assets when first needed.
 - Leaderboard visibility is controlled through the user profile.
+
+## Credits
+
+Stories and books come from [Project Gutenberg](https://www.gutenberg.org/) and are in the public domain in the United States. Please check the copyright laws of your country before redistributing them.
 
 ## Current status
 

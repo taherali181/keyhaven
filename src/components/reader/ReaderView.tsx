@@ -471,7 +471,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
           <StoryModeToggle mode={settings.storyMode} onChange={changeMode} />
           <span className="story-side-divider" aria-hidden="true" />
           <button type="button" className="story-bar-button story-library-trigger" onClick={onOpenLibrary} aria-label="Library" title="Library (Ctrl K)">
-            <Library aria-hidden="true" /><span>Library</span><kbd className="story-switcher-hint" aria-hidden="true">Ctrl K</kbd>
+            <Library aria-hidden="true" /><span>Library</span>
           </button>
           <span className="story-side-divider" aria-hidden="true" />
           {fullscreen.supported && <button type="button" className="story-bar-button is-icon" onClick={fullscreen.toggle} aria-label={fullscreen.active ? 'Exit full screen' : 'Enter full screen'} title={fullscreen.active ? 'Exit full screen' : 'Full screen'}>{fullscreen.active ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}</button>}
