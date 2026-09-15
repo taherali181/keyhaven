@@ -3,8 +3,10 @@ import { DEFAULT_SETTINGS, normalizeSettings } from '@/lib/db';
 import { EXTRA_TONES, MAIN_TONES, RECIPE_TONES, contrastRatio, resolveTone, toneName, toneVariables } from '@/lib/reader-style';
 
 describe('unified themes', () => {
-  it('uses Night by default', () => {
+  it('opens new users in Night with Misty mountains', () => {
     expect(DEFAULT_SETTINGS.theme).toBe('night');
+    expect(DEFAULT_SETTINGS.readerBackground).toBe('misty-mountains');
+    expect(DEFAULT_SETTINGS.storyMode).toBe('read');
   });
 
   it('preserves an explicit legacy page tone over the old chrome theme', () => {
