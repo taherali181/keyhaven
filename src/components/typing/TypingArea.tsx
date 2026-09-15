@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Caret } from './Caret';
 import { CaretStyle, FontFamily, WrapMode } from '@/types';
 import { FONTS } from '@/lib/themes';
-import { READER_SIZE_CLASSES } from '@/lib/reader-style';
+import { passageFontSize } from '@/lib/reader-style';
 
 interface TypingAreaProps {
   targetText: string;
@@ -12,7 +12,8 @@ interface TypingAreaProps {
   isFinished: boolean;
   caretStyle?: CaretStyle;
   font?: FontFamily;
-  fontSize?: 'sm' | 'base' | 'lg' | 'xl';
+  /** Text size in px at desktop widths. */
+  fontSize?: number;
   wrapMode?: WrapMode;
   feedbackMode?: 'standard' | 'reader';
   viewportLines?: number;
@@ -22,6 +23,8 @@ interface TypingAreaProps {
   onCompositionStart?: () => void;
   onCompositionEnd?: (event: React.CompositionEvent) => void;
   onReset?: () => void;
+  /** Escape; defaults to restarting. */
+  onEscape?: () => void;
   onClickFocus?: () => void;
   customClassName?: string;
   /** Change when CSS-driven typography (weight, letter spacing) changes, so line positions are re-measured. */
@@ -53,9 +56,9 @@ const TypingCharacter = React.memo<TypingCharacterProps>(({ character, state, is
 TypingCharacter.displayName = 'TypingCharacter';
 
 export const TypingArea: React.FC<TypingAreaProps> = ({
-  targetText, typed, isFinished, caretStyle = 'smooth', font = 'serif', fontSize = 'base',
+  targetText, typed, isFinished, caretStyle = 'smooth', font = 'serif', fontSize = 23,
   wrapMode = 'whole-word', feedbackMode = 'standard', viewportLines, viewportMode = 'centered',
-  lineHeight, onKeyDown, onCompositionStart, onCompositionEnd, onReset, onClickFocus, customClassName = '', layoutKey
+  lineHeight, onKeyDown, onCompositionStart, onCompositionEnd, onReset, onEscape, onClickFocus, customClassName = '', layoutKey
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -124,7 +127,6 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   const characters = useMemo(() => targetText.split(''), [targetText]);
   const tokens = useMemo(() => targetText.match(/\S+\s*|\s+/g) ?? [], [targetText]);
   const fontClass = FONTS[font]?.class ?? 'font-serif';
-  const sizeClass = READER_SIZE_CLASSES[fontSize];
   const currentPage = viewportLines ? Math.floor(lineMetrics.active / viewportLines) : 0;
   const pageCount = viewportLines ? Math.max(1, Math.ceil(lineMetrics.total / viewportLines)) : 1;
   const visiblePage = Math.min(pageCount - 1, browsedPage ?? currentPage);
@@ -134,6 +136,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   const transform = viewportLines ? `translateY(${-firstLine * lineMetrics.height}px)` : undefined;
   const style = {
     '--typing-line-height': `${lineMetrics.height}px`,
+    fontSize: passageFontSize(fontSize),
     lineHeight: lineHeight ?? undefined
   } as React.CSSProperties;
 
@@ -152,9 +155,9 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   };
 
   let tokenOffset = 0;
-  return <div ref={containerRef} className={`typing-surface relative ${fontClass} ${sizeClass} ${viewportLines === 3 ? 'speed-window' : ''} ${customClassName}`} style={style} onClick={() => { inputRef.current?.focus(); onClickFocus?.(); }}>
+  return <div ref={containerRef} className={`typing-surface relative ${fontClass} ${viewportLines === 3 ? 'speed-window' : ''} ${customClassName}`} style={style} onClick={() => { inputRef.current?.focus(); onClickFocus?.(); }}>
     <input ref={inputRef} type="text" className="typing-input" inputMode="text" enterKeyHint="enter" onCompositionStart={onCompositionStart} onCompositionEnd={onCompositionEnd} onKeyDown={event => {
-      if (event.key === 'Escape' && onReset) { event.preventDefault(); onReset(); return; }
+      if (event.key === 'Escape' && (onEscape ?? onReset)) { event.preventDefault(); (onEscape ?? onReset)?.(); return; }
       if (event.key === 'Tab') { restartArmedRef.current = true; return; }
       if (event.key === 'Enter' && restartArmedRef.current && onReset) { event.preventDefault(); restartArmedRef.current = false; onReset(); return; }
       restartArmedRef.current = false; setBrowsedPage(null); onKeyDown(event);

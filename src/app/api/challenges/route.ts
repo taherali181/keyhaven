@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { requireCloudUser } from '@/server/http';
+import { requireSyncUser } from '@/server/http';
 import { challenges } from '@/server/schema';
 import { challengeText } from '@/server/challenges';
 
@@ -9,7 +9,7 @@ const input = z.object({
 });
 
 export async function POST(request: Request) {
-  const context = await requireCloudUser();
+  const context = await requireSyncUser();
   if ('error' in context) return context.error;
   const parsed = input.safeParse(await request.json());
   if (!parsed.success) return Response.json({ error: 'Invalid challenge configuration.' }, { status: 422 });

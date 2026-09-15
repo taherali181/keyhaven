@@ -10,7 +10,7 @@ export type TypingMode =
 
 export type ThemeId = 'reading-room' | 'daylight';
 
-export type ReaderBackground = 'none' | 'plain' | 'cherry-blossoms' | 'misty-mountains' | 'quiet-lake' | 'soft-forest' | 'mountain-valley' | 'alpine-lake' | 'forest-sunset' | 'twilight-peaks';
+export type ReaderBackground = 'none' | 'plain' | 'custom' | 'cherry-blossoms' | 'misty-mountains' | 'quiet-lake' | 'soft-forest' | 'mountain-valley' | 'alpine-lake' | 'forest-sunset' | 'twilight-peaks';
 
 export type ReaderToneId = 'paper' | 'sepia' | 'night' | 'bright' | 'pitch' | 'mist' | 'sage' | 'slate' | 'ocean' | 'rose' | 'espresso';
 
@@ -49,7 +49,15 @@ export type FontFamily =
   | 'fira'
   | 'serif'
   | 'sans'
-  | 'playfair';
+  | 'playfair'
+  | 'source-serif'
+  | 'lora'
+  | 'merriweather'
+  | 'garamond'
+  | 'inter'
+  | 'plex'
+  | 'atkinson'
+  | 'jetbrains-mono';
 
 export type CaretStyle = 
   | 'smooth'
@@ -60,6 +68,35 @@ export type CaretStyle =
 
 /** Anything the reader can open: a catalog short story, a Project Gutenberg book, or an imported EPUB/PDF. */
 export type WorkKind = 'story' | 'book' | 'import';
+
+/** A stretch of time spent in the reader, for reading stats. */
+export interface ReadingSessionRecord {
+  id?: number;
+  clientId: string;
+  workKey: string;
+  kind: WorkKind;
+  title: string;
+  author: string;
+  mode: 'read' | 'type';
+  startedAt: number;
+  durationMs: number;
+  /** Words moved through during the session. */
+  words: number;
+  pages: number;
+  syncedAt?: number;
+  dirty?: 0 | 1;
+}
+
+/** Record kinds whose deletions travel between devices. */
+export type SyncTombstoneEntity = 'results' | 'scores' | 'sessions' | 'progress' | 'shelf' | 'documents';
+
+/** A local deletion waiting to be backed up. Key '*' covers every record of that kind up to `deletedAt`. */
+export interface PendingDeleteRecord {
+  id: string;
+  entity: SyncTombstoneEntity;
+  key: string;
+  deletedAt: number;
+}
 
 export interface WorkSection {
   id: string;
@@ -122,6 +159,8 @@ export interface ShelfRecord {
   want: boolean;
   finishedAt?: number;
   addedAt: number;
+  syncedAt?: number;
+  dirty?: 0 | 1;
   updatedAt: number;
 }
 
@@ -194,6 +233,8 @@ export interface TestResultRecord {
   correctChars?: number;
   incorrectChars?: number;
   syncedAt?: number;
+  /** 1 while this record has changes not yet backed up (see src/lib/sync/tracking.ts). */
+  dirty?: 0 | 1;
   challengeId?: string;
   visibility?: 'private' | 'public';
 }
@@ -210,6 +251,8 @@ export interface BookProgressRecord {
   totalWordsTyped: number;
   lastRead: number;
   syncedAt?: number;
+  /** 1 while this record has changes not yet backed up (see src/lib/sync/tracking.ts). */
+  dirty?: 0 | 1;
   kind?: WorkKind;
   title?: string;
   author?: string;
@@ -234,6 +277,8 @@ export interface ArcadeScoreRecord {
   rank?: number;
   name?: string;
   syncedAt?: number;
+  /** 1 while this record has changes not yet backed up (see src/lib/sync/tracking.ts). */
+  dirty?: 0 | 1;
   challengeId?: string;
   visibility?: 'private' | 'public';
   configuration?: Record<string, unknown>;
@@ -254,13 +299,14 @@ export interface ReaderBarStyle {
 }
 
 /** Per-section typography and bottom bar (see src/lib/section-settings.ts). */
-export type SectionPrefs = Pick<UserSettings, 'font' | 'fontSize' | 'readerFontWeight' | 'readerLetterSpacing' | 'readerLineHeight' | 'readerWidth' | 'readerStats' | 'readerBarStyle'>;
+export type SectionPrefs = Pick<UserSettings, 'font' | 'fontSize' | 'readerFontWeight' | 'readerLetterSpacing' | 'readerWordSpacing' | 'readerParagraphSpacing' | 'readerAlign' | 'readerHyphens' | 'readerLineHeight' | 'readerWidth' | 'readerStats' | 'readerBarStyle'>;
 
 export interface UserSettings {
   theme: ThemeId;
   font: FontFamily;
   caretStyle: CaretStyle;
-  fontSize: 'sm' | 'base' | 'lg' | 'xl';
+  /** Passage text size in px at desktop widths (scaled down on phones). See src/lib/typography.ts. */
+  fontSize: number;
   switchSound: SwitchSound;
   soundVolume: number;
   ambientSound: AmbientSound;
@@ -273,15 +319,26 @@ export interface UserSettings {
   strictMode: boolean;
   leaderboardEnabled: boolean;
   readerLineHeight: number;
-  readerWidth: 'narrow' | 'balanced' | 'wide' | 'full';
+  /** Text column width in px. */
+  readerWidth: number;
   /** 'system' follows the theme; `custom:<id>` points into customTones. */
   readerPaper: 'system' | ReaderToneId | `custom:${string}`;
   customTones: CustomReaderTone[];
   readerBackground: ReaderBackground;
+  /** Read mode only; narrow screens always display one page. */
+  readerPageLayout?: 'single' | 'spread';
+  /** Compressed image data URL retained with the user's settings. */
+  customScenery?: string;
   readerOverlay: number;
   readerBlur: number;
-  readerFontWeight: 300 | 400 | 500 | 600;
-  readerLetterSpacing: 'tight' | 'normal' | 'wide';
+  readerFontWeight: number;
+  /** Letter and word spacing in em. */
+  readerLetterSpacing: number;
+  readerWordSpacing: number;
+  /** Blank lines between paragraphs on reading pages (whole lines keep page breaks between lines). */
+  readerParagraphSpacing: 0 | 1 | 2;
+  readerAlign: 'left' | 'justify';
+  readerHyphens: boolean;
   /** Stories: type the passage, or just read it in pages. */
   storyMode: 'type' | 'read';
   /** Silences key sounds and background ambience without losing their settings. */
@@ -294,6 +351,11 @@ export interface UserSettings {
   readerBarStyle: ReaderBarStyle;
   /** Typography and bottom bar for sections other than Read; Read uses the top-level values. */
   sectionPrefs: Partial<Record<TypingMode, Partial<SectionPrefs>>>;
+  /** Daily goals shown on the profile, in minutes. */
+  dailyTypingGoalMinutes: number;
+  dailyReadingGoalMinutes: number;
+  /** Academy lessons show the keyboard guide under the text. */
+  academyGuide: 'on' | 'off';
   updatedAt: number;
 }
 
@@ -317,18 +379,44 @@ export interface ImportedDocumentRecord {
   createdAt: number;
   updatedAt: number;
   syncedAt?: number;
+  /** 1 while this record has changes not yet backed up (see src/lib/sync/tracking.ts). */
+  dirty?: 0 | 1;
 }
 
+export interface AcademyLessonProgress {
+  /** Next step to practise; equals the step count once the checkpoint is passed. */
+  stepIndex: number;
+  bestWpm: number;
+  bestAccuracy: number;
+  stars: 0 | 1 | 2 | 3;
+  attempts: number;
+  passedAt?: number;
+  /** Most recent checkpoint attempt that fell short, while not yet passed. */
+  failedAt?: number;
+}
+
+export interface AcademyKeyStat { hits: number; misses: number; avgMs: number }
+
+/** Academy progress (see src/lib/academy/progress.ts). Version 1 records are migrated when loaded. */
 export interface AcademyStateRecord {
   id: 'academy';
+  version?: 2;
   placementComplete: boolean;
+  placementUnitId?: string;
   currentLessonId: string;
-  completedExercises: string[];
-  mastery: Record<string, number>;
+  lessons?: Record<string, AcademyLessonProgress>;
+  keyStats?: Record<string, AcademyKeyStat>;
+  /** Minutes practised per local day (YYYY-MM-DD). */
+  practiceLog?: Record<string, number>;
   dailyGoalMinutes: number;
-  weeklyGoalMinutes: number;
-  practiceDates: string[];
-  totalMinutes: number;
+  /** Version 1 fields. */
+  completedExercises?: string[];
+  mastery?: Record<string, number>;
+  weeklyGoalMinutes?: number;
+  practiceDates?: string[];
+  totalMinutes?: number;
   updatedAt: number;
   syncedAt?: number;
+  /** 1 while this record has changes not yet backed up (see src/lib/sync/tracking.ts). */
+  dirty?: 0 | 1;
 }

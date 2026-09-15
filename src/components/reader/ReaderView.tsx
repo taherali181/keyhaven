@@ -8,16 +8,18 @@ import { StoryReader, type ReaderLayout } from '@/components/reader/StoryReader'
 import { ReaderBottomBar } from '@/components/reader/ReaderBottomBar';
 import { StoryAtmosphere } from '@/components/reader/StoryAtmosphere';
 import { TypingArea } from '@/components/typing/TypingArea';
-import { TestResultsModal } from '@/components/typing/TestResultsModal';
+import { ResultPopup } from '@/components/reader/results/ResultPopup';
+import { saveResult, useResultPopup, type HistoryScope, type ReaderResult } from '@/components/reader/results/useResultPopup';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { useFullscreen } from '@/hooks/useFullscreen';
+import { useReadingSession } from '@/hooks/useReadingSession';
 import { openReaderSettings } from '@/lib/reader-events';
 import { loadTypedParts } from '@/lib/reading-progress';
 import { resolveReaderStats, type ReaderStatContext } from '@/lib/reader-stats';
 import { chunkParagraphs, countWords, DEFAULT_READING_WPM, loadReadingSpeed, sectionName, updateReadingSpeed } from '@/lib/reading';
 import { createClientId, db } from '@/lib/db';
 import { readerSurfaceProps } from '@/lib/reader-style';
-import type { BookProgressRecord, TypingStats, UserSettings, Work } from '@/types';
+import type { BookProgressRecord, TestResultRecord, TypingStats, UserSettings, Work } from '@/types';
 
 type UpdateSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
 /** Where reading mode should land once the reader has measured its pages. */
@@ -70,8 +72,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
 
   const reading = settings.storyMode === 'read';
   const fullscreen = useFullscreen();
-  const [result, setResult] = useState<TypingStats | null>(null);
-  const [resultOpen, setResultOpen] = useState(false);
+  const showResultRef = useRef<(result: ReaderResult) => void>(() => {});
 
   // Saved progress that isn't just the current position.
   const [readSections, setReadSections] = useState<number[]>([]);
@@ -183,7 +184,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
     if (reader) resize.observe(reader);
     void document.fonts?.ready.then(schedule);
     return () => { cancelAnimationFrame(frame); resize.disconnect(); styleChange.disconnect(); };
-  }, [reading, settings.readerBarPinned, settings.font, settings.fontSize, settings.readerLineHeight, settings.readerFontWeight, settings.readerLetterSpacing, work.key, sectionIndex]);
+  }, [reading, settings.readerBarPinned, settings.font, settings.fontSize, settings.readerLineHeight, settings.readerFontWeight, settings.readerLetterSpacing, settings.readerWordSpacing, settings.readerParagraphSpacing, settings.readerAlign, settings.readerHyphens, settings.readerWidth, work.key, sectionIndex]);
 
   // The hidden bar takes no room; its height is kept in a variable so the page can slide under it.
   useEffect(() => {
@@ -200,16 +201,32 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
   const markFinished = () => { const now = Date.now(); setFinishedAt(current => current ?? now); };
 
   const complete = (stats: TypingStats) => {
-    setResult(stats); setResultOpen(true);
     const prefix = partPrefix(sectionIndex);
     setTypedParts(current => new Map(current).set(prefix, new Set([...(current.get(prefix) ?? []), chunkIndex])));
     if (chunkIndex === chunkCount - 1) {
       markSectionRead(sectionIndex);
       if (sectionIndex === sectionCount - 1) markFinished();
     }
-    void db.testResults.add({ clientId: createClientId(), mode: resultMode, subMode: work.title, title: `${prefix} · Part ${chunkIndex + 1}`, wpm: stats.wpm, rawWpm: stats.rawWpm, accuracy: stats.accuracy, consistency: stats.consistency, duration: stats.timeElapsed, timestamp: Date.now(), errors: stats.incorrectChars, errorKeys: stats.errorHeatmap, totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars });
+    const part = chunkIndex + 1;
+    const record: TestResultRecord = { clientId: createClientId(), mode: resultMode, subMode: work.title, title: `${prefix} · Part ${part}`, wpm: stats.wpm, rawWpm: stats.rawWpm, accuracy: stats.accuracy, consistency: stats.consistency, duration: stats.timeElapsed, timestamp: Date.now(), errors: stats.incorrectChars, errorKeys: stats.errorHeatmap, totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars };
+    const finalPart = sectionIndex === sectionCount - 1 && chunkIndex === chunkCount - 1;
+    const chapter = sectionName(section.title) || `${sectionLabel} ${sectionIndex + 1}`;
+    const thisWork: HistoryScope = { id: 'work', label: isStory ? 'This story' : work.kind === 'import' ? 'This document' : 'This book', match: item => item.mode === resultMode && item.subMode === work.title };
+    const thisChapter: HistoryScope = { id: 'chapter', label: `This ${sectionLabel.toLowerCase()}`, match: item => thisWork.match(item) && Boolean(item.title?.startsWith(`${prefix} · Part `)) };
+    const allReading: HistoryScope = { id: 'all', label: 'All reading', match: () => true };
+    void saveResult({
+      record, stats,
+      heading: `Part ${part} done`,
+      eyebrow: isStory ? `Story · Part ${part} of ${chunkCount}` : `${sectionLabel} ${sectionIndex + 1} · Part ${part} of ${chunkCount}`,
+      title: isStory ? work.title : `${work.title} · ${chapter}`,
+      nextLabel: finalPart ? (isStory ? 'Next story' : 'Done') : chunkIndex === chunkCount - 1 ? `Next ${unit}` : 'Next part',
+      modes: ['stories', 'library'],
+      scopes: isStory ? [thisWork, allReading] : [thisWork, thisChapter, allReading]
+    }).then(result => showResultRef.current(result)).catch(() => {});
   };
   const engine = useTypingEngine({ targetText: text, sessionKey: `${work.key}-${sectionIndex}-${chunkIndex}`, strictMode: settings.strictMode, onComplete: complete, onKeyPress });
+  const popup = useResultPopup(engine.typed.length, engine.isFinished);
+  useEffect(() => { showResultRef.current = popup.show; });
 
   /** Moves to another section; reading mode lands on the anchor once the new section is measured. */
   const openSection = (index: number, anchor: PageAnchor) => {
@@ -222,13 +239,12 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
     setPickedPart(null);
     setSectionIndex(index);
     setChunkIndex(anchor.kind === 'part' ? Math.min(anchor.part, count - 1) : anchor.kind === 'fraction' && anchor.value >= 1 ? count - 1 : 0);
-    setResultOpen(false);
     engine.reset();
   };
 
   const move = (direction: -1 | 1) => {
     const next = chunkIndex + direction;
-    if (next >= 0 && next < chunkCount) { setChunkIndex(next); setResultOpen(false); engine.reset(); return; }
+    if (next >= 0 && next < chunkCount) { setChunkIndex(next); engine.reset(); return; }
     if (direction === 1 && sectionIndex < sectionCount - 1) openSection(sectionIndex + 1, { kind: 'part', part: 0 });
     if (direction === -1 && sectionIndex > 0) openSection(sectionIndex - 1, { kind: 'part', part: Number.MAX_SAFE_INTEGER });
   };
@@ -236,7 +252,16 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
   const next = () => {
     if (!atEnd) move(1);
     else if (isStory) onNextStory();
-    else setResultOpen(false);
+    else popup.collapse();
+  };
+  // A finished part stays on screen: Enter, or starting to type, moves on (the last part of a book waits for Enter).
+  const typingKeyDown = (event: React.KeyboardEvent) => {
+    if (engine.isFinished && !event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'Enter' || (event.key.length === 1 && !atEnd))) {
+      event.preventDefault();
+      next();
+      return;
+    }
+    engine.handleKeyDown(event);
   };
 
   // The reader re-measures on resize and typography changes; keep the reader on the same spot.
@@ -255,17 +280,22 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       // The page holding that word: the last page that starts at or before it.
       else while (target < last && nextLayout.wordsBefore[target + 1] <= anchor.value) target++;
       target = Math.min(last, Math.max(0, target));
-      setPage(target);
+      setPage(Math.floor(target / (nextLayout.pagesPerView ?? 1)) * (nextLayout.pagesPerView ?? 1));
       // Coming from typing, the part being typed stays current on its first page.
       if (anchor.kind === 'words' && anchor.part !== undefined) setPickedPart({ page: target, part: anchor.part });
     } else {
-      setPage(current => (previous && previous.pageCount !== nextLayout.pageCount ? Math.min(last, Math.round((current / Math.max(1, previous.pageCount - 1)) * last)) : Math.min(last, current)));
+      setPage(current => {
+        const target = previous && previous.pageCount !== nextLayout.pageCount ? Math.min(last, Math.round((current / Math.max(1, previous.pageCount - 1)) * last)) : Math.min(last, current);
+        const step = nextLayout.pagesPerView ?? 1;
+        return Math.floor(target / step) * step;
+      });
     }
     pageShownAtRef.current = Date.now();
   }, []);
 
   const pageCount = layout?.pageCount ?? 1;
-  const onLastPage = page >= pageCount - 1;
+  const pagesPerView = layout?.pagesPerView ?? 1;
+  const onLastPage = page + pagesPerView >= pageCount;
 
   // One position for both modes, in words from the start of the section. Reading counts the pages before
   // this one (or the start of a part picked from Contents); typing counts whole parts plus what's typed.
@@ -295,14 +325,15 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       if (sectionIndex > 0) openSection(sectionIndex - 1, { kind: 'fraction', value: 1 });
       return;
     }
+    target = Math.floor(target / pagesPerView) * pagesPerView;
     if (target === page) return;
-    if (target === page + 1) {
-      const words = layout.wordsBefore[page + 1] - layout.wordsBefore[page];
+    if (target === page + pagesPerView) {
+      const words = layout.wordsBefore[Math.min(pageCount, page + pagesPerView)] - layout.wordsBefore[page];
       setReadingWpm(updateReadingSpeed(readingWpm, words, Date.now() - pageShownAtRef.current));
     }
     pageShownAtRef.current = Date.now();
     setPage(target);
-    if (target === last) {
+    if (target + pagesPerView > last) {
       markSectionRead(sectionIndex);
       if (sectionIndex === sectionCount - 1) markFinished();
     }
@@ -310,7 +341,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
 
   const pagerRef = useRef<(step: PageStep) => void>(() => {});
   useEffect(() => {
-    pagerRef.current = step => goToPage(step === 'start' ? 0 : step === 'end' ? pageCount - 1 : page + step);
+    pagerRef.current = step => goToPage(step === 'start' ? 0 : step === 'end' ? pageCount - 1 : page + step * pagesPerView);
   });
   useEffect(() => {
     if (!reading) return;
@@ -347,7 +378,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       setChunkIndex(currentPart);
       setPickedPart(null);
     }
-    setResultOpen(false); engine.reset();
+    popup.collapse(); engine.reset();
     onUpdateSetting('storyMode', mode);
   };
 
@@ -355,10 +386,12 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
   const sectionReadWords = Math.round(positionInSection);
   const positionWords = wordsBeforeSection[sectionIndex] + sectionReadWords;
   const percent = Math.min(100, Math.round((positionWords / Math.max(1, totalWords)) * 100));
+  // Time in the reader, for the reading stats on the profile.
+  useReadingSession(work, reading ? 'read' : 'type', sectionIndex, positionWords, page, engine.typed.length);
   // The last page of a section fills its bar: the whole of it is on screen.
   const fillWords = reading && layout && onLastPage ? sectionWords[sectionIndex] : positionInSection;
   const partFills = chunks.map((item, index) => Math.min(1, Math.max(0, (fillWords - (chunkWordsBefore[index] ?? 0)) / Math.max(1, item.words))));
-  const fills = reading ? Array.from({ length: pageCount }, (_, index) => index <= page ? 1 : 0) : partFills;
+  const fills = reading ? Array.from({ length: pageCount }, (_, index) => index < page + pagesPerView ? 1 : 0) : partFills;
 
   // Save where the reader is, shortly after it changes.
   const typedBucket = Math.floor(engine.typed.length / 40);
@@ -405,7 +438,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       return;
     }
     if (index === chunkIndex) return;
-    setChunkIndex(index); setResultOpen(false); engine.reset();
+    setChunkIndex(index); engine.reset();
   };
 
   const chapterName = sectionName(section.title);
@@ -418,7 +451,6 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
   const lastSection = sectionIndex === sectionCount - 1;
   const nextPageLabel = !onLastPage ? 'Next' : !lastSection ? `Next ${unit}` : isStory ? 'Next story' : 'Finish';
   const pinned = settings.readerBarPinned;
-  const resultTitle = `${partPrefix(sectionIndex)} · Part ${chunkIndex + 1}`;
 
   // Bottom bar stats, from the same position as the progress bar.
   const statContext: ReaderStatContext = {
@@ -434,7 +466,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
   return <section className="reader-workspace" {...readerSurfaceProps(settings)}>
     {settings.readerBackground !== 'plain' && <StoryAtmosphere withScenery={settings.readerBackground !== 'none'} motion={settings.ambientMotion} />}
     {/* Entrances are CSS keyframes so they play on first paint instead of waiting for hydration. */}
-    <div ref={shellRef} className={`reader-shell stories-shell ${reading ? 'is-reading' : ''}`} data-titlebar={settings.readerBarPinned ? 'pinned' : 'auto'}>
+    <div ref={shellRef} className={`reader-shell stories-shell ${reading ? 'is-reading' : ''}`} data-width={settings.readerWidth >= 1400 ? 'full' : 'fixed'} data-titlebar={settings.readerBarPinned ? 'pinned' : 'auto'}>
       {!settings.readerBarPinned && <>
         <div className="story-bar-hotzone" aria-hidden="true" onPointerEnter={() => scheduleReveal(true, 60)} onPointerLeave={() => scheduleReveal(false, 1500)} />
         <button type="button" className="story-bar-handle" aria-label="Show title bar" onPointerEnter={() => scheduleReveal(true, 40)} onPointerLeave={() => scheduleReveal(false, 1500)} onClick={() => { setBarRevealed(true); scheduleReveal(false, 4000); }}><span aria-hidden="true" /></button>
@@ -484,10 +516,10 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       <div ref={stageRef} className="reader-stage">
         {reading
           ? <>
-            <StoryReader parts={parts} sections={sectionParts} page={page} font={settings.font} fontSize={settings.fontSize} lineHeight={settings.readerLineHeight} layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}`} onLayout={handleLayout} />
+            <StoryReader parts={parts} sections={sectionParts} page={page} pageLayout={settings.readerPageLayout} font={settings.font} fontSize={settings.fontSize} lineHeight={settings.readerLineHeight} layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerParagraphSpacing}-${settings.readerAlign}-${settings.readerHyphens}-${settings.readerWidth}`} onLayout={handleLayout} />
             <p className="typing-hint reading-hint"><kbd aria-label="Left arrow">←</kbd><kbd aria-label="Right arrow">→</kbd> turn pages</p>
           </>
-          : <TypingArea targetText={text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="literary" feedbackMode="reader" viewportLines={typingLines} viewportMode="pages" layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}`} lineHeight={settings.readerLineHeight} onKeyDown={engine.handleKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} />}
+          : <TypingArea targetText={text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="literary" feedbackMode="reader" viewportLines={typingLines} viewportMode="pages" layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerParagraphSpacing}-${settings.readerAlign}-${settings.readerHyphens}-${settings.readerWidth}`} lineHeight={settings.readerLineHeight} onKeyDown={typingKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} onEscape={() => (popup.view === 'toast' ? popup.collapse() : engine.reset())} />}
       </div>
 
       <ReaderBottomBar
@@ -497,21 +529,22 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
         progress={{
           label: isStory ? 'Story progress' : 'Chapter progress',
           percent,
-          valueText: reading ? `Page ${page + 1} of ${pageCount}, ${percent}% read` : `Part ${chunkIndex + 1} of ${chunkCount}, ${percent}% of the ${isStory ? 'story' : 'book'}`,
+          valueText: reading ? `${pagesPerView === 2 ? `Pages ${page + 1}–${Math.min(pageCount, page + 2)}` : `Page ${page + 1}`} of ${pageCount}, ${percent}% read` : `Part ${chunkIndex + 1} of ${chunkCount}, ${percent}% of the ${isStory ? 'story' : 'book'}`,
           fills,
           partLabel: reading ? undefined : <>Part <strong>{chunkIndex + 1}</strong>/{chunkCount}</>
         }}
         previous={reading
-          ? { disabled: page === 0 && sectionIndex === 0, onClick: () => goToPage(page - 1) }
+          ? { disabled: page === 0 && sectionIndex === 0, onClick: () => goToPage(page - pagesPerView) }
           : { disabled: chunkIndex === 0 && sectionIndex === 0, onClick: () => move(-1) }}
         next={reading
-          ? { disabled: !layout || (onLastPage && lastSection && !isStory && Boolean(finishedAt)), label: nextPageLabel, onClick: () => goToPage(page + 1) }
+          ? { disabled: !layout || (onLastPage && lastSection && !isStory && Boolean(finishedAt)), label: nextPageLabel, onClick: () => goToPage(page + pagesPerView) }
           : { disabled: atEnd && !isStory, label: atEnd ? 'Next story' : !lastSection && chunkIndex === chunkCount - 1 ? `Next ${unit}` : 'Next', onClick: () => (atEnd ? onNextStory() : move(1)) }}
         onRandomStory={onNextStory}
         onReset={reading ? undefined : () => engine.reset()}
         stats={stats}
-      />
+      >
+        <ResultPopup popup={popup} onNext={next} onRetry={() => engine.reset()} />
+      </ReaderBottomBar>
     </div>
-    <TestResultsModal stats={result} isOpen={resultOpen} title={resultTitle} onRetry={() => { setResultOpen(false); engine.reset(); }} onNext={next} />
   </section>;
 }

@@ -43,6 +43,7 @@ yarn-error.log*
 .claude/
 /CLAUDE.md
 /HANDOFF.md
+/HANDOFF-*.md
 
 # typescript
 *.tsbuildinfo

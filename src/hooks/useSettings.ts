@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { UserSettings, ThemeId, FontFamily, SwitchSound, AmbientSound, CaretStyle } from '@/types';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '@/lib/db';
+import { sanitizeSectionPrefs } from '@/lib/section-settings';
+import { normalizeTypography } from '@/lib/typography';
 
 function applyTheme(theme: ThemeId) {
   if (typeof document === 'undefined') return;
@@ -29,12 +31,25 @@ export function useSettings() {
     });
   }, []);
 
+  /** Several changes in one update, computed from the latest settings (so batched section changes don't overwrite each other). */
+  const updateSettingsWith = useCallback((change: (previous: UserSettings) => Partial<UserSettings>) => {
+    setSettingsState(previous => {
+      const patch = change(previous);
+      const next = { ...previous, ...patch, updatedAt: Date.now() };
+      saveSettings(next);
+      if ('theme' in patch) applyTheme(next.theme);
+      return next;
+    });
+  }, []);
+
   const replaceSettings = useCallback((incoming: UserSettings) => {
     setSettingsState(previous => {
       if (incoming.updatedAt <= previous.updatedAt) return previous;
-      saveSettings(incoming);
-      applyTheme(incoming.theme);
-      return incoming;
+      // Settings from another device may predate the current typography model.
+      const next = { ...incoming, ...normalizeTypography(incoming), sectionPrefs: sanitizeSectionPrefs(incoming.sectionPrefs) };
+      saveSettings(next);
+      applyTheme(next.theme);
+      return next;
     });
   }, []);
 
@@ -50,6 +65,7 @@ export function useSettings() {
     setCaretStyle: (caret: CaretStyle) => updateSetting('caretStyle', caret),
     toggleZenMode: () => updateSetting('zenMode', !settings.zenMode),
     updateSetting,
+    updateSettingsWith,
     replaceSettings
   };
 }

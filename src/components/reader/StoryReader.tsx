@@ -3,10 +3,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { FontFamily } from '@/types';
 import { FONTS } from '@/lib/themes';
-import { READER_SIZE_CLASSES } from '@/lib/reader-style';
+import { passageFontSize } from '@/lib/reader-style';
 import { countWords } from '@/lib/reading';
 
 export interface ReaderLayout {
+  pagesPerView?: number;
   pageCount: number;
   /** Exact page counts for all sections at this page size, cached across chapter changes. */
   sectionPageCounts: number[];
@@ -28,8 +29,10 @@ interface StoryReaderProps {
   parts: string[][];
   sections: string[][][];
   page: number;
+  pageLayout?: 'single' | 'spread';
   font: FontFamily;
-  fontSize: 'sm' | 'base' | 'lg' | 'xl';
+  /** Text size in px at desktop widths. */
+  fontSize: number;
   lineHeight: number;
   /** Change when CSS-driven typography (weight, letter spacing) changes, so pages are re-measured. */
   layoutKey?: string;
@@ -42,7 +45,7 @@ const MOBILE = '(max-width: 767px)';
  * Book-like pages for reading mode. The page height is a whole number of lines and paragraphs are
  * one line apart, so every page break lands between lines. Pages are a translateY over one column.
  */
-export function StoryReader({ parts, sections, page, font, fontSize, lineHeight, layoutKey, onLayout }: StoryReaderProps) {
+export function StoryReader({ parts, sections, page, pageLayout = 'single', font, fontSize, lineHeight, layoutKey, onLayout }: StoryReaderProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
   const [pageHeight, setPageHeight] = useState(0);
@@ -68,7 +71,7 @@ export function StoryReader({ parts, sections, page, font, fontSize, lineHeight,
 
     const pageCount = Math.max(1, Math.ceil((copy.scrollHeight - 1) / height));
     const copyStyle = getComputedStyle(copy);
-    const key = [copy.getBoundingClientRect().width, height, copyStyle.fontFamily, copyStyle.fontSize, copyStyle.fontWeight, copyStyle.letterSpacing, line, document.fonts.status].join('|');
+    const key = [copy.getBoundingClientRect().width, height, copyStyle.fontFamily, copyStyle.fontSize, copyStyle.fontWeight, copyStyle.letterSpacing, line, document.fonts.status, layoutKey].join('|');
     if (sectionPagesRef.current?.key !== key || sectionPagesRef.current.sections !== sections) {
       // Reuse the actual reader styles in a hidden measurement copy. No estimates change as chapters open.
       const probe = copy.cloneNode(false) as HTMLDivElement;
@@ -100,6 +103,7 @@ export function StoryReader({ parts, sections, page, font, fontSize, lineHeight,
 
     setPageHeight(previous => (Math.abs(previous - height) < 0.5 ? previous : height));
     onLayoutRef.current({
+      pagesPerView: Number(frameStyle.getPropertyValue('--pages-per-view')) || 1,
       pageCount,
       sectionPageCounts: sectionPagesRef.current.counts,
       partStartPage: nodes.map(node => Math.floor(node.offsetTop / height)),
@@ -110,7 +114,7 @@ export function StoryReader({ parts, sections, page, font, fontSize, lineHeight,
       wordsBefore,
       totalWords: words.reduce((sum, count) => sum + count, 0)
     });
-  }, [parts, sections]);
+  }, [parts, sections, layoutKey]);
 
   useEffect(() => {
     let frame = requestAnimationFrame(measure);
@@ -122,7 +126,7 @@ export function StoryReader({ parts, sections, page, font, fontSize, lineHeight,
     // Web fonts can change line boxes after the first paint.
     void document.fonts?.ready.then(schedule);
     return () => { active = false; cancelAnimationFrame(frame); observer.disconnect(); };
-  }, [measure, font, fontSize, lineHeight, layoutKey]);
+  }, [measure, font, fontSize, lineHeight, layoutKey, pageLayout]);
 
   // A short fade-and-drift in the direction of travel; skipped for reduced motion.
   const previousPage = useRef(page);
@@ -138,7 +142,7 @@ export function StoryReader({ parts, sections, page, font, fontSize, lineHeight,
   }, [page]);
 
   const fontClass = FONTS[font]?.class ?? 'font-serif';
-  return <div ref={frameRef} className={`story-reader ${fontClass} ${READER_SIZE_CLASSES[fontSize]}`} style={{ lineHeight }}>
+  return <div ref={frameRef} className={`story-reader ${fontClass}`} data-page-layout={pageLayout} style={{ fontSize: passageFontSize(fontSize), lineHeight }}>
     <div className="story-reader-viewport" style={pageHeight ? { height: pageHeight } : undefined}>
       <div ref={copyRef} className="story-reader-copy" style={{ transform: `translateY(${-page * pageHeight}px)` }}>
         {parts.map((part, index) => <div key={index} className="story-reader-part" data-part={index + 1}>
@@ -146,5 +150,12 @@ export function StoryReader({ parts, sections, page, font, fontSize, lineHeight,
         </div>)}
       </div>
     </div>
+    {pageLayout === 'spread' && <div className="story-reader-viewport story-reader-second-page" aria-hidden="true" style={pageHeight ? { height: pageHeight } : undefined}>
+      <div className="story-reader-copy" style={{ transform: `translateY(${-(page + 1) * pageHeight}px)` }}>
+        {parts.map((part, index) => <div key={index} className="story-reader-part">
+          {part.map((text, paragraph) => <p key={paragraph}>{text}</p>)}
+        </div>)}
+      </div>
+    </div>}
   </div>;
 }

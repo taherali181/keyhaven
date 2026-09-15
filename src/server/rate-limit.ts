@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
-import type { cloudDb as cloudDbType } from '@/server/db';
+import type { syncDb as syncDbType } from '@/server/db';
 import { authRateLimits } from '@/server/schema';
 
-type Database = NonNullable<typeof cloudDbType>;
+type Database = NonNullable<typeof syncDbType>;
 
 export async function allowAuthAttempt(db: Database, key: string, limit = 8, windowMs = 15 * 60_000) {
   const now = new Date();

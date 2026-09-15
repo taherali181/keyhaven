@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Flag, Heart, Play, RotateCcw, Timer, Zap } from 'lucide-react';
+import { Check, CloudRain, Flag, Heart, Play, RotateCcw, Zap } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { UserSettings, TypingStats } from '@/types';
 import { createClientId, db } from '@/lib/db';
@@ -10,29 +10,65 @@ import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
 import { LeaderboardView } from '@/components/analytics/LeaderboardView';
 import { GlassSelect } from '@/components/ui/GlassSelect';
+import { SectionHeader } from '@/components/ui/SectionHeader';
+import { arcadeBests } from '@/lib/profile-stats';
 
 interface ArcadeViewProps { settings: UserSettings; onKeyPress: (key: string) => void; }
 type ArcadeGame = 'alphabet' | 'word-rain' | 'ghost-racer';
+type ArcadeTab = 'play' | 'daily' | 'leaderboard';
+
+const GAMES: Array<{ id: ArcadeGame; record: string; label: string; description: string; icon: React.ReactNode }> = [
+  { id: 'alphabet', record: 'alphabet-sprint', label: 'Alphabet Sprint', description: 'Race from A to Z. Every wrong key costs you time.', icon: <Zap aria-hidden="true" /> },
+  { id: 'word-rain', record: 'word-rain', label: 'Word Rain', description: 'Type falling words before they cross the line.', icon: <CloudRain aria-hidden="true" /> },
+  { id: 'ghost-racer', record: 'ghost-racer', label: 'Ghost Racer', description: 'Beat a steady rival to the end of a sentence.', icon: <Flag aria-hidden="true" /> }
+];
 
 export const ArcadeView: React.FC<ArcadeViewProps> = ({ settings, onKeyPress }) => {
   const [activeGame, setActiveGame] = useState<ArcadeGame>('alphabet');
-  const [view, setView] = useState<'play' | 'daily' | 'leaderboard'>('play');
-  const games: Array<{ id: ArcadeGame; label: string; icon: React.ReactNode }> = [
-    { id: 'alphabet', label: 'Alphabet Sprint', icon: <Zap /> },
-    { id: 'word-rain', label: 'Word Rain', icon: <Timer /> },
-    { id: 'ghost-racer', label: 'Ghost Racer', icon: <Flag /> }
-  ];
+  const [view, setView] = useState<ArcadeTab>('play');
+  const [dailyDate, setDailyDate] = useState('');
+  const [version, setVersion] = useState(0);
+  const [bests, setBests] = useState(() => arcadeBests([]));
+
+  useEffect(() => {
+    let cancelled = false;
+    void db.arcadeScores.toArray().then(scores => { if (!cancelled) setBests(arcadeBests(scores)); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [version]);
+
+  const recorded = useCallback(() => setVersion(value => value + 1), []);
+  const changeView = (next: ArcadeTab) => {
+    if (next === 'daily') {
+      const today = new Date();
+      setDailyDate(today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }));
+      setActiveGame(GAMES[today.getDate() % GAMES.length].id);
+    }
+    setView(next);
+  };
+  const game = GAMES.find(item => item.id === activeGame) ?? GAMES[0];
+
   return (
     <section className="speed-shell arcade-shell">
-      <header className="section-header academy-title"><div><p className="eyebrow">Play with purpose</p><h1>Arcade</h1></div><nav><button className={view === 'play' ? 'active' : ''} onClick={() => setView('play')}>Play</button><button className={view === 'daily' ? 'active' : ''} onClick={() => { setView('daily'); setActiveGame((['alphabet', 'word-rain', 'ghost-racer'] as ArcadeGame[])[new Date().getDate() % 3]); }}>Daily</button><button className={view === 'leaderboard' ? 'active' : ''} onClick={() => setView('leaderboard')}>Records</button></nav></header>
+      <SectionHeader eyebrow="Play with purpose" title="Arcade" tabs={[{ id: 'play', label: 'Play' }, { id: 'daily', label: 'Daily' }, { id: 'leaderboard', label: 'Records' }]} active={view} onChange={changeView} layoutId="arcade-tab" />
       {view === 'leaderboard' ? <LeaderboardView embedded /> : <>
-        {view === 'daily' && <div className="daily-arcade"><span>Today’s challenge</span><strong>{games.find(game => game.id === activeGame)?.label}</strong><small>One focused round. Come back tomorrow for a different game.</small></div>}
-        {view === 'play' && <div className="flex flex-wrap gap-1 border-b border-[var(--color-border)] pb-5 mb-7">
-          {games.map(game => <button key={game.id} onClick={() => setActiveGame(game.id)} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold [&_svg]:h-3.5 [&_svg]:w-3.5 ${activeGame === game.id ? 'bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}>{game.icon}{game.label}</button>)}
-        </div>}
-      {activeGame === 'alphabet' && <AlphabetSprint onKeyPress={onKeyPress} />}
-      {activeGame === 'word-rain' && <WordRain onKeyPress={onKeyPress} />}
-      {activeGame === 'ghost-racer' && <GhostRacer settings={settings} onKeyPress={onKeyPress} />}
+        {view === 'daily'
+          ? <div className="arc-daily">
+            <span className="arc-daily-icon">{game.icon}</span>
+            <div><p className="eyebrow">Today’s challenge · {dailyDate}</p><h2>{game.label}</h2><p>{game.description} One focused round; tomorrow brings a different game.</p></div>
+          </div>
+          : <div className="arc-games" role="group" aria-label="Choose a game">
+            {GAMES.map(item => {
+              const best = bests.find(entry => entry.id === item.record)?.best;
+              return <button key={item.id} type="button" className="arc-game" aria-pressed={activeGame === item.id} onClick={() => setActiveGame(item.id)}>
+                <span className="arc-game-icon">{item.icon}</span>
+                <span className="arc-game-text"><strong>{item.label}</strong><small>{item.description}</small></span>
+                <span className="arc-game-best">{best ? <>Best <b>{best}</b></> : 'Not played yet'}</span>
+              </button>;
+            })}
+          </div>}
+        {activeGame === 'alphabet' && <AlphabetSprint onKeyPress={onKeyPress} onRecorded={recorded} />}
+        {activeGame === 'word-rain' && <WordRain onKeyPress={onKeyPress} onRecorded={recorded} />}
+        {activeGame === 'ghost-racer' && <GhostRacer settings={settings} onKeyPress={onKeyPress} onRecorded={recorded} />}
       </>}
     </section>
   );
@@ -40,7 +76,11 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({ settings, onKeyPress }) 
 
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
-function AlphabetSprint({ onKeyPress }: { onKeyPress: (key: string) => void }) {
+function Metric({ label, value }: { label: string; value: string }) {
+  return <div className="arc-metric"><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function AlphabetSprint({ onKeyPress, onRecorded }: { onKeyPress: (key: string) => void; onRecorded: () => void }) {
   const [index, setIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [mistakes, setMistakes] = useState(0);
@@ -51,7 +91,7 @@ function AlphabetSprint({ onKeyPress }: { onKeyPress: (key: string) => void }) {
   const surfaceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    surfaceRef.current?.focus();
+    surfaceRef.current?.focus({ preventScroll: true });
     void db.arcadeScores.where('game').equals('alphabet-sprint').toArray().then(scores => {
       if (scores.length) setBest(Math.min(...scores.map(score => score.timeMs)));
     });
@@ -62,7 +102,7 @@ function AlphabetSprint({ onKeyPress }: { onKeyPress: (key: string) => void }) {
     if (intervalRef.current) window.clearInterval(intervalRef.current);
     startRef.current = null;
     setIndex(0); setElapsed(0); setMistakes(0); setFinished(false);
-    requestAnimationFrame(() => surfaceRef.current?.focus());
+    requestAnimationFrame(() => surfaceRef.current?.focus({ preventScroll: true }));
   };
 
   const handleKey = (event: React.KeyboardEvent) => {
@@ -83,24 +123,25 @@ function AlphabetSprint({ onKeyPress }: { onKeyPress: (key: string) => void }) {
     void db.arcadeScores.add({
       clientId: createClientId(), game: 'alphabet-sprint', score: Math.round(100000 / Math.max(1, finalTime)),
       wpm: Math.round((26 / 5) / (finalTime / 60000)), accuracy, timeMs: Math.round(finalTime), timestamp: Date.now()
-    });
+    }).then(onRecorded).catch(() => {});
     if (!best || finalTime < best) { setBest(finalTime); confetti({ particleCount: 60, spread: 70 }); }
   };
 
   return (
-    <div ref={surfaceRef} tabIndex={0} onKeyDown={handleKey} className="editorial-panel p-6 text-center sm:p-10">
-      <div className="mx-auto flex max-w-xl justify-between border-b border-[var(--color-border)] pb-5 text-left"><Metric label="Time" value={`${(elapsed / 1000).toFixed(2)}s`} /><Metric label="Mistakes" value={String(mistakes)} /><Metric label="Personal best" value={best ? `${(best / 1000).toFixed(2)}s` : '—'} /></div>
-      <p className="eyebrow mt-10">{finished ? 'Sprint complete' : 'Next letter'}</p>
-      <div className="mx-auto my-5 grid h-28 w-28 place-items-center border border-[var(--color-accent)] bg-[var(--color-highlight)] font-mono text-5xl text-[var(--color-accent)]">{finished ? '✓' : ALPHABET[index].toUpperCase()}</div>
-      <div className="mx-auto flex max-w-2xl flex-wrap justify-center gap-1.5">{ALPHABET.map((letter, letterIndex) => <span key={letter} className={`grid h-7 w-7 place-items-center rounded text-[10px] font-bold ${letterIndex < index || finished ? 'bg-[var(--color-correct)] text-[var(--bg-primary)]' : letterIndex === index ? 'bg-[var(--color-accent)] text-[var(--bg-primary)]' : 'border border-[var(--color-border)] text-[var(--text-muted)]'}`}>{letter.toUpperCase()}</span>)}</div>
-      <button onClick={restart} className="mt-9 inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-xs text-[var(--text-secondary)]"><RotateCcw className="h-3.5 w-3.5" />Reset sprint</button>
+    <div ref={surfaceRef} tabIndex={0} onKeyDown={handleKey} className="arc-stage arc-sprint" role="group" aria-label="Alphabet Sprint">
+      <div className="arc-metrics"><Metric label="Time" value={`${(elapsed / 1000).toFixed(2)}s`} /><Metric label="Mistakes" value={String(mistakes)} /><Metric label="Personal best" value={best ? `${(best / 1000).toFixed(2)}s` : '—'} /></div>
+      <p className="eyebrow arc-prompt">{finished ? 'Sprint complete' : 'Next letter'}</p>
+      <div className="arc-letter" data-finished={finished || undefined}>{finished ? <Check aria-label="Complete" /> : ALPHABET[index].toUpperCase()}</div>
+      <div className="arc-strip">{ALPHABET.map((letter, letterIndex) => <span key={letter} data-state={letterIndex < index || finished ? 'done' : letterIndex === index ? 'current' : undefined}>{letter.toUpperCase()}</span>)}</div>
+      <p className="arc-focus-hint">Click here, then type the alphabet</p>
+      <button type="button" onClick={restart} className="rs-btn"><RotateCcw aria-hidden="true" />Reset sprint</button>
     </div>
   );
 }
 
 interface FallingWord { id: number; word: string; x: number; y: number; speed: number; }
 
-function WordRain({ onKeyPress }: { onKeyPress: (key: string) => void }) {
+function WordRain({ onKeyPress, onRecorded }: { onKeyPress: (key: string) => void; onRecorded: () => void }) {
   const [playing, setPlaying] = useState(false);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -113,8 +154,8 @@ function WordRain({ onKeyPress }: { onKeyPress: (key: string) => void }) {
 
   const finish = useCallback((finalScore: number, duration: number) => {
     setPlaying(false);
-    void db.arcadeScores.add({ clientId: createClientId(), game: 'word-rain', score: finalScore, wpm: 0, accuracy: 100, timeMs: duration, timestamp: Date.now() });
-  }, []);
+    void db.arcadeScores.add({ clientId: createClientId(), game: 'word-rain', score: finalScore, wpm: 0, accuracy: 100, timeMs: duration, timestamp: Date.now() }).then(onRecorded).catch(() => {});
+  }, [onRecorded]);
 
   useEffect(() => {
     if (!playing) return;
@@ -151,21 +192,29 @@ function WordRain({ onKeyPress }: { onKeyPress: (key: string) => void }) {
   };
 
   return (
-    <div className="editorial-panel overflow-hidden p-5 sm:p-7">
-      <div className="mb-4 flex items-center justify-between border-b border-[var(--color-border)] pb-4"><div className="flex gap-1 text-[var(--color-incorrect)]">{[0, 1, 2].map(value => <Heart key={value} className={`h-4 w-4 ${value < lives ? 'fill-current' : 'opacity-20'}`} />)}</div><Metric label="Score" value={String(score)} /></div>
-      <div className="relative h-[420px] overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--bg-secondary)]">
-        <div className="absolute inset-x-0 bottom-8 border-t border-dashed border-[var(--color-incorrect)] opacity-50" />
-        {words.map(word => <span key={word.id} style={{ left: `${word.x}%`, top: `${word.y}%` }} className={`absolute rounded-md border px-2.5 py-1 font-mono text-xs ${word.word.startsWith(input) && input ? 'border-[var(--color-accent)] bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--bg-card)]'}`}>{word.word}</span>)}
-        {!playing && <div className="absolute inset-0 grid place-items-center bg-[color-mix(in_srgb,var(--bg-primary)_78%,transparent)] p-6 text-center backdrop-blur-sm"><div><p className="eyebrow">Defend the archive</p><h2 className="mt-2 font-serif text-3xl">Word Rain</h2><p className="mx-auto mt-2 max-w-sm text-sm text-[var(--text-secondary)]">Type each word before it crosses the brass line. Three misses end the round.</p><button onClick={start} className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-xs font-bold text-[var(--bg-primary)]"><Play className="h-3.5 w-3.5 fill-current" />{score ? 'Play again' : 'Begin'}</button></div></div>}
+    <div className="arc-stage arc-rain">
+      <div className="arc-rain-bar">
+        <div className="arc-lives" role="img" aria-label={`${lives} of 3 lives left`}>{[0, 1, 2].map(value => <Heart key={value} aria-hidden="true" data-lost={value >= lives || undefined} />)}</div>
+        <Metric label="Score" value={String(score)} />
       </div>
-      {playing && <input ref={inputRef} value={input} onKeyDown={event => onKeyPress(event.key)} onChange={event => change(event.target.value)} autoCapitalize="off" autoComplete="off" spellCheck={false} placeholder="Type the falling word…" className="mx-auto mt-4 block w-full max-w-lg rounded-lg border border-[var(--color-accent)] bg-[var(--bg-secondary)] p-3 text-center font-mono text-sm outline-none" />}
+      <div className="arc-rain-field">
+        <div className="arc-rain-line" aria-hidden="true" />
+        {words.map(word => <span key={word.id} className="arc-word" data-match={(input && word.word.startsWith(input)) || undefined} style={{ left: `${word.x}%`, top: `${word.y}%` }}>{word.word}</span>)}
+        {!playing && <div className="arc-overlay"><div>
+          <p className="eyebrow">Defend the archive</p>
+          <h2>Word Rain</h2>
+          <p>Type each word before it crosses the line. Three misses end the round.</p>
+          <button type="button" onClick={start} className="rs-btn is-primary"><Play aria-hidden="true" />{score ? 'Play again' : 'Begin'}</button>
+        </div></div>}
+      </div>
+      {playing && <input ref={inputRef} value={input} onKeyDown={event => onKeyPress(event.key)} onChange={event => change(event.target.value)} autoCapitalize="off" autoComplete="off" spellCheck={false} placeholder="Type the falling word…" aria-label="Type a falling word" className="arc-input" />}
     </div>
   );
 }
 
 const RACE_TEXT = 'In the middle of difficulty lies opportunity. Keep typing steadily and conquer the ghost.';
 
-function GhostRacer({ settings, onKeyPress }: ArcadeViewProps) {
+function GhostRacer({ settings, onKeyPress, onRecorded }: ArcadeViewProps & { onRecorded: () => void }) {
   const [ghostWpm, setGhostWpm] = useState(60);
   const [racing, setRacing] = useState(false);
   const [ghostProgress, setGhostProgress] = useState(0);
@@ -177,8 +226,8 @@ function GhostRacer({ settings, onKeyPress }: ArcadeViewProps) {
     const won = ghostRef.current < 100 && stats.missedChars === 0;
     setRacing(false); setResult(won ? 'won' : 'lost');
     if (won) confetti({ particleCount: 55, spread: 65 });
-    void db.arcadeScores.add({ clientId: createClientId(), game: 'ghost-racer', score: won ? Math.round(stats.wpm * stats.accuracy) : 0, wpm: stats.wpm, accuracy: stats.accuracy, timeMs: Math.round(stats.timeElapsed * 1000), timestamp: Date.now() });
-  }, []);
+    void db.arcadeScores.add({ clientId: createClientId(), game: 'ghost-racer', score: won ? Math.round(stats.wpm * stats.accuracy) : 0, wpm: stats.wpm, accuracy: stats.accuracy, timeMs: Math.round(stats.timeElapsed * 1000), timestamp: Date.now() }).then(onRecorded).catch(() => {});
+  }, [onRecorded]);
 
   const engine = useTypingEngine({ targetText: RACE_TEXT, strictMode: true, sessionKey: `ghost-${ghostWpm}`, onComplete: complete, onKeyPress });
   const finishRace = engine.finishTest;
@@ -201,33 +250,28 @@ function GhostRacer({ settings, onKeyPress }: ArcadeViewProps) {
   };
   const userProgress = Math.min(100, (engine.typed.length / RACE_TEXT.length) * 100);
   return (
-    <div className="editorial-panel p-5 sm:p-8">
-      <div className="flex flex-col justify-between gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-center">
-        <div>
-          <p className="eyebrow">Head to head</p>
-          <h2 className="mt-1 font-serif text-3xl">Ghost Racer</h2>
+    <div className="arc-stage arc-race">
+      <header className="arc-race-head">
+        <div><p className="eyebrow">Head to head</p><h2>Ghost Racer</h2></div>
+        <div className="arc-pace">
+          <span>Rival pace</span>
+          <GlassSelect value={ghostWpm} align="right" disabled={racing} ariaLabel="Rival pace" onChange={value => setGhostWpm(Number(value))} options={[40, 60, 80, 100, 120].map(wpm => ({ value: wpm, label: `${wpm} wpm` }))} />
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-[var(--text-secondary)]">Rival pace</span>
-          <GlassSelect
-            value={ghostWpm}
-            align="right"
-            disabled={racing}
-            onChange={val => setGhostWpm(Number(val))}
-            options={[40, 60, 80, 100, 120].map(wpm => ({
-              value: wpm,
-              label: `${wpm} WPM`
-            }))}
-          />
-        </div>
+      </header>
+      <div className="arc-lanes">
+        <RaceLane label="You" progress={userProgress} accent />
+        <RaceLane label={`Ghost · ${ghostWpm} wpm`} progress={ghostProgress} />
       </div>
-      <RaceLane label="You" progress={userProgress} accent /><RaceLane label={`Ghost · ${ghostWpm} wpm`} progress={ghostProgress} />
-      {!racing && !result && <div className="py-8 text-center"><button onClick={start} className="rounded-lg bg-[var(--color-accent)] px-6 py-3 text-xs font-bold text-[var(--bg-primary)]">Start race</button></div>}
-      {(racing || result) && <TypingArea targetText={RACE_TEXT} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font="jetbrains" fontSize="sm" wrapMode="whole-word" onKeyDown={racing ? engine.handleKeyDown : event => event.preventDefault()} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={racing ? engine.handleCompositionEnd : undefined} onReset={start} />}
-      {result && <div className="mt-5 flex items-center justify-between border-t border-[var(--color-border)] pt-5"><p className={`font-serif text-xl ${result === 'won' ? 'text-[var(--color-correct)]' : 'text-[var(--color-incorrect)]'}`}>{result === 'won' ? 'You outran the ghost.' : 'The ghost reached the line first.'}</p><button onClick={start} className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-xs">Race again</button></div>}
+      {!racing && !result && <div className="arc-race-start"><button type="button" onClick={start} className="rs-btn is-primary"><Play aria-hidden="true" />Start race</button></div>}
+      {(racing || result) && <TypingArea targetText={RACE_TEXT} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font="jetbrains" fontSize={19} wrapMode="whole-word" onKeyDown={racing ? engine.handleKeyDown : event => event.preventDefault()} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={racing ? engine.handleCompositionEnd : undefined} onReset={start} />}
+      {result && <div className="arc-result" data-result={result} role="status"><p>{result === 'won' ? 'You outran the ghost.' : 'The ghost reached the line first.'}</p><button type="button" onClick={start} className="rs-btn"><RotateCcw aria-hidden="true" />Race again</button></div>}
     </div>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) { return <div><span className="text-[9px] uppercase tracking-[.18em] text-[var(--text-muted)]">{label}</span><strong className="mt-1 block font-mono text-xl text-[var(--color-accent)]">{value}</strong></div>; }
-function RaceLane({ label, progress, accent = false }: { label: string; progress: number; accent?: boolean }) { return <div className="mt-6"><div className="mb-2 flex justify-between text-[10px] uppercase tracking-widest text-[var(--text-secondary)]"><span>{label}</span><span>{Math.round(progress)}%</span></div><div className="h-2 overflow-hidden rounded-full bg-[var(--bg-secondary)]"><div className={`h-full transition-[width] duration-75 ${accent ? 'bg-[var(--color-accent)]' : 'bg-[var(--text-muted)]'}`} style={{ width: `${progress}%` }} /></div></div>; }
+function RaceLane({ label, progress, accent = false }: { label: string; progress: number; accent?: boolean }) {
+  return <div className="arc-lane">
+    <div className="arc-lane-label"><span>{label}</span><span>{Math.round(progress)}%</span></div>
+    <div className="arc-lane-track" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}><i data-accent={accent || undefined} style={{ transform: `scaleX(${progress / 100})` }} /></div>
+  </div>;
+}

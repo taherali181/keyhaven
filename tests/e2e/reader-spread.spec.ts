@@ -1,0 +1,30 @@
+import { expect, test } from '@playwright/test';
+
+test('two-page reading advances consecutive spreads and falls back on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/read?story=gift-of-the-magi');
+  await page.locator('.typing-character').first().waitFor();
+  await page.locator('.story-side').getByText('Read', { exact: true }).click();
+  await page.getByRole('button', { name: 'Reading settings' }).first().click();
+  await page.getByRole('tab', { name: 'Typography' }).click();
+  await page.getByRole('button', { name: /Two pages/ }).click();
+  await page.getByRole('button', { name: 'Close reading settings' }).click();
+  const progress = page.getByRole('progressbar', { name: 'Story progress' });
+  await expect(progress).toHaveAttribute('aria-valuetext', /^Pages 1–2 of/);
+  const viewports = page.locator('.story-reader-viewport');
+  await expect(viewports).toHaveCount(2);
+  const left = await viewports.nth(0).boundingBox();
+  const right = await viewports.nth(1).boundingBox();
+  expect(right!.x).toBeGreaterThan(left!.x + left!.width);
+  expect(Math.abs(left!.height - right!.height)).toBeLessThan(1);
+  await page.getByRole('navigation', { name: 'Story pages' }).getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(progress).toHaveAttribute('aria-valuetext', /^Pages 3–4 of/);
+  await page.keyboard.press('ArrowLeft');
+  await expect(progress).toHaveAttribute('aria-valuetext', /^Pages 1–2 of/);
+  await page.reload();
+  await expect(page.locator('.story-reader')).toHaveAttribute('data-page-layout', 'spread');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('.story-reader-second-page')).toBeHidden();
+  await expect(progress).toHaveAttribute('aria-valuetext', /^Page \d+ of/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

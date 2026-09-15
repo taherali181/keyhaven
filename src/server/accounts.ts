@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
-import type { cloudDb as cloudDbType } from '@/server/db';
+import type { syncDb as syncDbType } from '@/server/db';
 import { profiles } from '@/server/schema';
 
-type Database = NonNullable<typeof cloudDbType>;
+type Database = NonNullable<typeof syncDbType>;
 
 export async function createUniqueProfile(db: Database, userId: string, source: string) {
   const stem = source.toLowerCase().replace(/@.*$/, '').replace(/[^a-z0-9_]/g, '').slice(0, 18) || 'reader';

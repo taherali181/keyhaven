@@ -1,7 +1,9 @@
 import Dexie, { type Table } from 'dexie';
 import { DEFAULT_READER_BAR_STYLE, DEFAULT_READER_STATS, sanitizeReaderStats } from '@/lib/reader-stats';
 import { sanitizeSectionPrefs } from '@/lib/section-settings';
-import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ImportedDocumentRecord, AcademyStateRecord, ShelfRecord, Work } from '@/types';
+import { DEFAULT_TYPOGRAPHY, normalizeTypography } from '@/lib/typography';
+import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ImportedDocumentRecord, AcademyStateRecord, ShelfRecord, Work, ReadingSessionRecord, PendingDeleteRecord } from '@/types';
+import { installSyncTracking } from '@/lib/sync/tracking';
 
 export class KeyHavenDatabase extends Dexie {
   testResults!: Table<TestResultRecord, number>;
@@ -11,6 +13,8 @@ export class KeyHavenDatabase extends Dexie {
   academyState!: Table<AcademyStateRecord, string>;
   works!: Table<Work, string>;
   shelf!: Table<ShelfRecord, string>;
+  readingSessions!: Table<ReadingSessionRecord, number>;
+  pendingDeletes!: Table<PendingDeleteRecord, string>;
 
   constructor() {
     super('KeyHavenDB');
@@ -67,6 +71,24 @@ export class KeyHavenDatabase extends Dexie {
         }
       } catch { /* no stored positions */ }
     });
+    // v5: Backup & sync. Records carry a `dirty` flag, reading sessions are kept for stats, and deletions wait in
+    // pendingDeletes until they are backed up. Everything already here counts as not yet backed up.
+    this.version(5).stores({
+      testResults: '++id, &clientId, mode, subMode, timestamp, wpm, accuracy, syncedAt, dirty',
+      bookProgress: 'bookId, kind, chapterIndex, lastRead, syncedAt, dirty',
+      arcadeScores: '++id, &clientId, game, score, wpm, timestamp, syncedAt, dirty',
+      importedDocuments: 'id, title, format, updatedAt, syncedAt, dirty',
+      academyState: 'id, updatedAt, syncedAt, dirty',
+      works: 'key, kind, updatedAt',
+      shelf: 'key, kind, want, finishedAt, updatedAt, dirty',
+      readingSessions: '++id, &clientId, workKey, kind, startedAt, dirty',
+      pendingDeletes: 'id, entity'
+    }).upgrade(async transaction => {
+      for (const name of ['testResults', 'arcadeScores', 'bookProgress', 'shelf', 'importedDocuments', 'academyState']) {
+        await transaction.table(name).toCollection().modify(record => { record.dirty = 1; });
+      }
+    });
+    installSyncTracking(this);
   }
 }
 
@@ -74,9 +96,9 @@ export const db = new KeyHavenDatabase();
 
 export const DEFAULT_SETTINGS: UserSettings = {
   theme: 'reading-room',
-  font: 'serif',
+  font: DEFAULT_TYPOGRAPHY.font,
   caretStyle: 'smooth',
-  fontSize: 'base',
+  fontSize: DEFAULT_TYPOGRAPHY.fontSize,
   switchSound: 'holy-panda',
   soundVolume: 0.5,
   ambientSound: 'none',
@@ -88,8 +110,12 @@ export const DEFAULT_SETTINGS: UserSettings = {
   smoothCaret: true,
   strictMode: false,
   leaderboardEnabled: true,
-  readerLineHeight: 1.8,
-  readerWidth: 'balanced',
+  readerLineHeight: DEFAULT_TYPOGRAPHY.readerLineHeight,
+  readerWidth: DEFAULT_TYPOGRAPHY.readerWidth,
+  readerWordSpacing: DEFAULT_TYPOGRAPHY.readerWordSpacing,
+  readerParagraphSpacing: DEFAULT_TYPOGRAPHY.readerParagraphSpacing,
+  readerAlign: DEFAULT_TYPOGRAPHY.readerAlign,
+  readerHyphens: DEFAULT_TYPOGRAPHY.readerHyphens,
   readerPaper: 'system',
   customTones: [],
   storyMode: 'type',
@@ -99,11 +125,14 @@ export const DEFAULT_SETTINGS: UserSettings = {
   readerStats: DEFAULT_READER_STATS,
   readerBarStyle: DEFAULT_READER_BAR_STYLE,
   sectionPrefs: {},
+  dailyTypingGoalMinutes: 15,
+  dailyReadingGoalMinutes: 20,
+  academyGuide: 'on',
   readerBackground: 'none',
   readerOverlay: 65,
   readerBlur: 2,
-  readerFontWeight: 400,
-  readerLetterSpacing: 'normal',
+  readerFontWeight: DEFAULT_TYPOGRAPHY.readerFontWeight,
+  readerLetterSpacing: DEFAULT_TYPOGRAPHY.readerLetterSpacing,
   updatedAt: 0
 };
 
@@ -123,6 +152,7 @@ export function loadSettings(): UserSettings {
       customTones: Array.isArray(parsed.customTones) ? parsed.customTones : [],
       readerStats: sanitizeReaderStats(parsed.readerStats),
       readerBarStyle: { ...DEFAULT_READER_BAR_STYLE, ...(parsed.readerBarStyle ?? {}) },
+      ...normalizeTypography(parsed),
       sectionPrefs: sanitizeSectionPrefs(parsed.sectionPrefs)
     };
   } catch {

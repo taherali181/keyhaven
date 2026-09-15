@@ -2,184 +2,105 @@
 
 import React from 'react';
 
-interface VirtualKeyboardHeatmapProps {
-  activeKey?: string;
-  errorHeatmap?: Record<string, number>;
-  highlightKeys?: string[];
-  showFingers?: boolean;
-}
-
-interface KeyConfig {
-  key: string;
+interface KeyDef {
+  id: string;
+  label: string;
+  /** The character this key types without Shift. */
+  char?: string;
+  /** The character it types with Shift. */
   shift?: string;
-  width?: string;
-  finger?: string;
-  home?: boolean;
+  finger: Finger;
+  /** Width in key units. */
+  u?: number;
   bump?: boolean;
 }
 
-const KEYBOARD_ROWS: KeyConfig[][] = [
-  [
-    { key: '`', shift: '~', finger: 'left-pinky' },
-    { key: '1', shift: '!', finger: 'left-pinky' },
-    { key: '2', shift: '@', finger: 'left-ring' },
-    { key: '3', shift: '#', finger: 'left-middle' },
-    { key: '4', shift: '$', finger: 'left-index' },
-    { key: '5', shift: '%', finger: 'left-index' },
-    { key: '6', shift: '^', finger: 'right-index' },
-    { key: '7', shift: '&', finger: 'right-index' },
-    { key: '8', shift: '*', finger: 'right-middle' },
-    { key: '9', shift: '(', finger: 'right-ring' },
-    { key: '0', shift: ')', finger: 'right-pinky' },
-    { key: '-', shift: '_', finger: 'right-pinky' },
-    { key: '=', shift: '+', finger: 'right-pinky' },
-    { key: 'Backspace', width: 'w-16', finger: 'right-pinky' }
-  ],
-  [
-    { key: 'Tab', width: 'w-12', finger: 'left-pinky' },
-    { key: 'q', finger: 'left-pinky' },
-    { key: 'w', finger: 'left-ring' },
-    { key: 'e', finger: 'left-middle' },
-    { key: 'r', finger: 'left-index' },
-    { key: 't', finger: 'left-index' },
-    { key: 'y', finger: 'right-index' },
-    { key: 'u', finger: 'right-index' },
-    { key: 'i', finger: 'right-middle' },
-    { key: 'o', finger: 'right-ring' },
-    { key: 'p', finger: 'right-pinky' },
-    { key: '[', shift: '{', finger: 'right-pinky' },
-    { key: ']', shift: '}', finger: 'right-pinky' },
-    { key: '\\', shift: '|', width: 'w-12', finger: 'right-pinky' }
-  ],
-  [
-    { key: 'Caps', width: 'w-14', finger: 'left-pinky' },
-    { key: 'a', finger: 'left-pinky', home: true },
-    { key: 's', finger: 'left-ring', home: true },
-    { key: 'd', finger: 'left-middle', home: true },
-    { key: 'f', finger: 'left-index', home: true, bump: true },
-    { key: 'g', finger: 'left-index' },
-    { key: 'h', finger: 'right-index' },
-    { key: 'j', finger: 'right-index', home: true, bump: true },
-    { key: 'k', finger: 'right-middle', home: true },
-    { key: 'l', finger: 'right-ring', home: true },
-    { key: ';', shift: ':', finger: 'right-pinky', home: true },
-    { key: "'", shift: '"', finger: 'right-pinky' },
-    { key: 'Enter', width: 'w-16', finger: 'right-pinky' }
-  ],
-  [
-    { key: 'Shift', width: 'w-20', finger: 'left-pinky' },
-    { key: 'z', finger: 'left-pinky' },
-    { key: 'x', finger: 'left-ring' },
-    { key: 'c', finger: 'left-middle' },
-    { key: 'v', finger: 'left-index' },
-    { key: 'b', finger: 'left-index' },
-    { key: 'n', finger: 'right-index' },
-    { key: 'm', finger: 'right-index' },
-    { key: ',', shift: '<', finger: 'right-middle' },
-    { key: '.', shift: '>', finger: 'right-ring' },
-    { key: '/', shift: '?', finger: 'right-pinky' },
-    { key: 'Shift', width: 'w-20', finger: 'right-pinky' }
-  ],
-  [
-    { key: 'Ctrl', width: 'w-12', finger: 'left-pinky' },
-    { key: 'Alt', width: 'w-12', finger: 'left-thumb' },
-    { key: ' ', width: 'w-64', finger: 'thumb' },
-    { key: 'Alt', width: 'w-12', finger: 'right-thumb' },
-    { key: 'Ctrl', width: 'w-12', finger: 'right-pinky' }
-  ]
+type Finger = 'left-pinky' | 'left-ring' | 'left-middle' | 'left-index' | 'right-index' | 'right-middle' | 'right-ring' | 'right-pinky' | 'thumb';
+
+const key = (char: string, finger: Finger, shift?: string, extra: Partial<KeyDef> = {}): KeyDef => ({ id: `key-${char}`, label: /[a-z]/.test(char) ? char.toUpperCase() : char, char, shift, finger, ...extra });
+
+const ROWS: KeyDef[][] = [
+  [key('`', 'left-pinky', '~'), key('1', 'left-pinky', '!'), key('2', 'left-ring', '@'), key('3', 'left-middle', '#'), key('4', 'left-index', '$'), key('5', 'left-index', '%'), key('6', 'right-index', '^'), key('7', 'right-index', '&'), key('8', 'right-middle', '*'), key('9', 'right-ring', '('), key('0', 'right-pinky', ')'), key('-', 'right-pinky', '_'), key('=', 'right-pinky', '+'), { id: 'Backspace', label: 'Back', finger: 'right-pinky', u: 2 }],
+  [{ id: 'Tab', label: 'Tab', finger: 'left-pinky', u: 1.5 }, key('q', 'left-pinky'), key('w', 'left-ring'), key('e', 'left-middle'), key('r', 'left-index'), key('t', 'left-index'), key('y', 'right-index'), key('u', 'right-index'), key('i', 'right-middle'), key('o', 'right-ring'), key('p', 'right-pinky'), key('[', 'right-pinky', '{'), key(']', 'right-pinky', '}'), key('\\', 'right-pinky', '|', { u: 1.5 })],
+  [{ id: 'Caps', label: 'Caps', finger: 'left-pinky', u: 1.75 }, key('a', 'left-pinky'), key('s', 'left-ring'), key('d', 'left-middle'), key('f', 'left-index', undefined, { bump: true }), key('g', 'left-index'), key('h', 'right-index'), key('j', 'right-index', undefined, { bump: true }), key('k', 'right-middle'), key('l', 'right-ring'), key(';', 'right-pinky', ':'), key("'", 'right-pinky', '"'), { id: 'Enter', label: 'Enter', char: '\n', finger: 'right-pinky', u: 2.25 }],
+  [{ id: 'ShiftLeft', label: 'Shift', finger: 'left-pinky', u: 2.25 }, key('z', 'left-pinky'), key('x', 'left-ring'), key('c', 'left-middle'), key('v', 'left-index'), key('b', 'left-index'), key('n', 'right-index'), key('m', 'right-index'), key(',', 'right-middle', '<'), key('.', 'right-ring', '>'), key('/', 'right-pinky', '?'), { id: 'ShiftRight', label: 'Shift', finger: 'right-pinky', u: 2.75 }],
+  [{ id: 'Space', label: 'Space', char: ' ', finger: 'thumb', u: 6.25 }]
 ];
 
-const FINGER_COLORS: Record<string, string> = {
-  'left-pinky': 'border-l-2 border-l-rose-500/70',
-  'left-ring': 'border-l-2 border-l-amber-500/70',
-  'left-middle': 'border-l-2 border-l-emerald-500/70',
-  'left-index': 'border-l-2 border-l-sky-500/70',
-  'right-index': 'border-l-2 border-l-sky-500/70',
-  'right-middle': 'border-l-2 border-l-emerald-500/70',
-  'right-ring': 'border-l-2 border-l-amber-500/70',
-  'right-pinky': 'border-l-2 border-l-rose-500/70',
-  'thumb': 'border-l-2 border-l-purple-500/70'
+const KEYS = ROWS.flat();
+
+const FINGER_NAMES: Record<Finger, string> = {
+  'left-pinky': 'left pinky', 'left-ring': 'left ring finger', 'left-middle': 'left middle finger', 'left-index': 'left index finger',
+  'right-index': 'right index finger', 'right-middle': 'right middle finger', 'right-ring': 'right ring finger', 'right-pinky': 'right pinky', thumb: 'thumb'
 };
 
-export const VirtualKeyboardHeatmap: React.FC<VirtualKeyboardHeatmapProps> = ({
-  activeKey = '',
-  errorHeatmap = {},
-  highlightKeys = [],
-  showFingers = true
-}) => {
-  const normActiveKey = activeKey ? activeKey.toLowerCase() : '';
+/** The key for a typed character, and which Shift key (opposite hand) it needs, if any. */
+export function locateChar(char: string) {
+  if (!char) return null;
+  const direct = KEYS.find(item => item.char === char);
+  if (direct) return { key: direct, shiftId: null as string | null };
+  const lower = char.toLowerCase();
+  const shifted = KEYS.find(item => (lower !== char && item.char === lower) || item.shift === char);
+  if (!shifted) return null;
+  return { key: shifted, shiftId: shifted.finger.startsWith('left') ? 'ShiftRight' : 'ShiftLeft' };
+}
 
-  return (
-    <div className="w-full max-w-4xl mx-auto p-4 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--color-border)] shadow-md select-none">
-      <div className="flex flex-col gap-1.5 items-center">
-        {KEYBOARD_ROWS.map((row, rIdx) => (
-          <div key={rIdx} className="flex gap-1.5 justify-center w-full">
-            {row.map((k, kIdx) => {
-              const keyLabel = k.key;
-              const isKeyActive = normActiveKey === keyLabel.toLowerCase() || (keyLabel === ' ' && normActiveKey === ' ');
-              const isHighlighted = highlightKeys.includes(keyLabel.toLowerCase());
-              const errors = errorHeatmap[keyLabel.toLowerCase()] || 0;
+/** "E, left middle finger" style description of the next character, for the typing guide. */
+export function describeKey(char: string) {
+  const found = locateChar(char);
+  if (!found) return null;
+  const label = char === ' ' ? 'Space' : char === '\n' ? 'Enter' : /[a-z]/i.test(char) ? char.toUpperCase() : char;
+  const shift = found.shiftId ? ` with ${found.shiftId === 'ShiftLeft' ? 'left' : 'right'} Shift` : '';
+  return { label, finger: `${FINGER_NAMES[found.key.finger]}${shift}` };
+}
 
-              let errorBg = '';
-              if (errors > 5) {
-                errorBg = 'bg-rose-500/30 text-rose-300 border-rose-500/50';
-              } else if (errors > 2) {
-                errorBg = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
-              } else if (errors > 0) {
-                errorBg = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
-              }
+interface VirtualKeyboardHeatmapProps {
+  /** The next character to type; its key (and Shift, when needed) is lit. */
+  activeKey?: string;
+  /** Mistakes per expected key; colours keys by how often they were missed. */
+  errorHeatmap?: Record<string, number>;
+  /** Keys a lesson is teaching. 'Shift' highlights both Shift keys. */
+  highlightKeys?: string[];
+  /** 0–1 per key: how quick and accurate that key is. */
+  confidence?: Record<string, number>;
+  showFingers?: boolean;
+  label?: string;
+}
 
-              const widthClass = k.width || 'w-9 sm:w-11';
-              const fingerBorder = showFingers && k.finger ? FINGER_COLORS[k.finger] || '' : '';
+/** A keyboard for guides and heatmaps. Colour-only states, so nothing moves while someone types. */
+export const VirtualKeyboardHeatmap = React.memo(function VirtualKeyboardHeatmap({ activeKey = '', errorHeatmap = {}, highlightKeys = [], confidence, showFingers = true, label }: VirtualKeyboardHeatmapProps) {
+  const target = activeKey ? locateChar(activeKey) : null;
+  const highlight = new Set(highlightKeys.map(item => item.toLowerCase()));
+  const maxErrors = Math.max(0, ...Object.values(errorHeatmap).filter(Number.isFinite));
+  const description = describeKey(activeKey);
 
-              return (
-                <div
-                  key={kIdx}
-                  className={`relative flex flex-col items-center justify-center h-10 sm:h-12 rounded-lg text-xs font-mono font-medium border transition-all duration-100 ${widthClass} ${fingerBorder} ${
-                    isKeyActive
-                      ? 'bg-[var(--color-accent)] text-white scale-95 shadow-md border-[var(--color-accent)]'
-                      : isHighlighted
-                      ? 'bg-[var(--color-highlight)] text-[var(--text-primary)] border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/50'
-                      : errorBg
-                      ? errorBg
-                      : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--color-border)] hover:bg-[var(--bg-primary)]'
-                  }`}
-                >
-                  <span className="capitalize">{keyLabel === ' ' ? 'Space' : keyLabel}</span>
-                  {k.bump && (
-                    <span className="absolute bottom-1 w-2.5 h-[2px] rounded-full bg-[var(--text-muted)]" />
-                  )}
-                  {errors > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 px-1 py-0.2 rounded-full text-[9px] font-bold bg-rose-600 text-white shadow-xs">
-                      {errors}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-
-      {showFingers && (
-        <div className="flex flex-wrap items-center justify-center gap-4 mt-3 pt-3 border-t border-[var(--color-border)] text-[11px] text-[var(--text-muted)]">
-          <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Pinky
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Ring
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Middle
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-500" /> Index
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> Thumb
-          </span>
-        </div>
-      )}
-    </div>
-  );
-};
+  return <div className={`kb ${showFingers ? 'has-fingers' : ''}`} role="img" aria-label={label ?? (description ? `Keyboard, next key ${description.label}` : 'Keyboard')}>
+    {ROWS.map((row, rowIndex) => <div key={rowIndex} className="kb-row">
+      {row.map(item => {
+        const char = item.char ?? '';
+        const next = Boolean(target && (target.key.id === item.id || target.shiftId === item.id));
+        const focus = (char && highlight.has(char)) || (highlight.has('shift') && item.id.startsWith('Shift'));
+        const errors = char ? errorHeatmap[char] ?? 0 : 0;
+        const level = errors > 0 && maxErrors > 0 ? Math.max(1, Math.ceil((errors / maxErrors) * 3)) : 0;
+        const keyConfidence = char ? confidence?.[char] : undefined;
+        return <span
+          key={item.id}
+          className="kb-key"
+          data-finger={item.finger}
+          data-next={next || undefined}
+          data-focus={focus || undefined}
+          data-errors={level || undefined}
+          data-confidence={keyConfidence !== undefined ? '' : undefined}
+          style={{ '--u': item.u ?? 1, ...(keyConfidence !== undefined ? { '--confidence': keyConfidence } : {}) } as React.CSSProperties}
+        >
+          <span className="kb-label">{item.label}</span>
+          {item.bump && <i className="kb-bump" />}
+          {errors > 0 && <b className="kb-count">{errors}</b>}
+        </span>;
+      })}
+    </div>)}
+    {showFingers && <div className="kb-legend" aria-hidden="true">
+      <span><i data-finger="left-pinky" />Pinky</span><span><i data-finger="left-ring" />Ring</span><span><i data-finger="left-middle" />Middle</span><span><i data-finger="left-index" />Index</span><span><i data-finger="thumb" />Thumb</span>
+    </div>}
+  </div>;
+});

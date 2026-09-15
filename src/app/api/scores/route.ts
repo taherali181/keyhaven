@@ -1,14 +1,14 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { calculateAccuracy, calculateConsistency, calculateRawWPM, calculateWPM } from '@/lib/metrics';
-import { requireCloudUser } from '@/server/http';
+import { requireSyncUser } from '@/server/http';
 import { arcadeScores, challenges, profiles, typingResults } from '@/server/schema';
 
 const eventSchema = z.object({ key: z.string().max(12), atMs: z.number().int().nonnegative() });
 const inputSchema = z.object({ clientResultId: z.string().uuid(), challengeId: z.string().uuid(), elapsedMs: z.number().int().positive().max(600_000), events: z.array(eventSchema).min(1).max(5000) });
 
 export async function POST(request: Request) {
-  const context = await requireCloudUser();
+  const context = await requireSyncUser();
   if ('error' in context) return context.error;
   const parsed = inputSchema.safeParse(await request.json());
   if (!parsed.success) return Response.json({ error: 'Invalid score evidence.' }, { status: 422 });

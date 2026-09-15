@@ -3,10 +3,11 @@
 import type { SectionPrefs, TypingMode, UserSettings } from '@/types';
 import { DEFAULT_SETTINGS } from '@/lib/db';
 import { sanitizeReaderStats } from '@/lib/reader-stats';
+import { normalizeTypography, TYPOGRAPHY_KEYS } from '@/lib/typography';
 
-export const SECTION_KEYS = ['font', 'fontSize', 'readerFontWeight', 'readerLetterSpacing', 'readerLineHeight', 'readerWidth', 'readerStats', 'readerBarStyle'] as const;
+export const SECTION_KEYS = [...TYPOGRAPHY_KEYS, 'readerStats', 'readerBarStyle'] as const;
 
-export const SECTION_LABELS: Partial<Record<TypingMode, string>> = { stories: 'Read', quotes: 'Quotes', 'speed-test': 'Speed', learn: 'Academy', arcade: 'Arcade', leaderboard: 'Speed', profile: 'Progress' };
+export const SECTION_LABELS: Partial<Record<TypingMode, string>> = { stories: 'Read', quotes: 'Quotes', 'speed-test': 'Speed', learn: 'Academy', arcade: 'Arcade', leaderboard: 'Speed', profile: 'Profile' };
 
 const usesBase = (mode: TypingMode) => mode === 'stories';
 
@@ -36,6 +37,6 @@ export function sanitizeSectionPrefs(value: unknown): UserSettings['sectionPrefs
   if (!value || typeof value !== 'object') return {};
   return Object.fromEntries(Object.entries(value as Record<string, Partial<SectionPrefs>>).filter(([, prefs]) => prefs && typeof prefs === 'object').map(([mode, prefs]) => [
     mode,
-    { ...prefs, ...(prefs.readerStats ? { readerStats: sanitizeReaderStats(prefs.readerStats) } : {}) }
+    { ...prefs, ...normalizeTypography(prefs), ...(prefs.readerStats ? { readerStats: sanitizeReaderStats(prefs.readerStats) } : {}) }
   ]));
 }

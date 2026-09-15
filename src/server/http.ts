@@ -1,10 +1,10 @@
 import { auth } from '@/auth';
-import { cloudDb } from './db';
+import { syncDb } from './db';
 
-export async function requireCloudUser() {
-  if (!cloudDb) return { error: Response.json({ error: 'Cloud sync is not configured.' }, { status: 503 }) } as const;
+export async function requireSyncUser() {
+  if (!syncDb) return { error: Response.json({ error: "Backup & sync isn't set up on this server." }, { status: 503 }) } as const;
   const session = await auth();
   const userId = session?.user?.id;
-  if (!userId) return { error: Response.json({ error: 'Authentication required.' }, { status: 401 }) } as const;
-  return { db: cloudDb, userId } as const;
+  if (!userId) return { error: Response.json({ error: 'Sign in to use Backup & sync.' }, { status: 401 }) } as const;
+  return { db: syncDb, userId } as const;
 }

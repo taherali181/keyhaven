@@ -1,19 +1,30 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Crown, Medal } from 'lucide-react';
+import { Crown, Medal, Trophy } from 'lucide-react';
 import { ArcadeScoreRecord, TestResultRecord } from '@/types';
 import { db } from '@/lib/db';
+import { syncEnabled } from '@/lib/sync-config';
+import { ARCADE_GAMES } from '@/lib/profile-stats';
+import { SectionHeader } from '@/components/ui/SectionHeader';
+import { Segmented } from '@/components/ui/Segmented';
 
 type Board = 'speed-test' | 'alphabet-sprint' | 'word-rain' | 'ghost-racer';
+type Period = 'day' | 'week' | 'all';
 interface PublicEntry { handle: string; score: number; accuracy: number; occurredAt: string; }
+interface Entry { key: string; rank: number; name: string; score: string; detail: string }
+
+const BOARDS: Array<{ value: Board; label: string }> = [
+  { value: 'speed-test', label: 'Speed' }, { value: 'alphabet-sprint', label: 'Alphabet' }, { value: 'word-rain', label: 'Word Rain' }, { value: 'ghost-racer', label: 'Ghost Racer' }
+];
+const PERIODS: Array<{ value: Period; label: string }> = [{ value: 'day', label: 'Today' }, { value: 'week', label: 'This week' }, { value: 'all', label: 'All time' }];
 
 export const LeaderboardView = ({ speedOnly = false, embedded = false }: { speedOnly?: boolean; embedded?: boolean }) => {
   const [board, setBoard] = useState<Board>('speed-test');
-  const [period, setPeriod] = useState<'day' | 'week' | 'all'>('all');
+  const [period, setPeriod] = useState<Period>('all');
   const [personal, setPersonal] = useState<Array<TestResultRecord | ArcadeScoreRecord>>([]);
   const [publicEntries, setPublicEntries] = useState<PublicEntry[]>([]);
-  const [cloudConfigured, setCloudConfigured] = useState(false);
+  const [syncConfigured, setSyncConfigured] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,49 +36,68 @@ export const LeaderboardView = ({ speedOnly = false, embedded = false }: { speed
         ranked = (await db.arcadeScores.where('game').equals(board).toArray()).sort((left, right) => board === 'alphabet-sprint' ? left.timeMs - right.timeMs : right.score - left.score);
       }
       if (!cancelled) setPersonal(ranked.slice(0, 15));
-      if (process.env.NEXT_PUBLIC_KEYHAVEN_CLOUD === 'true') {
+      if (syncEnabled()) {
         const response = await fetch(`/api/leaderboards?mode=${board}&period=${period}`);
         if (response.ok) {
-          const payload = await response.json() as { entries: PublicEntry[]; cloudConfigured: boolean };
-          if (!cancelled) { setPublicEntries(payload.entries); setCloudConfigured(payload.cloudConfigured); }
+          const payload = await response.json() as { entries: PublicEntry[]; syncConfigured: boolean };
+          if (!cancelled) { setPublicEntries(payload.entries); setSyncConfigured(payload.syncConfigured); }
         }
       }
     };
-    void load();
+    void load().catch(() => {});
     return () => { cancelled = true; };
   }, [board, period]);
 
-  const tabs: Array<{ id: Board; label: string }> = [
-    { id: 'speed-test', label: 'Speed' }, { id: 'alphabet-sprint', label: 'Alphabet' }, { id: 'word-rain', label: 'Word Rain' }, { id: 'ghost-racer', label: 'Ghost Racer' }
-  ];
-  return (
-    <section className={embedded ? '' : 'mx-auto max-w-5xl px-4 py-10 sm:px-6'}>
-      {!embedded && <header className="mb-8 border-b border-[var(--color-border)] pb-7"><p className="eyebrow">The record room</p><h1 className="mt-2 font-serif text-4xl font-medium">Leaderboards</h1><p className="mt-2 text-sm text-[var(--text-secondary)]">Verified public standings when connected; honest personal records everywhere.</p></header>}
-      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row">
-        {!speedOnly && <div className="flex gap-1 overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--bg-secondary)] p-1.5">{tabs.map(tab => <button key={tab.id} onClick={() => setBoard(tab.id)} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold ${board === tab.id ? 'bg-[var(--color-highlight)] text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}>{tab.label}</button>)}</div>}
-        <div className="flex gap-1">{(['day', 'week', 'all'] as const).map(value => <button key={value} onClick={() => setPeriod(value)} className={`px-3 py-2 text-[10px] uppercase tracking-widest ${period === value ? 'text-[var(--color-accent)]' : 'text-[var(--text-muted)]'}`}>{value}</button>)}</div>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <BoardPanel title="Public standings" icon={<Crown />} empty={cloudConfigured ? 'No verified scores for this board yet.' : 'Connect KeyHaven Cloud to enable verified public standings.'}>
-          {publicEntries.map((entry, index) => <Row key={`${entry.handle}-${index}`} rank={index + 1} name={entry.handle} score={`${entry.score}${board === 'speed-test' ? ' wpm' : ' pts'}`} detail={`${entry.accuracy}% accuracy`} />)}
-        </BoardPanel>
-        <BoardPanel title="Your records" icon={<Medal />} empty="Complete this activity to set your first record.">
-          {personal.map((entry, index) => {
-            const arcade = 'game' in entry;
-            const score = board === 'alphabet-sprint' && arcade ? `${(entry.timeMs / 1000).toFixed(2)}s` : arcade ? `${entry.score} pts` : `${entry.wpm} wpm`;
-            return <Row key={entry.clientId} rank={index + 1} name={arcade ? entry.game.replaceAll('-', ' ') : entry.title ?? entry.subMode} score={score} detail={`${entry.accuracy}% accuracy`} />;
-          })}
-        </BoardPanel>
-      </div>
-    </section>
-  );
+  const publicRows: Entry[] = publicEntries.map((entry, index) => ({ key: `${entry.handle}-${index}`, rank: index + 1, name: entry.handle, score: `${entry.score}${board === 'speed-test' ? ' wpm' : ' pts'}`, detail: `${entry.accuracy}% accuracy` }));
+  const personalRows: Entry[] = personal.map((entry, index) => {
+    const arcade = 'game' in entry;
+    const score = board === 'alphabet-sprint' && arcade ? `${(entry.timeMs / 1000).toFixed(2)}s` : arcade ? `${entry.score} pts` : `${entry.wpm} wpm`;
+    const name = arcade ? ARCADE_GAMES.find(game => game.id === entry.game)?.label ?? entry.game : entry.title ?? entry.subMode;
+    const date = new Date(entry.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return { key: entry.clientId, rank: index + 1, name, score, detail: `${entry.accuracy}% · ${date}` };
+  });
+
+  const content = <div className="lb">
+    <div className="lb-controls">
+      {!speedOnly && <Segmented label="Board" value={board} options={BOARDS} onChange={setBoard} layoutId="leaderboard-board" />}
+      <Segmented label="Period" value={period} options={PERIODS} onChange={setPeriod} layoutId={speedOnly ? 'leaderboard-period-speed' : 'leaderboard-period'} />
+    </div>
+    <div className="lb-grid">
+      <BoardPanel title="Public standings" icon={<Crown aria-hidden="true" />} entries={publicRows} empty={syncConfigured ? 'No verified scores for this board yet.' : 'Verified public standings appear once Backup & sync is set up and you are signed in.'} />
+      <BoardPanel title="Your records" icon={<Medal aria-hidden="true" />} entries={personalRows} empty="Complete this activity to set your first record." />
+    </div>
+  </div>;
+
+  if (embedded) return content;
+  return <section className="speed-shell">
+    <SectionHeader eyebrow="The record room" title="Leaderboards" description="Verified public standings when Backup & sync is on, and honest personal records everywhere." />
+    {content}
+  </section>;
 };
 
-function BoardPanel({ title, icon, empty, children }: { title: string; icon: React.ReactNode; empty: string; children: React.ReactNode }) {
-  const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children);
-  return <section className="editorial-panel overflow-hidden"><header className="flex items-center gap-2 border-b border-[var(--color-border)] px-5 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] [&_svg]:h-4 [&_svg]:w-4 [&_svg]:text-[var(--color-accent)]">{icon}{title}</header>{hasChildren ? <div className="divide-y divide-[var(--color-border)]">{children}</div> : <div className="grid min-h-52 place-items-center p-8 text-center text-xs leading-5 text-[var(--text-muted)]">{empty}</div>}</section>;
-}
-
-function Row({ rank, name, score, detail }: { rank: number; name: string; score: string; detail: string }) {
-  return <div className="flex items-center justify-between px-5 py-4 text-xs"><div className="flex min-w-0 items-center gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[var(--color-border)] font-mono text-[10px] text-[var(--color-accent)]">{rank}</span><span className="truncate capitalize text-[var(--text-primary)]">{name}</span></div><div className="ml-3 text-right"><strong className="block font-mono text-[var(--color-accent)]">{score}</strong><span className="text-[10px] text-[var(--text-muted)]">{detail}</span></div></div>;
+function BoardPanel({ title, icon, entries, empty }: { title: string; icon: React.ReactNode; entries: Entry[]; empty: string }) {
+  const podium = entries.slice(0, 3);
+  const rest = entries.slice(3);
+  return <section className="lb-panel" aria-label={title}>
+    <header className="lb-panel-head">{icon}<h2>{title}</h2></header>
+    {entries.length
+      ? <>
+        <ol className="lb-podium">
+          {podium.map(entry => <li key={entry.key} data-rank={entry.rank}>
+            <span className="lb-rank" aria-label={`Rank ${entry.rank}`}>{entry.rank}</span>
+            <span className="lb-name">{entry.name}</span>
+            <strong>{entry.score}</strong>
+            <small>{entry.detail}</small>
+          </li>)}
+        </ol>
+        {rest.length > 0 && <ol className="lb-list" start={4}>
+          {rest.map(entry => <li key={entry.key}>
+            <span className="lb-rank" aria-label={`Rank ${entry.rank}`}>{entry.rank}</span>
+            <span className="lb-name">{entry.name}</span>
+            <span className="lb-score"><strong>{entry.score}</strong><small>{entry.detail}</small></span>
+          </li>)}
+        </ol>}
+      </>
+      : <div className="lb-empty"><Trophy aria-hidden="true" /><p>{empty}</p></div>}
+  </section>;
 }

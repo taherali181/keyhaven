@@ -1,17 +1,9 @@
 import type { CSSProperties } from 'react';
 import type { CustomReaderTone, ReaderBackground, ReaderToneId, UserSettings } from '@/types';
+import { TYPE_RANGES } from '@/lib/typography';
 
-const widths = { narrow: '640px', balanced: '780px', wide: '940px', full: '1400px' } as const;
-
-export const READER_TRACKING = { tight: '-0.012em', normal: '0.006em', wide: '0.045em' } as const;
-
-/** Passage text sizes, shared by the typing surface and the story reader so both set type identically. */
-export const READER_SIZE_CLASSES = {
-  sm: 'text-[1.05rem] md:text-[1.16rem]',
-  base: 'text-[1.22rem] md:text-[1.42rem]',
-  lg: 'text-[1.42rem] md:text-[1.66rem]',
-  xl: 'text-[1.65rem] md:text-[1.94rem]'
-} as const;
+/** Passage font size for a px value; `--type-scale` shrinks it on phones (see globals.css). */
+export const passageFontSize = (px: number) => `calc(${px}px * var(--type-scale, 1))`;
 
 export interface ToneRecipe { name: string; background: string; text: string; accent: string }
 
@@ -36,7 +28,7 @@ export const RECIPE_TONES: Record<Exclude<ReaderToneId, keyof typeof THEME_TONE_
 };
 
 export const MAIN_TONES: ReaderToneId[] = ['paper', 'sepia', 'night'];
-export const EXTRA_TONES: ReaderToneId[] = ['bright', 'pitch', 'mist', 'sage', 'slate', 'ocean', 'rose', 'espresso'];
+export const EXTRA_TONES: ReaderToneId[] = ['bright', 'pitch', 'rose', 'sage', 'slate', 'ocean', 'mist', 'espresso'];
 export const CUSTOM_TONE_PREFIX = 'custom:';
 
 export function isThemeTone(id: string): id is keyof typeof THEME_TONE_NAMES {
@@ -111,17 +103,19 @@ export interface ResolvedTone {
   /** Value for data-reader-tone; undefined means "follow the theme". */
   attr?: string;
   vars: CSSProperties;
+  /** Whether the page is light or dark; undefined when it follows the theme. */
+  scheme?: 'light' | 'dark';
 }
 
 export function resolveTone(paper: UserSettings['readerPaper'], customTones: CustomReaderTone[] = []): ResolvedTone {
   if (!paper || paper === 'system') return { vars: {} };
   if (paper.startsWith(CUSTOM_TONE_PREFIX)) {
     const custom = customTones.find(tone => `${CUSTOM_TONE_PREFIX}${tone.id}` === paper);
-    return custom ? { attr: 'custom', vars: toneVariables(custom) } : { vars: {} };
+    return custom ? { attr: 'custom', vars: toneVariables(custom), scheme: isLightColor(custom.background) ? 'light' : 'dark' } : { vars: {} };
   }
-  if (isThemeTone(paper)) return { attr: paper, vars: {} };
+  if (isThemeTone(paper)) return { attr: paper, vars: {}, scheme: paper === 'paper' ? 'light' : 'dark' };
   const recipe = RECIPE_TONES[paper as keyof typeof RECIPE_TONES];
-  return recipe ? { attr: paper, vars: toneVariables(recipe) } : { vars: {} };
+  return recipe ? { attr: paper, vars: toneVariables(recipe), scheme: isLightColor(recipe.background) ? 'light' : 'dark' } : { vars: {} };
 }
 
 /** 'none' (quiet atmosphere) and 'plain' draw no photo; only the rest map to an image. */
@@ -132,17 +126,24 @@ export function hasSceneryImage(background: ReaderBackground) {
 export function readerStyle(settings: UserSettings): CSSProperties {
   const scenery = hasSceneryImage(settings.readerBackground);
   return {
-    '--reader-image': scenery ? `url(/backgrounds/${settings.readerBackground}.webp)` : 'none',
+    '--reader-image': settings.readerBackground === 'custom'
+      ? (settings.customScenery?.startsWith('data:image/jpeg;base64,') ? `url("${settings.customScenery}")` : 'none')
+      : scenery ? `url(/backgrounds/${settings.readerBackground}.webp)` : 'none',
     '--reader-overlay': `${scenery ? settings.readerOverlay : 100}%`,
     '--reader-blur': `${settings.readerBlur}px`,
-    '--reader-width': widths[settings.readerWidth] ?? widths.balanced,
-    '--reader-weight': settings.readerFontWeight ?? 400,
-    '--reader-tracking': READER_TRACKING[settings.readerLetterSpacing] ?? READER_TRACKING.normal,
+    '--reader-width': settings.readerWidth >= TYPE_RANGES.readerWidth.max ? '100%' : `${settings.readerWidth}px`,
+    '--reader-weight': settings.readerFontWeight,
+    '--reader-tracking': `${settings.readerLetterSpacing}em`,
+    '--reader-word-spacing': `${settings.readerWordSpacing}em`,
+    '--reader-paragraph-lines': settings.readerParagraphSpacing,
+    '--reader-align': settings.readerAlign,
+    '--reader-hyphens': settings.readerHyphens ? 'auto' : 'manual',
     ...resolveTone(settings.readerPaper, settings.customTones).vars
   } as CSSProperties;
 }
 
 /** Spread onto every reader surface: the style plus the tone attribute that theme-mirroring tones need. */
 export function readerSurfaceProps(settings: UserSettings) {
-  return { style: readerStyle(settings), 'data-reader-tone': resolveTone(settings.readerPaper, settings.customTones).attr };
+  const tone = resolveTone(settings.readerPaper, settings.customTones);
+  return { style: readerStyle(settings), 'data-reader-tone': tone.attr, 'data-tone-scheme': tone.scheme };
 }

@@ -46,14 +46,47 @@ export const Navbar: React.FC<NavbarProps> = props => {
   const peekTimer = useRef<number | undefined>(undefined);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const peeking = !pinned && peek;
-  const hidden = !pinned && !peek;
+  const [introOpen, setIntroOpen] = useState(false);
+  const [introMobile, setIntroMobile] = useState(false);
+  const peeking = !pinned && (peek || (introOpen && !introMobile));
+  const hidden = !pinned && !peeking;
+  const mobileVisible = mobileOpen || (introOpen && introMobile);
+
+  useEffect(() => {
+    // Reveal on each page load; navigating within the app keeps this component mounted.
+    const start = window.setTimeout(() => {
+      setIntroMobile(window.matchMedia('(max-width: 767px)').matches);
+      setIntroOpen(true);
+    }, 0);
+    return () => {
+      window.clearTimeout(start);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!introOpen) return;
+    const dismiss = () => {
+      window.clearTimeout(peekTimer.current);
+      setIntroOpen(false);
+      setPeek(false);
+    };
+    const onContentPointer = (event: PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest('main.app-content, .mobile-scrim')) dismiss();
+    };
+    const expiry = window.setTimeout(dismiss, 10_000);
+    document.addEventListener('pointerdown', onContentPointer);
+    return () => {
+      window.clearTimeout(expiry);
+      document.removeEventListener('pointerdown', onContentPointer);
+    };
+  }, [introOpen]);
 
   const schedulePeek = (open: boolean, delay: number) => {
     window.clearTimeout(peekTimer.current);
     peekTimer.current = window.setTimeout(() => setPeek(open), delay);
   };
   const pin = (next: boolean) => {
+    setIntroOpen(false);
     window.clearTimeout(peekTimer.current);
     setPeek(false);
     setPinned(next);
@@ -68,11 +101,12 @@ export const Navbar: React.FC<NavbarProps> = props => {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setMobileOpen(false); setSettingsOpen(false); setPeek(false); }
+      if (event.key === 'Escape') { setIntroOpen(false); setMobileOpen(false); setSettingsOpen(false); setPeek(false); }
       if ((event.ctrlKey || event.metaKey) && event.key === '\\' && !settings.zenMode) {
         event.preventDefault();
         window.clearTimeout(peekTimer.current);
         setPeek(false);
+        setIntroOpen(false);
         setPinned(!pinned);
       }
     };
@@ -81,6 +115,7 @@ export const Navbar: React.FC<NavbarProps> = props => {
   }, [pinned, setPinned, settings.zenMode]);
 
   const choose = (mode: TypingMode) => {
+    setIntroOpen(false);
     onSelectMode(mode);
     setMobileOpen(false);
     setSettingsOpen(false);
@@ -117,7 +152,6 @@ export const Navbar: React.FC<NavbarProps> = props => {
         </div>
       </div>
       <nav className="sidebar-nav" aria-label="Primary navigation">
-        <p className="sidebar-section-label">Practice</p>
         {sections.map(item => {
           const active = currentMode === item.mode;
           return (
@@ -130,9 +164,9 @@ export const Navbar: React.FC<NavbarProps> = props => {
       </nav>
       <div className="sidebar-footer">
         <button className="sidebar-link" onClick={() => setSettingsOpen(true)} title="Settings"><Settings2 /><span>Settings</span></button>
-        <button className={`sidebar-link ${currentMode === 'profile' ? 'active' : ''}`} onClick={() => choose('profile')} title="Profile and progress">
+        <button className={`sidebar-link ${currentMode === 'profile' ? 'active' : ''}`} onClick={() => choose('profile')} aria-current={currentMode === 'profile' ? 'page' : undefined}>
           {currentMode === 'profile' && <motion.span layoutId={`${scope}-nav-pill`} className="sidebar-pill" transition={spring.snappy} />}
-          <User /><span>My progress</span>
+          <User /><span>Profile</span>
         </button>
       </div>
     </>
@@ -179,14 +213,14 @@ export const Navbar: React.FC<NavbarProps> = props => {
       <header className="mobile-bar glass glass-pill">
         <button onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu /></button>
         <button className="brand-home" onClick={() => choose('stories')} aria-label="KeyHaven home"><BrandLogo /></button>
-        <button onClick={() => choose('profile')} aria-label="Profile and progress"><User /></button>
+        <button onClick={() => choose('profile')} aria-label="Profile"><User /></button>
       </header>
 
       <AnimatePresence>
-        {mobileOpen && <motion.div key="mobile-scrim" className="mobile-scrim" variants={fade} initial="hidden" animate="show" exit="exit" onClick={() => setMobileOpen(false)} />}
-        {mobileOpen && (
+        {mobileVisible && <motion.div key="mobile-scrim" className="mobile-scrim" variants={fade} initial="hidden" animate="show" exit="exit" onClick={() => { setIntroOpen(false); setMobileOpen(false); }} />}
+        {mobileVisible && (
           <motion.aside key="mobile-drawer" className="mobile-drawer glass glass-panel" variants={slideInLeft} initial="hidden" animate="show" exit="exit">
-            <button className="drawer-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X /></button>
+            <button className="drawer-close" onClick={() => { setIntroOpen(false); setMobileOpen(false); }} aria-label="Close navigation"><X /></button>
             {renderNav('mobile')}
           </motion.aside>
         )}
@@ -251,7 +285,7 @@ function SettingsPanel(props: NavbarProps & { onClose: () => void; onProgress: (
     <p className="settings-note">Themes, fonts, scenery and background sound are in <strong>Reading settings</strong> on any Read page.</p>
     <div className="settings-actions">
       <button className="quiet-action" onClick={props.onToggleZenMode}><Focus />Enter focus mode</button>
-      <button className="quiet-action" onClick={props.onProgress}><User />Open my progress</button>
+      <button className="quiet-action" onClick={props.onProgress}><User />Open profile</button>
     </div>
   </div>;
 }

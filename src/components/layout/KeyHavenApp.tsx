@@ -16,8 +16,10 @@ import { QuotesView } from '@/components/reader/QuotesView';
 import { LearnView } from '@/components/learn/LearnView';
 import { ArcadeView } from '@/components/arcade/ArcadeView';
 import { LeaderboardView } from '@/components/analytics/LeaderboardView';
-import { ProfileView } from '@/components/analytics/ProfileView';
-import { useCloudSync } from '@/hooks/useCloudSync';
+import { ProfileView } from '@/components/profile/ProfileView';
+import { rememberWork } from '@/lib/catalog';
+import { useBackupSync } from '@/hooks/useBackupSync';
+import { useBackupStatus, type BackupState } from '@/lib/sync/status';
 import { modeFromPath, pathForMode } from '@/lib/navigation';
 import { hasSceneryImage, readerSurfaceProps } from '@/lib/reader-style';
 import { SECTION_LABELS, sectionUpdate, settingsForSection } from '@/lib/section-settings';
@@ -26,12 +28,22 @@ import type { UserSettings } from '@/types';
 /** Views that draw their own scenery and have a reading-settings button in their title bar. */
 const READER_VIEWS: TypingMode[] = ['stories', 'quotes'];
 
+const BACKUP_LABELS: Record<BackupState, string> = {
+  off: 'Saved on this device',
+  'signed-out': 'Saved on this device',
+  syncing: 'Backing up…',
+  'up-to-date': 'Backed up',
+  offline: 'Offline · backs up later',
+  error: 'Backup paused'
+};
+
 export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = false }: { initialMode?: TypingMode; initialLibraryOpen?: boolean }) {
   const [currentMode, setCurrentMode] = useState<TypingMode>(initialMode);
   const settingsApi = useSettings();
   const { settings } = settingsApi;
   const { playKeyPress } = useSoundEngine(settings.switchSound, settings.soundVolume, settings.ambientSound, settings.ambientVolume, settings.muted);
-  const syncStatus = useCloudSync(settings, currentMode, settingsApi.replaceSettings);
+  useBackupSync(settings, settingsApi.replaceSettings);
+  const backup = useBackupStatus();
 
   useEffect(() => {
     const onBack = () => {
@@ -44,10 +56,12 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
 
   // Each section renders with its own typography and bottom bar; changes made from it are saved to that section.
   const sectionSettings = settingsForSection(settings, currentMode);
-  const updateSectionSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
-    const change = sectionUpdate(settings, currentMode, key, value);
-    for (const [changedKey, changedValue] of Object.entries(change)) settingsApi.updateSetting(changedKey as keyof UserSettings, changedValue as never);
-  };
+  const updateSectionSettings = (patch: Partial<UserSettings>) => settingsApi.updateSettingsWith(previous =>
+    (Object.entries(patch) as Array<[keyof UserSettings, UserSettings[keyof UserSettings]]>).reduce<Partial<UserSettings>>(
+      (change, [key, value]) => ({ ...change, ...sectionUpdate({ ...previous, ...change }, currentMode, key, value) }),
+      {}
+    ));
+  const updateSectionSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => updateSectionSettings({ [key]: value } as Partial<UserSettings>);
 
   // Mode changes run inside a transition so <ViewTransition> animates between views.
   const selectMode = (mode: TypingMode) => {
@@ -57,11 +71,34 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
 
   return (
     <MotionConfig reducedMotion="user">
-      {/* Reading preferences (page tone, scenery, type) apply to the whole site, not just the reader. */}
-      <div className="min-h-screen app-surface" data-motion={settings.ambientMotion ? 'on' : 'off'} {...readerSurfaceProps(sectionSettings)}>
-        <AmbientBackdrop />
+      <div className="min-h-screen app-surface" data-motion={settings.ambientMotion ? 'on' : 'off'}>
+        {/* Page tone and scenery colour every page's content. The chrome (sidebar, panels, library, tooltips)
+            sits outside this wrapper and always follows the site theme. */}
+        <div className="page-surface" {...readerSurfaceProps(sectionSettings)}>
+          <AmbientBackdrop />
+          {!READER_VIEWS.includes(currentMode) && hasSceneryImage(settings.readerBackground) && <div className="app-scenery" aria-hidden="true" />}
+          <main className="app-content">
+            <ViewTransition key={currentMode} enter="mode-enter" exit="mode-exit" default="none">
+              <div className="mode-view-root">
+                {currentMode === 'stories' && <ReaderHome settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
+                {currentMode === 'speed-test' && <SpeedTestView settings={sectionSettings} onKeyPress={playKeyPress} />}
+                {currentMode === 'quotes' && <QuotesView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
+                {currentMode === 'learn' && <LearnView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
+                {currentMode === 'arcade' && <ArcadeView settings={sectionSettings} onKeyPress={playKeyPress} />}
+                {currentMode === 'leaderboard' && <LeaderboardView />}
+                {currentMode === 'profile' && <ProfileView
+                  settings={settings}
+                  onUpdateSetting={settingsApi.updateSetting}
+                  onNavigate={selectMode}
+                  onOpenWork={key => { rememberWork(key); selectMode('stories'); }}
+                  onImportSettings={settingsApi.replaceSettings}
+                />}
+              </div>
+            </ViewTransition>
+          </main>
+        </div>
         <Tooltips />
-        {!READER_VIEWS.includes(currentMode) && hasSceneryImage(settings.readerBackground) && <div className="app-scenery" aria-hidden="true" />}
+        {!settings.zenMode && <span className="sync-indicator" role="status">{BACKUP_LABELS[backup.state]}</span>}
         <Navbar
           currentMode={currentMode}
           onSelectMode={selectMode}
@@ -74,21 +111,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
         />
         {/* The library is part of Read: a window over the reader, opened from its title bar or with Ctrl K. */}
         {currentMode === 'stories' && <LibraryWindow initialOpen={initialLibraryOpen} />}
-        {!settings.zenMode && <ReaderSettings settings={sectionSettings} onUpdateSetting={updateSectionSetting} sectionLabel={SECTION_LABELS[currentMode] ?? 'Read'} showTrigger={!READER_VIEWS.includes(currentMode)} />}
-        <main className="app-content">
-          <ViewTransition key={currentMode} enter="mode-enter" exit="mode-exit" default="none">
-            <div className="mode-view-root">
-              {currentMode === 'stories' && <ReaderHome settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
-              {currentMode === 'speed-test' && <SpeedTestView settings={sectionSettings} onKeyPress={playKeyPress} />}
-              {currentMode === 'quotes' && <QuotesView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
-              {currentMode === 'learn' && <LearnView settings={sectionSettings} onKeyPress={playKeyPress} />}
-              {currentMode === 'arcade' && <ArcadeView settings={sectionSettings} onKeyPress={playKeyPress} />}
-              {currentMode === 'leaderboard' && <LeaderboardView />}
-              {currentMode === 'profile' && <ProfileView />}
-            </div>
-          </ViewTransition>
-          {!settings.zenMode && <span className="sync-indicator">{syncStatus === 'synced' ? 'Synced' : syncStatus === 'syncing' ? 'Syncing…' : syncStatus === 'error' ? 'Local · sync pending' : 'Saved locally'}</span>}
-        </main>
+        {!settings.zenMode && <ReaderSettings settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} sectionLabel={SECTION_LABELS[currentMode] ?? 'Read'} showTrigger={!READER_VIEWS.includes(currentMode)} />}
       </div>
     </MotionConfig>
   );

@@ -15,6 +15,13 @@
       "when": 1789198080709,
       "tag": "0001_wandering_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789416096601,
+      "tag": "0002_backup_and_sync",
+      "breakpoints": true
     }
   ]
 }

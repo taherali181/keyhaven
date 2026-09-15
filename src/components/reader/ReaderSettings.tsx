@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AudioWaveform, Check, ChevronDown, ChevronUp, CloudRain, Coffee, Flame, Headphones, PanelBottom, Palette, Plus, SlidersHorizontal, Trees, Type, VolumeX, Waves, X } from 'lucide-react';
+import { AudioWaveform, Check, ChevronDown, ChevronUp, CloudRain, Coffee, Flame, Headphones, PanelBottom, Palette, Plus, RotateCcw, SlidersHorizontal, Trees, Type, VolumeX, Waves, X } from 'lucide-react';
 import { AmbientSound, CustomReaderTone, FontFamily, ReaderBackground, ReaderToneId, ThemeId, UserSettings } from '@/types';
 import { FONTS } from '@/lib/themes';
-import { CUSTOM_TONE_PREFIX, EXTRA_TONES, MAIN_TONES, READER_TRACKING, RECIPE_TONES, contrastRatio, hasSceneryImage, isThemeTone, readerSurfaceProps, toneName, toneVariables } from '@/lib/reader-style';
+import { CUSTOM_TONE_PREFIX, EXTRA_TONES, MAIN_TONES, RECIPE_TONES, contrastRatio, hasSceneryImage, isThemeTone, readerSurfaceProps, toneName, toneVariables } from '@/lib/reader-style';
+import { DEFAULT_TYPOGRAPHY, TYPE_PRESETS, TYPE_RANGES, matchesTypography, weightName, type Typography } from '@/lib/typography';
+import { SliderField } from '@/components/ui/SliderField';
+import { prepareCustomScenery } from '@/lib/custom-scenery';
 import { ease, fade, slideInRight, spring } from '@/lib/motion';
 import { OPEN_READER_SETTINGS_EVENT } from '@/lib/reader-events';
 import { DEFAULT_READER_STATS, MAX_READER_STATS, resolveReaderStats, statsForMode, type ReaderMode, type ReaderStatContext } from '@/lib/reader-stats';
@@ -19,8 +22,22 @@ interface TileOption<T> { value: T; label: string; sub?: string; visual: ReactNo
 const TABS: Array<{ id: TabId; label: string; icon: ReactNode }> = [
   { id: 'look', label: 'Appearance', icon: <Palette /> },
   { id: 'type', label: 'Typography', icon: <Type /> },
-  { id: 'sound', label: 'Ambience', icon: <Headphones /> },
-  { id: 'bar', label: 'Bottom bar', icon: <PanelBottom /> }
+  { id: 'bar', label: 'Bottom bar', icon: <PanelBottom /> },
+  { id: 'sound', label: 'Ambience', icon: <Headphones /> }
+];
+
+type TypefaceGroup = { label: string; fonts: FontFamily[] };
+
+const FEATURED_TYPEFACES: TypefaceGroup[] = [
+  { label: 'Serif', fonts: ['serif', 'source-serif'] },
+  { label: 'Sans serif', fonts: ['sans', 'inter'] }
+];
+
+const MORE_TYPEFACES: TypefaceGroup[] = [
+  { label: 'Serif', fonts: ['lora', 'merriweather', 'garamond', 'playfair'] },
+  { label: 'Sans serif', fonts: ['plex'] },
+  { label: 'Accessible', fonts: ['atkinson'] },
+  { label: 'Monospace', fonts: ['jetbrains', 'jetbrains-mono'] }
 ];
 
 /** Sample reader state for the bottom bar preview. */
@@ -144,27 +161,8 @@ const SOUNDS: Array<{ id: AmbientSound; label: string; icon: ReactNode; style: C
   { id: 'alpha-waves', label: 'Alpha waves', icon: <AudioWaveform />, style: { background: 'linear-gradient(135deg, #5d7f8f, #3b4a6b 50%, #1d2334)' } }
 ];
 
-const READING_FONTS: FontFamily[] = ['serif', 'sans', 'playfair', 'jetbrains'];
-const SIZES: Array<{ value: UserSettings['fontSize']; label: string; preview: string }> = [
-  { value: 'sm', label: 'Small', preview: '1rem' },
-  { value: 'base', label: 'Medium', preview: '1.3rem' },
-  { value: 'lg', label: 'Large', preview: '1.6rem' },
-  { value: 'xl', label: 'Extra large', preview: '1.95rem' }
-];
-const PREVIEW_SIZES: Record<UserSettings['fontSize'], string> = { sm: '1.05rem', base: '1.22rem', lg: '1.42rem', xl: '1.65rem' };
-const WEIGHTS: Array<{ value: UserSettings['readerFontWeight']; label: string }> = [
-  { value: 300, label: 'Light' }, { value: 400, label: 'Regular' }, { value: 500, label: 'Medium' }, { value: 600, label: 'Bold' }
-];
-const LINE_HEIGHTS = [{ value: 1.5, label: 'Compact' }, { value: 1.8, label: 'Comfortable' }, { value: 2.1, label: 'Airy' }];
-const TRACKING: Array<{ value: UserSettings['readerLetterSpacing']; label: string }> = [
-  { value: 'tight', label: 'Snug' }, { value: 'normal', label: 'Normal' }, { value: 'wide', label: 'Open' }
-];
-const MARGINS: Array<{ value: UserSettings['readerWidth']; label: string; column: string }> = [
-  { value: 'narrow', label: 'Wide margins', column: '42%' },
-  { value: 'balanced', label: 'Balanced', column: '60%' },
-  { value: 'wide', label: 'Slim margins', column: '78%' },
-  { value: 'full', label: 'Edge to edge', column: '94%' }
-];
+/** The preview shows real sizes, capped so very large text still fits the settings panel. */
+const PREVIEW_MAX_PX = 34;
 
 function TileGroup<T extends string | number>({ label, hint, value, options, moreOptions, moreLabel = 'More', moreCompact = false, moreFooter, onChange, columns = 3 }: { label: string; hint?: string; value: T; options: TileOption<T>[]; moreOptions?: TileOption<T>[]; moreLabel?: string; moreCompact?: boolean; moreFooter?: ReactNode; onChange: (value: T) => void; columns?: 2 | 3 | 4 }) {
   const moreId = useId();
@@ -233,17 +231,76 @@ function Preview({ settings }: { settings: UserSettings }) {
   const font = FONTS[settings.font]?.class ?? 'font-serif';
   return <div className="rs-preview" {...readerSurfaceProps(settings)} aria-hidden="true">
     <small>Preview</small>
-    <p className={font} style={{ fontSize: PREVIEW_SIZES[settings.fontSize], fontWeight: settings.readerFontWeight, lineHeight: settings.readerLineHeight, letterSpacing: READER_TRACKING[settings.readerLetterSpacing] }}>
+    <p className={font} style={{ fontSize: `${Math.min(settings.fontSize, PREVIEW_MAX_PX)}px`, fontWeight: settings.readerFontWeight, lineHeight: settings.readerLineHeight, letterSpacing: `${settings.readerLetterSpacing}em`, wordSpacing: `${settings.readerWordSpacing}em`, textAlign: settings.readerAlign, hyphens: settings.readerHyphens ? 'auto' : 'manual' }}>
       Once upon a midnight dreary, while I pondered, weak and weary, over many a quaint and curious volume of forgotten lore.
     </p>
   </div>;
 }
 
+function TypefacePicker({ value, onChange }: { value: FontFamily; onChange: (font: FontFamily) => void }) {
+  const moreId = useId();
+  const selectedExtra = MORE_TYPEFACES.flatMap(group => group.fonts).find(font => font === value);
+  const [showMore, setShowMore] = useState(Boolean(selectedExtra));
+
+  const tile = (font: FontFamily) => <button key={font} type="button" role="radio" aria-checked={value === font} aria-label={FONTS[font].name} className="rs-preset rs-typeface-option" onClick={() => onChange(font)}>
+    <span className={`rs-preset-aa ${FONTS[font].class}`} aria-hidden="true">Aa</span>
+    <span aria-hidden="true"><strong>{FONTS[font].name}</strong><small>{FONTS[font].description}</small></span>
+  </button>;
+
+  const groups = (items: TypefaceGroup[]) => items.map(group => <div key={group.label} className="rs-typeface-group">
+    <p>{group.label}</p>
+    <div className="rs-presets">{group.fonts.map(tile)}</div>
+  </div>);
+
+  return <section className="rs-group">
+    <header><h3>Typeface</h3><span>{FONTS[value]?.name}</span></header>
+    <div id={moreId} className="rs-typeface-picker" role="radiogroup" aria-label="Typeface">
+      {FEATURED_TYPEFACES.map(group => <div key={group.label} className="rs-typeface-group">
+        <p>{group.label}</p>
+        <div className="rs-presets">{group.fonts.map(tile)}</div>
+        <div className="rs-more rs-typeface-extras" data-open={showMore} inert={!showMore}>
+          <div><div className="rs-presets">{MORE_TYPEFACES.find(extra => extra.label === group.label)?.fonts.map(tile)}</div></div>
+        </div>
+      </div>)}
+      <div className="rs-more rs-typeface-more" data-open={showMore} inert={!showMore}>
+        <div>{groups(MORE_TYPEFACES.filter(group => !FEATURED_TYPEFACES.some(featured => featured.label === group.label)))}</div>
+      </div>
+    </div>
+    <button type="button" className="rs-more-toggle" aria-expanded={showMore} aria-controls={moreId} onClick={() => setShowMore(open => !open)}>
+      <span>{showMore ? 'Show fewer typefaces' : 'More typefaces'}</span>
+      {!showMore && selectedExtra && <em>{FONTS[selectedExtra].name}</em>}
+      <ChevronDown aria-hidden="true" />
+    </button>
+  </section>;
+}
+
 /** Reading-only settings: a floating trigger plus a tile-based sheet. Rendered for Stories, Quotes and Library. */
-export function ReaderSettings({ settings, onUpdateSetting, showTrigger = true, sectionLabel = 'Read' }: { settings: UserSettings; onUpdateSetting: UpdateSetting; showTrigger?: boolean; sectionLabel?: string }) {
+export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, showTrigger = true, sectionLabel = 'Read' }: { settings: UserSettings; onUpdateSetting: UpdateSetting; onUpdateSettings: (patch: Partial<UserSettings>) => void; showTrigger?: boolean; sectionLabel?: string }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabId>('look');
-  const fontClass = FONTS[settings.font]?.class ?? 'font-serif';
+  const sceneryInput = useRef<HTMLInputElement>(null);
+  const [uploadingScenery, setUploadingScenery] = useState(false);
+  const [sceneryError, setSceneryError] = useState('');
+  const uploadScenery = async (file: File) => {
+    setUploadingScenery(true);
+    setSceneryError('');
+    try {
+      const customScenery = await prepareCustomScenery(file);
+      // Reserve enough storage before applying a change; settings persistence otherwise fails silently.
+      const probeKey = `keyhaven_scenery_check_${crypto.randomUUID()}`;
+      try {
+        localStorage.setItem(probeKey, customScenery);
+        localStorage.removeItem(probeKey);
+      } catch {
+        throw new Error('There is not enough browser storage to save this image.');
+      }
+      onUpdateSettings({ customScenery, readerBackground: 'custom' });
+    } catch (error) {
+      setSceneryError(error instanceof Error ? error.message : 'The image could not be saved.');
+    } finally {
+      setUploadingScenery(false);
+    }
+  };
   const customTones = settings.customTones ?? [];
   const [toneDraft, setToneDraft] = useState<{ tone: CustomReaderTone; isNew: boolean } | null>(null);
   const selectedCustom = customTones.find(tone => `${CUSTOM_TONE_PREFIX}${tone.id}` === settings.readerPaper);
@@ -302,9 +359,10 @@ export function ReaderSettings({ settings, onUpdateSetting, showTrigger = true, 
     <TileGroup label="Page tone" columns={4} value={settings.readerPaper} onChange={value => onUpdateSetting('readerPaper', value)}
       options={[
         { value: 'system', label: 'Match theme', visualClass: 'rs-tone-auto', visual: <><span className="rs-tone-split"><i data-reader-tone="night" /><i data-reader-tone="paper" /></span><span className="rs-aa font-serif">Aa</span></> },
-        ...MAIN_TONES.map(toneTile)
+        ...MAIN_TONES.map(toneTile),
+        ...EXTRA_TONES.slice(0, 4).map(toneTile)
       ]}
-      moreOptions={[...EXTRA_TONES.map(toneTile), ...customTones.map(customTile)]}
+      moreOptions={[...EXTRA_TONES.slice(4).map(toneTile), ...customTones.map(customTile)]}
       moreLabel="More tones"
       moreCompact
       moreFooter={<button type="button" className="rs-tile rs-tone-add" onClick={startNewTone}><span className="rs-visual" aria-hidden="true"><Plus /></span><span className="rs-label">New tone</span></button>}
@@ -312,7 +370,14 @@ export function ReaderSettings({ settings, onUpdateSetting, showTrigger = true, 
     {toneDraft
       ? <ToneEditor draft={toneDraft.tone} isNew={toneDraft.isNew} onChange={tone => setToneDraft({ ...toneDraft, tone })} onCancel={() => setToneDraft(null)} onSave={saveTone} onDelete={() => deleteTone(toneDraft.tone.id)} />
       : selectedCustom && <div className="rs-tone-bar"><span>Custom tone · <strong>{selectedCustom.name}</strong></span><div><button type="button" className="rs-btn is-small" onClick={() => setToneDraft({ isNew: false, tone: selectedCustom })}>Edit</button></div></div>}
-    <TileGroup label="Scenery" hint="Behind the page" columns={3} value={settings.readerBackground} onChange={value => onUpdateSetting('readerBackground', value)} options={SCENERY.map(sceneryTile)} moreOptions={MORE_SCENERY.map(sceneryTile)} moreLabel="More scenery" />
+    <TileGroup label="Scenery" hint="Behind the page" columns={3} value={settings.readerBackground} onChange={value => onUpdateSetting('readerBackground', value)} options={SCENERY.map(sceneryTile)}
+      moreOptions={[...MORE_SCENERY.map(sceneryTile), ...(settings.customScenery ? [{ value: 'custom' as const, label: 'Custom image', visual: null, visualClass: 'rs-image', visualStyle: { backgroundImage: `url("${settings.customScenery}")` } }] : [])]}
+      moreLabel="More scenery"
+      moreFooter={<button type="button" className="rs-tile" disabled={uploadingScenery} onClick={() => sceneryInput.current?.click()}><span className="rs-visual" aria-hidden="true"><Plus /></span><span className="rs-label">{uploadingScenery ? 'Saving image…' : settings.customScenery ? 'Replace image' : 'Custom image'}<small>Upload JPG, PNG, WebP</small></span></button>}
+    />
+    <input ref={sceneryInput} type="file" accept="image/jpeg,image/png,image/webp" hidden aria-label="Upload custom scenery" onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void uploadScenery(file); }} />
+    {sceneryError && <p className="rs-hint" role="alert">{sceneryError}</p>}
+    {settings.customScenery && <div className="rs-tone-bar"><span>Your uploaded image</span><button type="button" className="rs-btn is-small" disabled={uploadingScenery} onClick={() => onUpdateSettings({ customScenery: undefined, ...(settings.readerBackground === 'custom' ? { readerBackground: 'none' } : {}) })}>Remove image</button></div>}
     <div className="setting-group rs-motion">
       <label className="toggle-row">Background motion<input type="checkbox" checked={settings.ambientMotion} onChange={event => onUpdateSetting('ambientMotion', event.target.checked)} /></label>
       <p className="rs-hint">Floating motes and drifting scenery. Leave off for the lightest, coolest-running pages.</p>
@@ -323,13 +388,89 @@ export function ReaderSettings({ settings, onUpdateSetting, showTrigger = true, 
     </div>}
   </>;
 
+  type SliderKey = keyof typeof TYPE_RANGES;
+  const typeSlider = (key: SliderKey, label: string, format: (value: number) => string, hint?: string) => (
+    <SliderField label={label} value={settings[key]} {...TYPE_RANGES[key]} defaultValue={DEFAULT_TYPOGRAPHY[key]} format={format} hint={hint} visual={key === 'fontSize' ? 'size' : key === 'readerFontWeight' ? 'weight' : undefined} onChange={value => onUpdateSetting(key, value)} />
+  );
+  const applyTypography = (values: Typography) => onUpdateSettings(values);
+  const signed = (value: number, digits: number) => `${value > 0 ? '+' : ''}${value.toFixed(digits)} em`;
+
   const typography = <>
-    <TileGroup label="Typeface" columns={2} value={settings.font} onChange={value => onUpdateSetting('font', value)} options={READING_FONTS.map(font => ({ value: font, label: FONTS[font].name, sub: FONTS[font].description, visual: <span className={`rs-aa ${FONTS[font].class}`} style={{ fontSize: '1.9rem' }}>Aa</span> }))} />
-    <TileGroup label="Text size" columns={4} value={settings.fontSize} onChange={value => onUpdateSetting('fontSize', value)} options={SIZES.map(size => ({ value: size.value, label: size.label, visual: <span className={`rs-aa ${fontClass}`} style={{ fontSize: size.preview }}>Aa</span> }))} />
-    <TileGroup label="Boldness" columns={4} value={settings.readerFontWeight ?? 400} onChange={value => onUpdateSetting('readerFontWeight', value)} options={WEIGHTS.map(weight => ({ value: weight.value, label: weight.label, visual: <span className={`rs-aa ${fontClass}`} style={{ fontWeight: weight.value }}>Aa</span> }))} />
-    <TileGroup label="Line spacing" columns={3} value={settings.readerLineHeight} onChange={value => onUpdateSetting('readerLineHeight', value)} options={LINE_HEIGHTS.map(item => ({ value: item.value, label: item.label, sub: `${item.value}×`, visual: <span className="rs-lines" style={{ gap: `${(item.value - 1.2) * 14}px` }}><i /><i /><i /><i /></span> }))} />
-    <TileGroup label="Letter spacing" columns={3} value={settings.readerLetterSpacing ?? 'normal'} onChange={value => onUpdateSetting('readerLetterSpacing', value)} options={TRACKING.map(item => ({ value: item.value, label: item.label, visual: <span className={`rs-word ${fontClass}`} style={{ letterSpacing: READER_TRACKING[item.value] }}>reading</span> }))} />
-    <TileGroup label="Margins" columns={4} value={settings.readerWidth} onChange={value => onUpdateSetting('readerWidth', value)} options={MARGINS.map(item => ({ value: item.value, label: item.label, visual: <span className="rs-frame" style={{ '--col': item.column } as CSSProperties}><i /><i /><i /><i /></span> }))} />
+    {sectionLabel === 'Read' && <section className="rs-group">
+      <header><h3>Page layout</h3><span>Reading mode</span></header>
+      <div className="rs-presets" role="group" aria-label="Page layout">
+        {(['single', 'spread'] as const).map(value => <button key={value} type="button" className="rs-preset" aria-pressed={(settings.readerPageLayout ?? 'single') === value} onClick={() => onUpdateSetting('readerPageLayout', value)}>
+          <span className="rs-page-diagram" aria-hidden="true"><i />{value === 'spread' && <i />}</span>
+          <span><strong>{value === 'single' ? 'One page' : 'Two pages'}</strong><small>{value === 'single' ? 'A focused column' : 'Side by side'}</small></span>
+        </button>)}
+      </div>
+      <p className="kh-slider-hint">Two pages use one page on narrow screens.</p>
+    </section>}
+    <section className="rs-group">
+      <header><h3>Presets</h3><span>Sets every option below</span></header>
+      <div className="rs-presets">
+        {TYPE_PRESETS.map(preset => <button key={preset.id} type="button" className="rs-preset" aria-pressed={matchesTypography(settings, preset.values)} onClick={() => applyTypography(preset.values)}>
+          <span className={`rs-preset-aa ${FONTS[preset.values.font].class}`} style={{ fontWeight: preset.values.readerFontWeight }} aria-hidden="true">Aa</span>
+          <span><strong>{preset.label}</strong><small>{preset.description}</small></span>
+        </button>)}
+      </div>
+    </section>
+
+    <TypefacePicker value={settings.font} onChange={font => onUpdateSetting('font', font)} />
+
+    <section className="rs-group">
+      <header><h3>Size and weight</h3><span>Double-click a slider to reset it</span></header>
+      <div className="rs-fields">
+        {typeSlider('fontSize', 'Text size', value => `${value} px`)}
+        {typeSlider('readerFontWeight', 'Weight', value => `${value} · ${weightName(value)}`)}
+      </div>
+    </section>
+
+    <section className="rs-group">
+      <header><h3>Spacing</h3></header>
+      <div className="rs-fields">
+        {typeSlider('readerLineHeight', 'Line spacing', value => `${value.toFixed(2)}×`)}
+        {typeSlider('readerLetterSpacing', 'Letter spacing', value => signed(value, 3))}
+        {typeSlider('readerWordSpacing', 'Word spacing', value => signed(value, 2))}
+        <div className="kh-slider">
+          <div className="kh-slider-head"><span className="rs-field-label">Paragraph spacing</span></div>
+          <div className="rs-segmented" role="radiogroup" aria-label="Paragraph spacing">
+            {([[0, 'None'], [1, 'One line'], [2, 'Two lines']] as const).map(([value, label]) => <button key={value} type="button" role="radio" aria-checked={settings.readerParagraphSpacing === value} onClick={() => onUpdateSetting('readerParagraphSpacing', value)}>{label}</button>)}
+          </div>
+          <p className="kh-slider-hint">Space between paragraphs on reading pages.</p>
+        </div>
+      </div>
+    </section>
+
+    <section className="rs-group">
+      <header><h3>Layout</h3></header>
+      <div className="rs-fields">
+        <div className="rs-presets" role="group" aria-label="Column width presets">
+          {([
+            { value: 640, label: 'Wide margins', column: '42%' },
+            { value: 780, label: 'Balanced', column: '60%' },
+            { value: 940, label: 'Slim margins', column: '78%' },
+            { value: 1400, label: 'Edge to edge', column: '94%' }
+          ] as const).map(option => <button key={option.value} type="button" className="rs-preset" aria-pressed={settings.readerWidth === option.value} onClick={() => onUpdateSetting('readerWidth', option.value)}>
+            <span className="rs-preset-aa rs-width-preview" aria-hidden="true"><span className="rs-frame" style={{ '--col': option.column } as CSSProperties}><i /><i /><i /><i /></span></span>
+            <span><strong>{option.label}</strong><small>{option.value === TYPE_RANGES.readerWidth.max ? 'Full available width' : `${option.value} px`}</small></span>
+          </button>)}
+        </div>
+        {typeSlider('readerWidth', 'Column width', value => value === TYPE_RANGES.readerWidth.max ? 'Edge to edge' : `${value} px`, 'Narrower columns are easier to follow. The maximum fills the available width with a small edge margin.')}
+        <div className="kh-slider">
+          <div className="kh-slider-head"><span className="rs-field-label">Alignment</span></div>
+          <div className="rs-segmented" role="radiogroup" aria-label="Alignment">
+            {(['left', 'justify'] as const).map(value => <button key={value} type="button" role="radio" aria-checked={settings.readerAlign === value} onClick={() => onUpdateSetting('readerAlign', value)}>{value === 'left' ? 'Left' : 'Justified'}</button>)}
+          </div>
+        </div>
+        <div className="setting-group">
+          <label className="toggle-row">Hyphenate long words<input type="checkbox" checked={settings.readerHyphens} onChange={event => onUpdateSetting('readerHyphens', event.target.checked)} /></label>
+        </div>
+        <p className="kh-slider-hint">Alignment and hyphenation shape reading pages. While typing, every word stays whole on its line.</p>
+      </div>
+    </section>
+
+    <button type="button" className="rs-btn rs-reset" onClick={() => applyTypography(DEFAULT_TYPOGRAPHY)}><RotateCcw aria-hidden="true" />Reset typography for {sectionLabel}</button>
   </>;
 
   const sound = <>
@@ -353,7 +494,7 @@ export function ReaderSettings({ settings, onUpdateSetting, showTrigger = true, 
         <motion.aside key="rs-panel" className="rs-panel glass glass-panel" role="dialog" aria-label="Reading settings" variants={slideInRight} initial="hidden" animate="show" exit="exit">
           <div className="rs-pinned">
             <header className="rs-header">
-              <div><p className="eyebrow">{sectionLabel} · type and bottom bar are for {sectionLabel} only</p><h2>Reading settings</h2></div>
+              <h2>Settings</h2>
               <button type="button" onClick={close} aria-label="Close reading settings"><X /></button>
             </header>
             <div className="rs-tabs" role="tablist" aria-label="Reading settings sections">
