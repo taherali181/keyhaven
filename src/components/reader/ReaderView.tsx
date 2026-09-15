@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, Library, Maximize2, Minimize2, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
+import { ChevronUp, Library, Maximize2, Minimize2, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
 import { ContentsMenu, type ContentsEntry } from '@/components/reader/ContentsMenu';
 import { StoryModeToggle } from '@/components/reader/StoryModeToggle';
 import { StoryReader, type ReaderLayout } from '@/components/reader/StoryReader';
@@ -117,7 +117,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
     window.clearTimeout(revealTimerRef.current);
     revealTimerRef.current = window.setTimeout(() => setBarRevealed(show), delay);
   };
-  useEffect(() => () => window.clearTimeout(revealTimerRef.current), []);
+  useEffect(() => () => window.clearTimeout(revealTimerRef.current), [settings.readerBarPinned]);
   // Fit the text to the screen: typing shows as many lines as fit (more when the title bar hides), and
   // whatever is left under the last whole line is shared across the gaps around the text so they stay even.
   const stageRef = useRef<HTMLDivElement>(null);
@@ -509,7 +509,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
           {fullscreen.supported && <button type="button" className="story-bar-button is-icon" onClick={fullscreen.toggle} aria-label={fullscreen.active ? 'Exit full screen' : 'Enter full screen'} title={fullscreen.active ? 'Exit full screen' : 'Full screen'}>{fullscreen.active ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}</button>}
           <button type="button" className="story-bar-button is-icon" onClick={() => onUpdateSetting('muted', !settings.muted)} aria-label="Mute sound" aria-pressed={settings.muted} title={settings.muted ? 'Unmute sound' : 'Mute sound'}>{settings.muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}</button>
           {!settings.zenMode && <button type="button" className="story-bar-button is-icon story-settings-button" onClick={openReaderSettings} aria-label="Reading settings" title="Reading settings"><SlidersHorizontal aria-hidden="true" /></button>}
-          <button type="button" className="story-bar-button is-icon story-hide-button" onClick={event => { onUpdateSetting('readerBarPinned', !pinned); setBarRevealed(false); if (pinned) event.currentTarget.blur(); }} aria-label="Auto-hide title bar" aria-pressed={!pinned} title={pinned ? 'Hide title bar' : 'Keep title bar shown'}>{pinned ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}</button>
+          <button type="button" className="story-bar-button is-icon story-hide-button" onClick={event => { window.clearTimeout(revealTimerRef.current); onUpdateSetting('readerBarPinned', !pinned); setBarRevealed(false); if (pinned) event.currentTarget.blur(); }} aria-label="Auto-hide title bar" aria-pressed={!pinned} title={pinned ? 'Hide title bar' : 'Keep title bar shown'}><ChevronUp aria-hidden="true" /></button>
         </div>
       </div>
 

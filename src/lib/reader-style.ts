@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { CustomReaderTone, ReaderBackground, ReaderToneId, UserSettings } from '@/types';
+import type { CustomReaderTone, ReaderBackground, ReaderToneId, ThemeId, UserSettings } from '@/types';
 import { TYPE_RANGES } from '@/lib/typography';
 
 /** Passage font size for a px value; `--type-scale` shrinks it on phones (see globals.css). */
@@ -7,15 +7,10 @@ export const passageFontSize = (px: number) => `calc(${px}px * var(--type-scale,
 
 export interface ToneRecipe { name: string; background: string; text: string; accent: string }
 
-/*
- * Night and Soft paper carry no colors of their own: globals.css applies the Reading room and
- * Daylight theme token blocks to [data-reader-tone="night"|"paper"], so they are identical to
- * "Match theme" in those themes and can never drift from it.
- */
-const THEME_TONE_NAMES = { night: 'Night', paper: 'Soft paper' } as const;
-
-/** Every other tone is a three-color recipe; the full token set is derived from it. */
-export const RECIPE_TONES: Record<Exclude<ReaderToneId, keyof typeof THEME_TONE_NAMES>, ToneRecipe> = {
+/** Every theme starts with three authored colors; the rest of its UI palette is derived. */
+export const RECIPE_TONES: Record<ReaderToneId, ToneRecipe> = {
+  night: { name: 'Night', background: '#1d2522', text: '#f4f1e8', accent: '#a8b59c' },
+  paper: { name: 'Soft paper', background: '#f4f1e8', text: '#1d2522', accent: '#536b54' },
   sepia: { name: 'Sepia', background: '#e9dfca', text: '#332e25', accent: '#6f5d3e' },
   bright: { name: 'Bright white', background: '#ffffff', text: '#121512', accent: '#3d5c43' },
   pitch: { name: 'Pitch black', background: '#000000', text: '#e7e7e1', accent: '#a8b59c' },
@@ -24,19 +19,16 @@ export const RECIPE_TONES: Record<Exclude<ReaderToneId, keyof typeof THEME_TONE_
   slate: { name: 'Slate', background: '#1b222a', text: '#e4e9ee', accent: '#8fb0c6' },
   ocean: { name: 'Deep ocean', background: '#0e1d25', text: '#d9e9ef', accent: '#76b3c5' },
   rose: { name: 'Rose dusk', background: '#291e23', text: '#f1e4e9', accent: '#d69cb0' },
-  espresso: { name: 'Espresso', background: '#2a211b', text: '#eee2d1', accent: '#caa46e' }
+  espresso: { name: 'Espresso', background: '#2a211b', text: '#eee2d1', accent: '#caa46e' },
+  lavender: { name: 'Lavender haze', background: '#e8e2ef', text: '#2b2433', accent: '#755a8d' }
 };
 
-export const MAIN_TONES: ReaderToneId[] = ['paper', 'sepia', 'night'];
-export const EXTRA_TONES: ReaderToneId[] = ['bright', 'pitch', 'rose', 'sage', 'slate', 'ocean', 'mist', 'espresso'];
+export const MAIN_TONES: ReaderToneId[] = ['night', 'paper', 'sepia'];
+export const EXTRA_TONES: ReaderToneId[] = ['pitch', 'rose', 'ocean', 'sage', 'espresso', 'slate', 'mist', 'bright', 'lavender'];
 export const CUSTOM_TONE_PREFIX = 'custom:';
 
-export function isThemeTone(id: string): id is keyof typeof THEME_TONE_NAMES {
-  return id in THEME_TONE_NAMES;
-}
-
 export function toneName(id: ReaderToneId) {
-  return isThemeTone(id) ? THEME_TONE_NAMES[id] : RECIPE_TONES[id].name;
+  return RECIPE_TONES[id].name;
 }
 
 function channels(hex: string) {
@@ -88,6 +80,7 @@ export function toneVariables({ background, text, accent }: Pick<ToneRecipe, 'ba
     '--color-highlight': mix(text, 7, background),
     '--glass-fill': `color-mix(in srgb, ${light ? mix(background, 70, '#fff') : background} 55%, transparent)`,
     '--glass-fill-strong': `color-mix(in srgb, ${light ? mix(background, 60, '#fff') : mix(background, 80, '#000')} 80%, transparent)`,
+    '--glass-fill-panel': `color-mix(in srgb, ${light ? mix(background, 58, '#fff') : mix(background, 78, '#000')} 64%, transparent)`,
     '--glass-border': `color-mix(in srgb, ${text} ${light ? 10 : 9}%, transparent)`,
     '--glass-highlight': light ? 'rgb(255 255 255 / .7)' : 'rgb(255 255 255 / .06)',
     '--glow-accent': `color-mix(in srgb, ${accent} ${light ? 22 : 30}%, transparent)`,
@@ -100,22 +93,33 @@ export function toneVariables({ background, text, accent }: Pick<ToneRecipe, 'ba
 }
 
 export interface ResolvedTone {
-  /** Value for data-reader-tone; undefined means "follow the theme". */
-  attr?: string;
+  /** Stable value for data-theme; custom themes use "custom" and inline variables. */
+  attr: string;
   vars: CSSProperties;
   /** Whether the page is light or dark; undefined when it follows the theme. */
   scheme?: 'light' | 'dark';
 }
 
-export function resolveTone(paper: UserSettings['readerPaper'], customTones: CustomReaderTone[] = []): ResolvedTone {
-  if (!paper || paper === 'system') return { vars: {} };
-  if (paper.startsWith(CUSTOM_TONE_PREFIX)) {
-    const custom = customTones.find(tone => `${CUSTOM_TONE_PREFIX}${tone.id}` === paper);
-    return custom ? { attr: 'custom', vars: toneVariables(custom), scheme: isLightColor(custom.background) ? 'light' : 'dark' } : { vars: {} };
+export function resolveTone(theme: ThemeId, customTones: CustomReaderTone[] = []): ResolvedTone {
+  if (theme?.startsWith(CUSTOM_TONE_PREFIX)) {
+    const custom = customTones.find(tone => `${CUSTOM_TONE_PREFIX}${tone.id}` === theme);
+    return custom
+      ? { attr: 'custom', vars: toneVariables(custom), scheme: isLightColor(custom.background) ? 'light' : 'dark' }
+      : resolveTone('night', customTones);
   }
-  if (isThemeTone(paper)) return { attr: paper, vars: {}, scheme: paper === 'paper' ? 'light' : 'dark' };
-  const recipe = RECIPE_TONES[paper as keyof typeof RECIPE_TONES];
-  return recipe ? { attr: paper, vars: toneVariables(recipe), scheme: isLightColor(recipe.background) ? 'light' : 'dark' } : { vars: {} };
+  const recipe = RECIPE_TONES[theme as ReaderToneId];
+  if (theme === 'night' || theme === 'paper') {
+    return { attr: theme, vars: {}, scheme: theme === 'paper' ? 'light' : 'dark' };
+  }
+  return recipe
+    ? { attr: theme, vars: toneVariables(recipe), scheme: isLightColor(recipe.background) ? 'light' : 'dark' }
+    : { attr: 'night', vars: toneVariables(RECIPE_TONES.night), scheme: 'dark' };
+}
+
+export const THEME_VARIABLE_NAMES = Object.keys(toneVariables(RECIPE_TONES.night)).filter(name => name.startsWith('--'));
+
+export function isLightTheme(theme: ThemeId, customTones: CustomReaderTone[] = []) {
+  return resolveTone(theme, customTones).scheme === 'light';
 }
 
 /** 'none' (quiet atmosphere) and 'plain' draw no photo; only the rest map to an image. */
@@ -137,13 +141,11 @@ export function readerStyle(settings: UserSettings): CSSProperties {
     '--reader-word-spacing': `${settings.readerWordSpacing}em`,
     '--reader-paragraph-lines': settings.readerParagraphSpacing,
     '--reader-align': settings.readerAlign,
-    '--reader-hyphens': settings.readerHyphens ? 'auto' : 'manual',
-    ...resolveTone(settings.readerPaper, settings.customTones).vars
+    '--reader-hyphens': settings.readerHyphens ? 'auto' : 'manual'
   } as CSSProperties;
 }
 
-/** Spread onto every reader surface: the style plus the tone attribute that theme-mirroring tones need. */
+/** Spread onto reader surfaces for typography and scenery; theme colors inherit from the document root. */
 export function readerSurfaceProps(settings: UserSettings) {
-  const tone = resolveTone(settings.readerPaper, settings.customTones);
-  return { style: readerStyle(settings), 'data-reader-tone': tone.attr, 'data-tone-scheme': tone.scheme };
+  return { style: readerStyle(settings), 'data-scenery': hasSceneryImage(settings.readerBackground) ? 'image' : 'none' };
 }

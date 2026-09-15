@@ -7,7 +7,7 @@ interface BrandIconProps {
 
 /**
  * KeyHaven canonical typewriter mark.
- * Uses currentColor to adapt to theme accent tokens (sage in Reading Room, deeper sage in Daylight).
+ * Uses currentColor so every site-wide theme can supply its own accent.
  */
 export function BrandIcon({ className = '', size = 22 }: BrandIconProps) {
   return (

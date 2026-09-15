@@ -88,7 +88,7 @@ export function ResultDialog({ open, result, onClose, onNext, onRetry }: { open:
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="rr-dialog theme-chrome"
+        className="rr-dialog"
         onClick={event => event.stopPropagation()}
         initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1, transition: spring.soft }}

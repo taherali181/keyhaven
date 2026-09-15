@@ -19,13 +19,9 @@
   --font-num: var(--font-mono);
 }
 
-/* [data-reader-tone] reuses these exact blocks so Night / Soft paper can never drift from "Match theme".
-   Page tones only colour page content. Chrome that renders inside a page (menus, popovers, the results modal)
-   re-declares the site theme here, so a light page tone never gives a dark-theme menu dark text, and vice versa. */
+/* Night is the default site-wide theme. Other tones replace these tokens on the root element. */
 :root,
-:root[data-theme="reading-room"],
-[data-reader-tone="night"],
-:root:not([data-theme="daylight"]) :is(.theme-chrome, .glass-select-menu, .story-switcher-menu, .speed-config-panel, .results-modal) {
+:root[data-theme="night"] {
   --bg-primary: #1d2522;
   --bg-secondary: #171d19;
   --bg-card: #1d241f;
@@ -55,9 +51,7 @@
   color-scheme: dark;
 }
 
-:root[data-theme="daylight"],
-[data-reader-tone="paper"],
-:root[data-theme="daylight"] :is(.theme-chrome, .glass-select-menu, .story-switcher-menu, .speed-config-panel, .results-modal) {
+:root[data-theme="paper"] {
   --bg-primary: #f4f1e8;
   --bg-secondary: #e9e9df;
   --bg-card: #f8f7f0;
@@ -178,11 +172,10 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .sidebar-brand { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 0 4px; }
 .sidebar-brand .brand-home { display: block; flex: none; width: 124px; }
 .sidebar-brand-actions { display: flex; align-items: center; gap: 4px; flex: none; }
-.brand-logo { display: block; width: 100%; aspect-ratio: 1540 / 475; }
-.brand-logo img { display: block; width: 100%; height: auto; }
-.brand-logo .brand-logo-light { display: none; }
-:root[data-theme="daylight"] .brand-logo .brand-logo-light { display: block; }
-:root[data-theme="daylight"] .brand-logo .brand-logo-dark { display: none; }
+.brand-logo { position: relative; display: block; width: 100%; aspect-ratio: 1540 / 475; color: var(--text-primary); }
+.brand-logo-silhouette { position: absolute; inset: 0; background: currentColor; -webkit-mask: url('/brand/logo.svg') center / contain no-repeat; mask: url('/brand/logo.svg') center / contain no-repeat; }
+.brand-logo-mark { position: absolute; top: 25.1%; left: 7.4%; width: 15.7%; height: 50.9%; color: var(--color-accent); }
+.brand-logo-mark .brand-icon { width: 100% !important; height: 100% !important; }
 .brand-home { display: block; flex: 1; min-width: 0; padding: 0; border: 0; border-radius: var(--r-xs); background: transparent; transition: opacity var(--dur-fast), transform var(--dur-fast); }
 .brand-home:hover, .auth-wordmark:hover { opacity: .8; }
 .brand-home:active, .auth-wordmark:active { transform: scale(.98); }
@@ -771,10 +764,6 @@ select option { background: var(--bg-card); color: var(--text-primary); }
   .ac-unit-number { display: none; }
   .kb { --kb-gap: 3px; padding: 8px; }
 }
-/* A page tone opposite to the theme (paper under Reading room, night under Daylight) would show through the
-   chrome's glass and wash out its text, so large panels frost more solidly in that case. */
-:root:not([data-theme="daylight"]) .app-surface:has(> .page-surface[data-tone-scheme="light"]) { --glass-fill-panel: rgb(21 27 23 / .9); --glass-fill: rgb(29 36 31 / .88); --glass-fill-strong: rgb(21 27 23 / .94); }
-:root[data-theme="daylight"] .app-surface:has(> .page-surface[data-tone-scheme="dark"]) { --glass-fill-panel: rgb(250 249 243 / .9); --glass-fill: rgb(252 251 245 / .88); --glass-fill-strong: rgb(250 249 243 / .94); }
 .setting-group input[type="range"] { width: 100%; height: 18px; margin: 0; appearance: none; -webkit-appearance: none; background: transparent; cursor: pointer; }
 .setting-group input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 99px; background: color-mix(in oklab, var(--text-primary) 14%, transparent); }
 .setting-group input[type="range"]::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -6px; appearance: none; -webkit-appearance: none; border: 3px solid var(--bg-card); border-radius: 50%; background: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent), 0 4px 10px -2px var(--glow-accent); transition: transform var(--dur-fast) var(--ease-spring); }
@@ -893,13 +882,23 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .story-switcher-trigger[aria-expanded="true"] .story-switcher-hint { opacity: 0; }
 
 /* ── Read / Type toggle ── */
-.story-mode-toggle { display: flex; height: 40px; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--glass-border); border-radius: var(--r-sm); background: color-mix(in oklab, var(--bg-primary) 35%, transparent); }
-.story-mode-toggle button { position: relative; isolation: isolate; display: flex; height: 32px; align-items: center; gap: 6px; padding: 0 10px; border: 0; border-radius: calc(var(--r-sm) - 3px); background: transparent; color: var(--text-muted); font-size: .8125rem; font-weight: 500; transition: color var(--dur-fast); }
+/* Tint the track around a clear selection: the selected surface is the actual title-bar glass,
+   without stacking another translucent fill over it. Text colour makes the track lighter on dark
+   tones and darker on light tones, including custom page tones. */
+.story-mode-toggle { position: relative; isolation: isolate; display: flex; height: 40px; align-items: stretch; overflow: hidden; border: 1px solid var(--glass-border); border-radius: var(--r-sm); background: transparent; }
+.story-mode-toggle button { position: relative; display: flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 0; background: transparent; color: var(--text-secondary); font-size: .8125rem; font-weight: 500; transition: color var(--dur-fast); }
 .story-mode-toggle button:hover, .story-mode-toggle button[aria-checked="true"] { color: var(--text-primary); }
 .story-mode-toggle button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
 .story-mode-toggle svg { width: 15px; height: 15px; stroke-width: 1.75; transition: color var(--dur-fast); }
 .story-mode-toggle button[aria-checked="true"] svg { color: var(--color-accent); }
-.story-mode-pill { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: color-mix(in oklab, var(--text-primary) 10%, transparent); box-shadow: inset 0 1px 0 var(--glass-highlight); }
+.story-library-trigger svg { color: var(--color-accent); }
+/* The spread shadow paints only outside the pill and is clipped by the toggle's rounded track. */
+.story-mode-toggle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.story-mode-toggle button { justify-content: center; }
+.story-mode-pill { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); z-index: -1; pointer-events: none; border-radius: calc(var(--r-sm) - 4px); background: transparent; box-shadow: 0 0 0 200px color-mix(in oklab, var(--text-primary) 12%, transparent); transition: transform 220ms var(--ease-out-expo); }
+.story-mode-toggle[data-mode="type"] .story-mode-pill { transform: translateX(100%); }
+.story-hide-button svg { transition: transform 220ms var(--ease-out-expo); }
+.story-hide-button[aria-pressed="true"] svg { transform: rotate(180deg); }
 
 /* ── Reading mode: book-like pages. Paragraphs sit one line apart so page breaks fall between lines. ── */
 .story-reader { position: relative; flex: 1; min-height: 0; overflow: hidden; padding: clamp(24px, 4vh, 44px) 0 44px; color: var(--text-primary); }
@@ -1716,7 +1715,8 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 :root[data-fullscreen="true"] .reader-bar { display: flex !important; }
 
 /* ── Auto-hiding title bar ── */
-.stories-shell[data-titlebar="auto"] > .story-bar-row { position: sticky; top: var(--reader-gap-pinned, 36px); z-index: 40; margin-bottom: calc(-1 * var(--bar-row-h, 68px)); opacity: 0; transform: translateY(calc(-100% - var(--reader-gap-pinned, 36px))) scale(.985); transform-origin: top center; pointer-events: none; transition: transform 460ms var(--ease-out-expo), opacity 240ms ease; }
+.stories-shell > .story-bar-row { position: relative; z-index: 40; transform: translateY(0); opacity: 1; transition: transform 320ms var(--ease-out-expo), opacity 220ms ease; }
+.stories-shell[data-titlebar="auto"] > .story-bar-row { position: sticky; top: var(--reader-gap-pinned, 36px); z-index: 40; margin-bottom: calc(-1 * var(--bar-row-h, 68px)); opacity: 0; transform: translateY(calc(-100% - var(--reader-gap-pinned, 36px))); pointer-events: none; }
 .stories-shell[data-titlebar="auto"] > .story-bar-row:is([data-revealed="true"], :focus-within, :has([aria-expanded="true"])) { opacity: 1; transform: none; pointer-events: auto; }
 .stories-shell[data-titlebar="auto"] > .story-bar-row .story-side,
 .stories-shell[data-titlebar="auto"] > .story-bar-row .story-mode-box,
@@ -1733,6 +1733,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .story-bar-peek { position: fixed; top: 22px; left: calc(50% + var(--sidebar-space, 0px) / 2); z-index: 40; max-width: calc(100vw - var(--sidebar-space, 0px) - 48px); overflow: hidden; color: var(--text-muted); font: 500 .6875rem/1.4 var(--font-interface); text-overflow: ellipsis; white-space: nowrap; translate: -50% 0; pointer-events: none; transition: opacity var(--dur-base); }
 .stories-shell[data-titlebar="auto"]:has(> .story-bar-row:is([data-revealed="true"], :focus-within, :has([aria-expanded="true"]))) .story-bar-peek { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
+  .stories-shell > .story-bar-row, .story-mode-pill, .story-hide-button svg { transition: none; }
   .stories-shell[data-titlebar="auto"] > .story-bar-row { transform: none; }
 }
 
@@ -2012,7 +2013,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .kh-tooltip[data-ready="true"][data-place="bottom"] { animation-name: kh-tip-in-down; }
 .kh-tooltip-keys { display: inline-flex; gap: 3px; }
 .kh-tooltip kbd { min-width: 18px; padding: 1px 5px 0; border: 1px solid color-mix(in oklab, var(--text-primary) 16%, var(--bg-card)); border-bottom-width: 2px; border-radius: 5px; background: color-mix(in oklab, var(--text-primary) 6%, var(--bg-card)); color: var(--text-secondary); font: 600 .6875rem/1.35 var(--font-mono); text-align: center; }
-:root[data-theme="daylight"] .kh-tooltip { box-shadow: inset 0 1px 0 var(--glass-highlight), 0 1px 2px rgb(39 48 40 / .08), 0 10px 28px -12px rgb(39 48 40 / .28); }
+:root[data-theme-scheme="light"] .kh-tooltip { box-shadow: inset 0 1px 0 var(--glass-highlight), 0 1px 2px rgb(39 48 40 / .08), 0 10px 28px -12px rgb(39 48 40 / .28); }
 @keyframes kh-tip-in { from { opacity: 0; transform: translateY(4px) scale(.97); } }
 @keyframes kh-tip-in-down { from { opacity: 0; transform: translateY(-4px) scale(.97); } }
 @media (prefers-reduced-motion: reduce) { .kh-tooltip[data-ready="true"] { animation: none; } }

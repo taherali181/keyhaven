@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '@/lib/db';
 import { sanitizeSectionPrefs, sectionUpdate, settingsForSection } from '@/lib/section-settings';
 
-const read = { ...DEFAULT_SETTINGS, font: 'playfair' as const, fontSize: 31, theme: 'daylight' as const };
+const read = { ...DEFAULT_SETTINGS, font: 'playfair' as const, fontSize: 31, theme: 'sage' as const };
 
 describe('per-section settings', () => {
   it('keeps Read on the top-level values and gives other sections their own defaults', () => {
@@ -10,7 +10,7 @@ describe('per-section settings', () => {
     const quotes = settingsForSection(read, 'quotes');
     expect(quotes.font).toBe(DEFAULT_SETTINGS.font);
     expect(quotes.fontSize).toBe(DEFAULT_SETTINGS.fontSize);
-    expect(quotes.theme).toBe('daylight');
+    expect(quotes.theme).toBe('sage');
   });
 
   it('saves typography changes to the section and shared changes to the top level', () => {
@@ -19,7 +19,7 @@ describe('per-section settings', () => {
     const next = { ...read, ...change };
     expect(settingsForSection(next, 'quotes').fontSize).toBe(19);
     expect(settingsForSection(next, 'stories').fontSize).toBe(31);
-    expect(sectionUpdate(read, 'quotes', 'theme', 'reading-room')).toEqual({ theme: 'reading-room' });
+    expect(sectionUpdate(read, 'quotes', 'theme', 'night')).toEqual({ theme: 'night' });
     expect(sectionUpdate(read, 'stories', 'fontSize', 19)).toEqual({ fontSize: 19 });
   });
 

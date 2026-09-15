@@ -11,6 +11,7 @@ import { useSidebarPinned } from '@/hooks/useSidebarPinned';
 import { fade, slideInLeft, slideInRight, spring } from '@/lib/motion';
 import { BrandIcon, BrandLogo } from '@/components/ui/BrandLogo';
 import { GlassSelect } from '@/components/ui/GlassSelect';
+import { isLightTheme } from '@/lib/reader-style';
 
 interface NavbarProps {
   currentMode: TypingMode;
@@ -39,6 +40,7 @@ const PEEK_CLOSE_DELAY = 320;
 
 export const Navbar: React.FC<NavbarProps> = props => {
   const { currentMode, onSelectMode, settings } = props;
+  const lightTheme = isLightTheme(settings.theme, settings.customTones);
   // Pinned: the sidebar stays open and the content makes room for it.
   // Unpinned (default): it hides, and "peeks" over the content while the pointer is at the left edge.
   const [pinned, setPinned] = useSidebarPinned();
@@ -133,11 +135,11 @@ export const Navbar: React.FC<NavbarProps> = props => {
         <div className="sidebar-brand-actions">
           <button
             className="sidebar-icon-button"
-            onClick={() => props.onUpdateTheme(settings.theme === 'reading-room' ? 'daylight' : 'reading-room')}
-            aria-label={`Switch to ${settings.theme === 'reading-room' ? 'light' : 'dark'} theme`}
-            title={settings.theme === 'reading-room' ? 'Switch to daylight' : 'Switch to reading room'}
+            onClick={() => props.onUpdateTheme(lightTheme ? 'night' : 'paper')}
+            aria-label={`Switch to ${lightTheme ? 'dark' : 'light'} theme`}
+            title={lightTheme ? 'Switch to Night' : 'Switch to Soft paper'}
           >
-            {settings.theme === 'reading-room' ? <Sun /> : <Moon />}
+            {lightTheme ? <Moon /> : <Sun />}
           </button>
           {scope === 'desktop' && (
             <button

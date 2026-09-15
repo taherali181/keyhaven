@@ -16,7 +16,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
-/** A small modal question in the site theme. Focus starts on Cancel, Escape closes it, and focus returns afterwards. */
+/** A small modal question. Focus starts on Cancel, Escape closes it, and focus returns afterwards. */
 export function ConfirmDialog({ open, title, children, confirmLabel, cancelLabel = 'Cancel', tone = 'default', secondary, onConfirm, onCancel }: ConfirmDialogProps) {
   const titleId = useId();
   const cancelRef = useRef<HTMLButtonElement>(null);
@@ -40,7 +40,7 @@ export function ConfirmDialog({ open, title, children, confirmLabel, cancelLabel
   if (!open) return null;
   return createPortal(
     <div className="kh-dialog-scrim" onClick={onCancel}>
-      <div role="alertdialog" aria-modal="true" aria-labelledby={titleId} className="kh-dialog theme-chrome" onClick={event => event.stopPropagation()}>
+      <div role="alertdialog" aria-modal="true" aria-labelledby={titleId} className="kh-dialog" onClick={event => event.stopPropagation()}>
         <h2 id={titleId}>{title}</h2>
         <div className="kh-dialog-body">{children}</div>
         <div className="kh-dialog-actions">

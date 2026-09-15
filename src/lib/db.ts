@@ -2,7 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import { DEFAULT_READER_BAR_STYLE, DEFAULT_READER_STATS, sanitizeReaderStats } from '@/lib/reader-stats';
 import { sanitizeSectionPrefs } from '@/lib/section-settings';
 import { DEFAULT_TYPOGRAPHY, normalizeTypography } from '@/lib/typography';
-import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ImportedDocumentRecord, AcademyStateRecord, ShelfRecord, Work, ReadingSessionRecord, PendingDeleteRecord } from '@/types';
+import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ReaderToneId, ImportedDocumentRecord, AcademyStateRecord, ShelfRecord, Work, ReadingSessionRecord, PendingDeleteRecord } from '@/types';
 import { installSyncTracking } from '@/lib/sync/tracking';
 
 export class KeyHavenDatabase extends Dexie {
@@ -95,7 +95,7 @@ export class KeyHavenDatabase extends Dexie {
 export const db = new KeyHavenDatabase();
 
 export const DEFAULT_SETTINGS: UserSettings = {
-  theme: 'reading-room',
+  theme: 'night',
   font: DEFAULT_TYPOGRAPHY.font,
   caretStyle: 'smooth',
   fontSize: DEFAULT_TYPOGRAPHY.fontSize,
@@ -116,7 +116,6 @@ export const DEFAULT_SETTINGS: UserSettings = {
   readerParagraphSpacing: DEFAULT_TYPOGRAPHY.readerParagraphSpacing,
   readerAlign: DEFAULT_TYPOGRAPHY.readerAlign,
   readerHyphens: DEFAULT_TYPOGRAPHY.readerHyphens,
-  readerPaper: 'system',
   customTones: [],
   storyMode: 'type',
   muted: false,
@@ -138,23 +137,50 @@ export const DEFAULT_SETTINGS: UserSettings = {
 
 const SETTINGS_KEY = 'keyhaven_settings_v1';
 
+const BUILT_IN_THEMES = new Set<ReaderToneId>(['paper', 'sepia', 'night', 'bright', 'pitch', 'mist', 'sage', 'slate', 'ocean', 'rose', 'espresso', 'lavender']);
+
+type StoredSettings = Partial<UserSettings> & {
+  /** Removed in the unified theme model. "system" had no colors of its own. */
+  readerPaper?: 'system' | ThemeId;
+  /** Older releases used these two values for chrome independently of page tone. */
+  theme?: ThemeId | 'reading-room' | 'daylight' | 'zen-sand' | 'paper-ink';
+};
+
+function validTheme(value: unknown, customTones: UserSettings['customTones']): value is ThemeId {
+  if (typeof value !== 'string') return false;
+  if (BUILT_IN_THEMES.has(value as ReaderToneId)) return true;
+  return value.startsWith('custom:') && customTones.some(tone => `custom:${tone.id}` === value);
+}
+
+/** Normalizes local, imported and synced settings through the same backwards-compatible migration. */
+export function normalizeSettings(value: unknown): UserSettings {
+  const parsed = value && typeof value === 'object' ? value as StoredSettings : {};
+  const customTones = Array.isArray(parsed.customTones) ? parsed.customTones : [];
+  // An explicit legacy page tone is the user's visible choice and wins. Match theme migrates to Night.
+  const theme = parsed.readerPaper !== 'system' && validTheme(parsed.readerPaper, customTones)
+    ? parsed.readerPaper
+    : validTheme(parsed.theme, customTones) ? parsed.theme : 'night';
+  const stored = { ...parsed };
+  delete stored.readerPaper;
+  delete stored.theme;
+  return {
+    ...DEFAULT_SETTINGS,
+    ...stored,
+    theme,
+    customTones,
+    readerStats: sanitizeReaderStats(parsed.readerStats),
+    readerBarStyle: { ...DEFAULT_READER_BAR_STYLE, ...(parsed.readerBarStyle ?? {}) },
+    ...normalizeTypography(parsed),
+    sectionPrefs: sanitizeSectionPrefs(parsed.sectionPrefs)
+  };
+}
+
 export function loadSettings(): UserSettings {
   if (typeof window === 'undefined') return DEFAULT_SETTINGS;
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
-    const parsed = JSON.parse(raw) as Partial<UserSettings>;
-    const legacyLight = parsed.theme === ('zen-sand' as ThemeId) || parsed.theme === ('paper-ink' as ThemeId);
-    return {
-      ...DEFAULT_SETTINGS,
-      ...parsed,
-      theme: parsed.theme === 'daylight' || legacyLight ? 'daylight' : 'reading-room',
-      customTones: Array.isArray(parsed.customTones) ? parsed.customTones : [],
-      readerStats: sanitizeReaderStats(parsed.readerStats),
-      readerBarStyle: { ...DEFAULT_READER_BAR_STYLE, ...(parsed.readerBarStyle ?? {}) },
-      ...normalizeTypography(parsed),
-      sectionPrefs: sanitizeSectionPrefs(parsed.sectionPrefs)
-    };
+    return normalizeSettings(JSON.parse(raw));
   } catch {
     return DEFAULT_SETTINGS;
   }

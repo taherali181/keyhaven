@@ -8,11 +8,10 @@ export type TypingMode =
   | 'leaderboard'
   | 'profile';
 
-export type ThemeId = 'reading-room' | 'daylight';
-
 export type ReaderBackground = 'none' | 'plain' | 'custom' | 'cherry-blossoms' | 'misty-mountains' | 'quiet-lake' | 'soft-forest' | 'mountain-valley' | 'alpine-lake' | 'forest-sunset' | 'twilight-peaks';
 
-export type ReaderToneId = 'paper' | 'sepia' | 'night' | 'bright' | 'pitch' | 'mist' | 'sage' | 'slate' | 'ocean' | 'rose' | 'espresso';
+export type ReaderToneId = 'paper' | 'sepia' | 'night' | 'bright' | 'pitch' | 'mist' | 'sage' | 'slate' | 'ocean' | 'rose' | 'espresso' | 'lavender';
+export type ThemeId = ReaderToneId | `custom:${string}`;
 
 /** A user-made page tone: three picked colors, the rest of the palette is derived. */
 export interface CustomReaderTone {
@@ -321,8 +320,6 @@ export interface UserSettings {
   readerLineHeight: number;
   /** Text column width in px. */
   readerWidth: number;
-  /** 'system' follows the theme; `custom:<id>` points into customTones. */
-  readerPaper: 'system' | ReaderToneId | `custom:${string}`;
   customTones: CustomReaderTone[];
   readerBackground: ReaderBackground;
   /** Read mode only; narrow screens always display one page. */

@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AudioWaveform, Check, ChevronDown, ChevronUp, CloudRain, Coffee, Flame, Headphones, PanelBottom, Palette, Plus, RotateCcw, SlidersHorizontal, Trees, Type, VolumeX, Waves, X } from 'lucide-react';
 import { AmbientSound, CustomReaderTone, FontFamily, ReaderBackground, ReaderToneId, ThemeId, UserSettings } from '@/types';
 import { FONTS } from '@/lib/themes';
-import { CUSTOM_TONE_PREFIX, EXTRA_TONES, MAIN_TONES, RECIPE_TONES, contrastRatio, hasSceneryImage, isThemeTone, readerSurfaceProps, toneName, toneVariables } from '@/lib/reader-style';
+import { CUSTOM_TONE_PREFIX, EXTRA_TONES, MAIN_TONES, RECIPE_TONES, contrastRatio, hasSceneryImage, readerSurfaceProps, toneName, toneVariables } from '@/lib/reader-style';
 import { DEFAULT_TYPOGRAPHY, TYPE_PRESETS, TYPE_RANGES, matchesTypography, weightName, type Typography } from '@/lib/typography';
 import { SliderField } from '@/components/ui/SliderField';
 import { prepareCustomScenery } from '@/lib/custom-scenery';
@@ -118,12 +118,6 @@ function BarSettings({ settings, onUpdateSetting }: { settings: UserSettings; on
     ]} />
   </>;
 }
-
-const THEME_PREVIEWS: Record<ThemeId, { bg: string; card: string; text: string; accent: string }> = {
-  // Mirrors the theme tokens in globals.css so the tile previews match the real themes.
-  'reading-room': { bg: '#1d2522', card: '#171d19', text: '#f4f1e8', accent: '#a8b59c' },
-  daylight: { bg: '#f4f1e8', card: '#e9e9df', text: '#1d2522', accent: '#536b54' }
-};
 
 const SCENERY: Array<{ id: ReaderBackground; label: string }> = [
   { id: 'none', label: 'Quiet atmosphere' },
@@ -303,15 +297,15 @@ export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, sh
   };
   const customTones = settings.customTones ?? [];
   const [toneDraft, setToneDraft] = useState<{ tone: CustomReaderTone; isNew: boolean } | null>(null);
-  const selectedCustom = customTones.find(tone => `${CUSTOM_TONE_PREFIX}${tone.id}` === settings.readerPaper);
+  const selectedCustom = customTones.find(tone => `${CUSTOM_TONE_PREFIX}${tone.id}` === settings.theme);
 
-  const toneTile = (id: ReaderToneId): TileOption<UserSettings['readerPaper']> => ({
+  const toneTile = (id: ReaderToneId): TileOption<ThemeId> => ({
     value: id, label: toneName(id), visualTone: id,
-    visualStyle: isThemeTone(id) ? undefined : toneVariables(RECIPE_TONES[id as keyof typeof RECIPE_TONES]),
+    visualStyle: toneVariables(RECIPE_TONES[id]),
     visual: <><span className="rs-aa font-serif">Aa</span><span className="rs-tone-dot" /></>
   });
-  const customTile = (tone: CustomReaderTone): TileOption<UserSettings['readerPaper']> => ({
-    value: `${CUSTOM_TONE_PREFIX}${tone.id}`, label: tone.name, visualTone: 'custom', visualStyle: toneVariables(tone),
+  const customTile = (tone: CustomReaderTone): TileOption<ThemeId> => ({
+    value: `${CUSTOM_TONE_PREFIX}${tone.id}` as ThemeId, label: tone.name, visualTone: 'custom', visualStyle: toneVariables(tone),
     visual: <><span className="rs-aa font-serif">Aa</span><span className="rs-tone-dot" /></>
   });
 
@@ -319,18 +313,15 @@ export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, sh
   const saveTone = (tone: CustomReaderTone) => {
     const exists = customTones.some(item => item.id === tone.id);
     onUpdateSetting('customTones', exists ? customTones.map(item => item.id === tone.id ? tone : item) : [...customTones, tone]);
-    onUpdateSetting('readerPaper', `${CUSTOM_TONE_PREFIX}${tone.id}`);
+    onUpdateSetting('theme', `${CUSTOM_TONE_PREFIX}${tone.id}`);
     setToneDraft(null);
   };
   const deleteTone = (id: string) => {
     onUpdateSetting('customTones', customTones.filter(item => item.id !== id));
-    if (settings.readerPaper === `${CUSTOM_TONE_PREFIX}${id}`) onUpdateSetting('readerPaper', 'system');
+    if (settings.theme === `${CUSTOM_TONE_PREFIX}${id}`) onUpdateSetting('theme', 'night');
     setToneDraft(null);
   };
-  // While editing, the pinned preview shows the draft so colors can be judged against real text.
-  const previewSettings = toneDraft
-    ? { ...settings, readerPaper: `${CUSTOM_TONE_PREFIX}${toneDraft.tone.id}` as const, customTones: [...customTones.filter(item => item.id !== toneDraft.tone.id), toneDraft.tone] }
-    : settings;
+  const previewSettings = settings;
 
   const close = useCallback(() => {
     setOpen(false);
@@ -352,17 +343,12 @@ export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, sh
   }, []);
 
   const look = <>
-    <TileGroup label="Theme" columns={2} value={settings.theme} onChange={value => onUpdateSetting('theme', value)} options={(Object.keys(THEME_PREVIEWS) as ThemeId[]).map(id => {
-      const colors = THEME_PREVIEWS[id];
-      return { value: id, label: id === 'reading-room' ? 'Reading room' : 'Daylight', sub: id === 'reading-room' ? 'Dark, low glare' : 'Light, crisp', visual: <span className="rs-mini-app" style={{ background: colors.bg }}><i style={{ background: colors.card }} /><span><b style={{ background: colors.text }} /><b style={{ background: colors.text, width: '72%' }} /><b style={{ background: colors.accent, width: '38%' }} /></span></span> };
-    })} />
-    <TileGroup label="Page tone" columns={4} value={settings.readerPaper} onChange={value => onUpdateSetting('readerPaper', value)}
+    <TileGroup label="Theme" columns={4} value={settings.theme} onChange={value => onUpdateSetting('theme', value)}
       options={[
-        { value: 'system', label: 'Match theme', visualClass: 'rs-tone-auto', visual: <><span className="rs-tone-split"><i data-reader-tone="night" /><i data-reader-tone="paper" /></span><span className="rs-aa font-serif">Aa</span></> },
         ...MAIN_TONES.map(toneTile),
-        ...EXTRA_TONES.slice(0, 4).map(toneTile)
+        ...EXTRA_TONES.slice(0, 5).map(toneTile)
       ]}
-      moreOptions={[...EXTRA_TONES.slice(4).map(toneTile), ...customTones.map(customTile)]}
+      moreOptions={[...EXTRA_TONES.slice(5).map(toneTile), ...customTones.map(customTile)]}
       moreLabel="More tones"
       moreCompact
       moreFooter={<button type="button" className="rs-tile rs-tone-add" onClick={startNewTone}><span className="rs-visual" aria-hidden="true"><Plus /></span><span className="rs-label">New tone</span></button>}

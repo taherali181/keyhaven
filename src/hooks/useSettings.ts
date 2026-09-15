@@ -2,13 +2,21 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { UserSettings, ThemeId, FontFamily, SwitchSound, AmbientSound, CaretStyle } from '@/types';
-import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '@/lib/db';
-import { sanitizeSectionPrefs } from '@/lib/section-settings';
-import { normalizeTypography } from '@/lib/typography';
+import { DEFAULT_SETTINGS, loadSettings, normalizeSettings, saveSettings } from '@/lib/db';
+import { resolveTone, THEME_VARIABLE_NAMES } from '@/lib/reader-style';
 
-function applyTheme(theme: ThemeId) {
+function applyTheme(theme: ThemeId, customTones: UserSettings['customTones']) {
   if (typeof document === 'undefined') return;
-  document.documentElement.dataset.theme = theme;
+  const root = document.documentElement;
+  const resolved = resolveTone(theme, customTones);
+  root.dataset.theme = resolved.attr;
+  root.dataset.themeScheme = resolved.scheme;
+  THEME_VARIABLE_NAMES.forEach(property => root.style.removeProperty(property));
+  root.style.removeProperty('color-scheme');
+  Object.entries(resolved.vars).forEach(([property, value]) => {
+    if (property === 'colorScheme') root.style.colorScheme = String(value);
+    else root.style.setProperty(property, String(value));
+  });
 }
 
 export function useSettings() {
@@ -17,7 +25,7 @@ export function useSettings() {
   useEffect(() => {
     queueMicrotask(() => {
       const loaded = loadSettings();
-      applyTheme(loaded.theme);
+      applyTheme(loaded.theme, loaded.customTones);
       setSettingsState(loaded);
     });
   }, []);
@@ -26,7 +34,7 @@ export function useSettings() {
     setSettingsState(previous => {
       const next = { ...previous, [key]: value, updatedAt: Date.now() };
       saveSettings(next);
-      if (key === 'theme') applyTheme(value as ThemeId);
+      applyTheme(next.theme, next.customTones);
       return next;
     });
   }, []);
@@ -37,7 +45,7 @@ export function useSettings() {
       const patch = change(previous);
       const next = { ...previous, ...patch, updatedAt: Date.now() };
       saveSettings(next);
-      if ('theme' in patch) applyTheme(next.theme);
+      applyTheme(next.theme, next.customTones);
       return next;
     });
   }, []);
@@ -46,9 +54,9 @@ export function useSettings() {
     setSettingsState(previous => {
       if (incoming.updatedAt <= previous.updatedAt) return previous;
       // Settings from another device may predate the current typography model.
-      const next = { ...incoming, ...normalizeTypography(incoming), sectionPrefs: sanitizeSectionPrefs(incoming.sectionPrefs) };
+      const next = normalizeSettings(incoming);
       saveSettings(next);
-      applyTheme(next.theme);
+      applyTheme(next.theme, next.customTones);
       return next;
     });
   }, []);

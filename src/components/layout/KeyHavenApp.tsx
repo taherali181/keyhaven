@@ -72,8 +72,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen app-surface" data-motion={settings.ambientMotion ? 'on' : 'off'}>
-        {/* Page tone and scenery colour every page's content. The chrome (sidebar, panels, library, tooltips)
-            sits outside this wrapper and always follows the site theme. */}
+        {/* The global theme colors every surface; scenery remains scoped to page content. */}
         <div className="page-surface" {...readerSurfaceProps(sectionSettings)}>
           <AmbientBackdrop />
           {!READER_VIEWS.includes(currentMode) && hasSceneryImage(settings.readerBackground) && <div className="app-scenery" aria-hidden="true" />}

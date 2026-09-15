@@ -40,7 +40,7 @@ function ResultToast({ result, onNext, onRetry, onDetails, onDismiss }: { result
   ];
 
   return <motion.div
-    className="rr-toast theme-chrome"
+    className="rr-toast"
     role="group"
     aria-labelledby={headingId}
     data-expanded={expanded ? 'true' : undefined}
