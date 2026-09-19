@@ -1757,14 +1757,25 @@ select option { background: var(--bg-card); color: var(--text-primary); }
   .stories-shell[data-titlebar="auto"] .story-bar-peek { top: 82px; }
   :root[data-fullscreen="true"] .stories-shell[data-titlebar="auto"] :is(.story-bar-handle, .story-bar-hotzone) { top: 0; }
   :root[data-fullscreen="true"] .stories-shell[data-titlebar="auto"] .story-bar-peek { top: 22px; }
-  .reader-bar { width: 100%; flex-wrap: wrap; justify-content: center; border-radius: var(--r-md); }
-  .reader-bar-nav { width: 100%; justify-content: space-between; }
-  .reader-bar .story-segments { width: 56px; }
-  .reader-bar-step { padding: 8px 10px; }
-  .reader-bar-stats { flex-wrap: wrap; justify-content: center; margin: 0; padding: 8px 8px 4px; border-top: 1px solid var(--glass-border); border-left: 0; row-gap: 8px; }
-  .reader-bar-reset { position: absolute; right: 6px; bottom: 4px; }
-  .reader-bar.is-compact { width: auto; }
-  .reader-bar.is-compact .reader-bar-stats { border-top: 0; padding: 4px; }
+  /* Phones: one card, two rows. Row 1 moves through the text (Previous · progress · Next); row 2 holds the stats on
+     one line, with the random button and restart tucked into its corners. Nothing floats on its own. */
+  .stories-shell > .reader-bar-dock { display: grid; }
+  .stories-shell > .reader-bar-dock > :is(.reader-random, .reader-bar) { grid-area: 1 / 1; }
+  .reader-bar { position: relative; display: grid; width: 100%; gap: 0; padding: 4px; border-radius: var(--r-md); }
+  .reader-bar-nav { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px; }
+  .reader-bar-step { min-height: 40px; padding: 0 10px; }
+  .reader-bar .pagination-progress { justify-content: center; min-width: 0; gap: 8px; padding: 0 4px; }
+  .reader-bar .story-segments { flex: 1; width: auto; max-width: 180px; }
+  .reader-bar-stats { justify-content: center; min-width: 0; min-height: 40px; margin: 0; padding: 0 48px; overflow-x: auto; scrollbar-width: none; border-top: 1px solid var(--glass-border); border-left: 0; }
+  .reader-bar-stats::-webkit-scrollbar { display: none; }
+  .reader-bar-reset { position: absolute; right: 8px; bottom: 8px; width: 32px; height: 32px; }
+  .stories-shell > .reader-bar-dock > .reader-random { z-index: 1; align-self: end; justify-self: start; width: 32px; height: 32px; margin: 0 0 8px 8px; padding: 0; justify-content: center; border: 0; --g-bg: transparent; box-shadow: none; backdrop-filter: none; }
+  .stories-shell > .reader-bar-dock > .reader-random > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .reader-bar.is-compact { width: auto; justify-self: center; }
+  .reader-bar.is-compact .reader-bar-stats { min-height: 0; padding: 4px; border-top: 0; }
+  /* Key hints mean nothing on a touch screen, and here they would sit on the text. */
+  .stories-shell .reader-stage .reading-hint { display: none; }
+  .stories-shell .typing-page-controls { font-family: var(--font-interface); }
 }
 
 /* ── Reading settings: bottom bar tab ── */
