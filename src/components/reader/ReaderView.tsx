@@ -449,6 +449,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
   const byline = `${work.author}${work.year ? ` · ${work.year}` : ''}`;
   const bylineOpen = byline;
   const lastSection = sectionIndex === sectionCount - 1;
+  const folio = (layout && !isStory ? sum(layout.sectionPageCounts.slice(0, sectionIndex)) : 0) + page + 1;
   const nextPageLabel = !onLastPage ? 'Next' : !lastSection ? `Next ${unit}` : isStory ? 'Next story' : 'Finish';
   const pinned = settings.readerBarPinned;
 
@@ -517,6 +518,11 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
         {reading
           ? <>
             <StoryReader parts={parts} sections={sectionParts} page={page} pageLayout={settings.readerPageLayout} font={settings.font} fontSize={settings.fontSize} lineHeight={settings.readerLineHeight} layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerParagraphSpacing}-${settings.readerAlign}-${settings.readerHyphens}-${settings.readerWidth}`} onLayout={handleLayout} />
+            {/* Page numbers, bottom-right of each page like a printed book: the page within the whole book. */}
+            {layout && <div className="story-folios" data-pages={pagesPerView} aria-hidden="true">
+              <span className="story-folio">{folio}</span>
+              {pagesPerView === 2 && <span className="story-folio">{page + 1 < pageCount ? folio + 1 : ''}</span>}
+            </div>}
             <p className="typing-hint reading-hint"><kbd aria-label="Left arrow">←</kbd><kbd aria-label="Right arrow">→</kbd> turn pages</p>
           </>
           : <TypingArea targetText={text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="literary" feedbackMode="reader" viewportLines={typingLines} viewportMode="pages" layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerParagraphSpacing}-${settings.readerAlign}-${settings.readerHyphens}-${settings.readerWidth}`} lineHeight={settings.readerLineHeight} onKeyDown={typingKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} onEscape={() => (popup.view === 'toast' ? popup.collapse() : engine.reset())} />}

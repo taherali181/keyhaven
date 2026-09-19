@@ -920,6 +920,19 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .kh-slider-sample.is-weight { font-size: 20px; }
 .kh-slider-sample.is-weight.is-low { font-weight: 300; }
 .kh-slider-sample.is-weight.is-high { font-weight: 700; }
+/* Page numbers under each page, quiet enough to ignore. */
+.story-folios { display: grid; grid-template-columns: repeat(var(--folio-pages, 1), minmax(0, 1fr)); gap: clamp(24px, 4vw, 64px); margin-top: 6px; color: var(--text-muted); font: 500 .75rem/12px var(--font-interface); font-variant-numeric: tabular-nums; letter-spacing: .02em; opacity: .6; pointer-events: none; }
+.story-folios[data-pages="2"] { --folio-pages: 2; }
+.story-folio { text-align: right; }
+@media (max-width: 767px) {
+  /* Phones: the page keeps room under the text; the number sits in it, just below the last line. */
+  .story-folios { margin-top: -34px; margin-bottom: 22px; }
+}
+@media (min-width: 768px) {
+  /* Centred in the space between the last line and the bottom bar. */
+  .stories-shell .story-folios { --below-text: var(--gap); position: absolute; top: calc(100% - var(--text-bottom-leading, 0px) + (var(--below-text) - 12px) / 2); right: 0; left: 0; margin: 0; }
+  .stories-shell[data-titlebar="auto"] .story-folios { --below-text: calc(var(--text-space) - var(--gap) - var(--bar-slot)); }
+}
 .story-reader-copy { position: relative; font-weight: var(--reader-weight, 400); letter-spacing: var(--reader-tracking, .005em); word-spacing: var(--reader-word-spacing, 0); }
 .story-reader-copy p { margin: 0; text-align: var(--reader-align, left); hyphens: var(--reader-hyphens, manual); text-wrap: pretty; white-space: pre-line; }
 /* Paragraph gaps are whole lines, so every page break still lands between lines. */

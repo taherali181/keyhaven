@@ -165,3 +165,30 @@ test('a new reader opens stories in Read mode', async ({ page }) => {
   await expect(page.getByRole('radio', { name: 'Reading mode' })).toBeChecked();
   await expect(page.getByLabel('Typing input')).toHaveCount(0);
 });
+
+test('reading pages carry a quiet page number at the bottom right of each page', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await seedSettings(page, { storyMode: 'read' });
+  await page.goto(STORY);
+  const folios = page.locator('.story-folio');
+  await expect(folios).toHaveText(['1']);
+  const [folio, column, bar] = await Promise.all([folios.first().boundingBox(), page.locator('.story-reader').boundingBox(), page.locator('.reader-bar').boundingBox()]);
+  // Right-aligned with the text column, below the text and above the bottom bar.
+  expect(Math.abs(folio!.x + folio!.width - (column!.x + column!.width))).toBeLessThanOrEqual(2);
+  expect(folio!.y).toBeGreaterThanOrEqual(column!.y + column!.height - 2);
+  expect(folio!.y + folio!.height).toBeLessThanOrEqual(bar!.y);
+  expect(Number(await folios.first().evaluate(node => getComputedStyle(node.parentElement!).opacity))).toBeLessThan(1);
+  await page.keyboard.press('ArrowRight');
+  await expect(folios).toHaveText(['2']);
+  await page.getByRole('radio', { name: 'Typing mode' }).click();
+  await expect(folios).toHaveCount(0);
+});
+
+test('a two-page spread numbers both pages', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await seedSettings(page, { storyMode: 'read', readerPageLayout: 'spread' });
+  await page.goto(STORY);
+  await expect(page.locator('.story-folio')).toHaveText(['1', '2']);
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('.story-folio')).toHaveText(['3', '4']);
+});
