@@ -367,7 +367,8 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
     if (!books || !authors) return <div className="library-grid">{Array.from({ length: 12 }, (_, index) => <span key={index} className="library-book skeleton" />)}</div>;
     const query = bookQuery.trim();
     const known = new Set(books.map(book => book.id));
-    const chips = <div className="library-chips is-scroll" role="group" aria-label="Categories">
+    // On wide screens the categories live in the rail; narrow screens keep them as a row of chips.
+    const chips = <div className="library-chips is-scroll library-inline-cats" role="group" aria-label="Categories">
       {BOOK_CATEGORIES.map(item => <button key={item.id} type="button" className="library-chip" aria-pressed={!query && category === item.id && !authorName} onClick={() => { setBookQuery(''); setCategory(item.id); setAuthorName(null); setVisible(PAGE_SIZE); setFullResults(null); }}>{item.label}</button>)}
     </div>;
 
@@ -471,6 +472,7 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
       key="library-window"
       ref={dialogRef}
       className="library-window glass glass-panel"
+      data-detail={detail ? 'open' : undefined}
       role="dialog"
       aria-modal="true"
       aria-label="Library"
@@ -487,7 +489,22 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
             {item.icon}<span>{item.label}</span>
           </button>)}
         </div>
-        <p className="library-rail-note">Public-domain books from Project Gutenberg.</p>
+        {tab === 'discover' && <div className="library-rail-group">
+          <p className="library-rail-label">Browse</p>
+          <div className="library-rail-list" role="group" aria-label="Browse categories">
+            {BOOK_CATEGORIES.map(item => <button key={item.id} type="button" className="library-rail-item" aria-pressed={!bookQuery.trim() && category === item.id && !authorName} onClick={() => { setBookQuery(''); setCategory(item.id); setAuthorName(null); setVisible(PAGE_SIZE); setFullResults(null); setDetail(null); }}>{item.label}</button>)}
+          </div>
+        </div>}
+        {tab === 'stories' && <div className="library-rail-group">
+          <p className="library-rail-label">Collections</p>
+          <div className="library-rail-list" role="group" aria-label="Story collections">
+            <button type="button" className="library-rail-item" aria-pressed={!storyFilter && !storyQuery} onClick={() => { setStoryFilter(null); setStoryQuery(''); }}>All stories</button>
+            {STORY_LISTS.map(list => <button key={list.id} type="button" className="library-rail-item" aria-pressed={storyFilter?.kind === 'list' && storyFilter.value === list.id} onClick={() => { setStoryQuery(''); setStoryFilter({ kind: 'list', value: list.id }); }}>{list.label}</button>)}
+          </div>
+        </div>}
+        <p className="library-rail-note">
+          {(books?.length ?? 5000).toLocaleString()} popular books, 60,000+ titles and {(stories?.length ?? 300).toLocaleString()} short stories, all public domain via Project Gutenberg.
+        </p>
       </nav>
 
       <div className="library-main">

@@ -344,3 +344,29 @@ test('the sidebar offers sign in and brings you back afterwards', async ({ page 
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Create an account' })).toHaveAttribute('href', '/sign-up?callbackUrl=%2Fspeed');
 });
+
+test('the library lists categories in its rail and shows book details beside the list', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const library = page.getByRole('dialog', { name: 'Library' });
+  // The shortcut can arrive before the page listens for it.
+  await expect(async () => {
+    if (!(await library.count())) await page.keyboard.press('Control+k');
+    await expect(library).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+  await library.getByRole('tab', { name: 'Discover' }).click();
+  const rail = library.getByRole('group', { name: 'Browse categories' });
+  await rail.getByRole('button', { name: 'Poetry' }).click();
+  await expect(rail.getByRole('button', { name: 'Poetry' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(library.locator('.library-shelf h3').first()).toContainText('Poetry');
+  const firstBook = library.locator('.library-grid .library-book').first();
+  await firstBook.click();
+  const detail = library.locator('.library-detail');
+  await expect(detail).toBeVisible();
+  // Wide screens: the details sit beside the list rather than on top of it.
+  const [list, pane] = await Promise.all([library.locator('.library-main').boundingBox(), detail.boundingBox()]);
+  expect(list!.x + list!.width).toBeLessThanOrEqual(pane!.x + 1);
+  await library.getByRole('tab', { name: 'Stories' }).click();
+  await library.getByRole('group', { name: 'Story collections' }).getByRole('button', { name: 'Humour' }).click();
+  await expect(library.locator('.library-shelf h3').first()).toContainText('Humour');
+});

@@ -1604,8 +1604,8 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 /* ── Library window ── */
 .library-scrim { position: fixed; inset: 0; z-index: 80; background: color-mix(in oklab, var(--bg-primary) 26%, transparent); }
 .library-window {
-  position: fixed; inset: 0; z-index: 81; display: grid; width: min(1120px, calc(100vw - 48px)); height: min(760px, calc(100dvh - 48px));
-  grid-template-columns: 220px minmax(0, 1fr); margin: auto; overflow: hidden;
+  position: fixed; inset: 0; z-index: 81; display: grid; width: min(1320px, calc(100vw - 48px)); height: min(900px, calc(100dvh - 48px));
+  grid-template-columns: 232px minmax(0, 1fr); margin: auto; overflow: hidden;
   --g-bg: var(--glass-fill-panel);
   box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-3);
 }
@@ -1619,7 +1619,22 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .library-tab[aria-selected="true"] { color: var(--text-primary); }
 .library-tab[aria-selected="true"] svg { color: var(--color-accent); }
 .library-tab-pill { position: absolute; inset: 0; z-index: -1; border: 1px solid color-mix(in oklab, var(--color-accent) 22%, transparent); border-radius: var(--r-sm); background: linear-gradient(100deg, color-mix(in oklab, var(--color-accent) 17%, transparent), color-mix(in oklab, var(--color-accent) 5%, transparent)); box-shadow: inset 0 1px 0 var(--glass-highlight); }
-.library-rail-note { margin: auto 8px 0; color: var(--text-muted); font-size: .6875rem; line-height: 1.5; }
+.library-rail-note { margin: auto 8px 0; padding-top: 16px; color: var(--text-muted); font-size: .6875rem; line-height: 1.5; }
+.library-rail { overflow-y: auto; scrollbar-width: thin; }
+/* Categories (Discover) and collections (Stories) listed under the tabs, so none are ever cut off. */
+.library-rail-group { display: grid; gap: 2px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--glass-border); }
+.library-rail-label { margin: 0 12px 6px; color: var(--text-muted); font-size: .6875rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.library-rail-list { display: grid; gap: 1px; }
+.library-rail-item { min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-secondary); font-size: .8125rem; text-align: left; transition: background var(--dur-fast), color var(--dur-fast); }
+.library-rail-item:hover { background: color-mix(in oklab, var(--text-primary) 5%, transparent); color: var(--text-primary); }
+.library-rail-item[aria-pressed="true"] { background: color-mix(in oklab, var(--color-accent) 14%, transparent); color: var(--text-primary); font-weight: 500; }
+.library-rail-item:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+@media (min-width: 768px) { .library-chips.library-inline-cats { display: none; } }
+/* Wide screens: book details open as a third column beside the list instead of covering it. */
+@media (min-width: 1100px) {
+  .library-window[data-detail="open"] { grid-template-columns: 232px minmax(0, 1fr) 400px; }
+  .library-window[data-detail="open"] .library-detail { position: relative; width: auto; box-shadow: none; }
+}
 
 .library-main { position: relative; display: flex; min-width: 0; min-height: 0; flex-direction: column; }
 .library-header { display: flex; min-height: 76px; align-items: center; gap: 12px; padding: 14px 16px 14px 24px; border-bottom: 1px solid var(--glass-border); }
@@ -1647,7 +1662,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .library-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .library-hint { margin: 0; color: var(--text-muted); font-size: .8125rem; line-height: 1.5; }
 
-.library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 20px 16px; }
+.library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 20px 14px; }
 .library-grid.is-stories { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
 .library-row { display: grid; grid-auto-columns: 220px; grid-auto-flow: column; gap: 12px; margin: 0 -24px; padding: 2px 24px 8px; overflow-x: auto; scroll-padding-inline: 24px; scroll-snap-type: x proximity; scrollbar-width: thin; }
 .library-row > * { scroll-snap-align: start; }
@@ -1772,7 +1787,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 @media (max-width: 767px) {
   .library-window { width: 100%; height: 100dvh; grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); border-radius: 0; }
   .library-rail { flex-direction: row; align-items: center; gap: 8px; padding: 8px 12px; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--glass-border); }
-  .library-rail h2, .library-rail-note { display: none; }
+  .library-rail h2, .library-rail-note, .library-rail-group { display: none; }
   .library-rail [role="tablist"] { display: flex; }
   .library-header { min-height: 64px; padding: 8px 8px 8px 16px; }
   .library-title h2 { font-size: 1.4rem; }
@@ -1780,7 +1795,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
   .library-row, .library-chips.is-scroll { margin-inline: -16px; padding-inline: 16px; scroll-padding-inline: 16px; }
   .library-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 16px 12px; }
   .library-continue { flex-direction: column; align-items: flex-start; gap: 16px; padding: 16px; }
-  .library-detail { width: 100%; padding: 16px; border-left: 0; }
+  .library-detail { width: 100%; padding: 16px; border-left: 0; background: var(--bg-card); }
   .library-detail-head { flex-direction: column; gap: 16px; }
 }
 
