@@ -10,7 +10,7 @@ const OUT = path.resolve('public/catalog/stories');
 const MANIFEST = path.resolve('scripts/catalog/story-sources.json');
 const MIN_WORDS = 400;
 const MAX_WORDS = 22000;
-const MAX_STORIES = 320;
+const MAX_STORIES = 620;
 const QUICK_READ_WORDS = 2400; // about ten minutes at an average reading pace
 
 const slug = value => value.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[’'"]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -23,6 +23,13 @@ export function typeable(text) {
     .replace(/\s*[—―]\s*/g, ' - ')
     .replace(/–/g, '-')
     .replace(/…/g, '...')
+    .replace(/×/g, 'x')
+    .replace(/½/g, '1/2')
+    .replace(/¼/g, '1/4')
+    .replace(/¾/g, '3/4')
+    .replace(/´/g, "'")
+    .replace(/æ/g, 'ae').replace(/Æ/g, 'Ae').replace(/œ/g, 'oe').replace(/Œ/g, 'Oe')
+    .replace(/\s*°/g, ' degrees')
     .replace(/­/g, '')
     .replace(/\s*[\[(]\*?\d*[\])]/g, (match) => (/\d|\*/.test(match) ? '' : match)) // footnote markers like [1], (*1) or (*)
     .replace(/ {2,}/g, ' ')
@@ -107,6 +114,8 @@ function collect(doc, start, story, otherKeys) {
 
 async function main() {
   const manifest = JSON.parse(await readFile(MANIFEST, 'utf8'));
+  // Stories already published stay published: readers' progress and highlights refer to their ids.
+  const published = new Set(JSON.parse(await readFile(path.join(OUT, 'index.json'), 'utf8').catch(() => '[]')).map(story => story.id));
   await rm(OUT, { recursive: true, force: true });
   await mkdir(OUT, { recursive: true });
   const index = [];
@@ -135,10 +144,12 @@ async function main() {
     }
   }
 
-  // Keep every popular story, then take the rest round-robin across authors in manifest order.
-  const chosen = new Set(index.filter(story => story.popular));
+  // Keep every popular or already published story, then take the rest round-robin across authors in manifest order.
+  const chosen = new Set(index.filter(story => story.popular || published.has(story.id)));
+  const missing = [...published].filter(id => !index.some(story => story.id === id));
+  if (missing.length) console.log(`\nNo longer extracted (readers may have progress in these): ${missing.join(', ')}`);
   const queues = new Map();
-  for (const story of index) if (!story.popular) { if (!queues.has(story.author)) queues.set(story.author, []); queues.get(story.author).push(story); }
+  for (const story of index) if (!chosen.has(story)) { if (!queues.has(story.author)) queues.set(story.author, []); queues.get(story.author).push(story); }
   while (chosen.size < MAX_STORIES && [...queues.values()].some(queue => queue.length)) {
     for (const queue of queues.values()) if (queue.length && chosen.size < MAX_STORIES) chosen.add(queue.shift());
   }

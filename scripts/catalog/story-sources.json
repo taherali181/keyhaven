@@ -301,13 +301,6 @@
       "mystery"
      ]
     },
-    {
-     "title": "The Gold-Bug",
-     "tags": [
-      "mystery",
-      "adventure"
-     ]
-    },
     "The Oval Portrait",
     "MS. Found in a Bottle"
    ]
@@ -1650,6 +1643,762 @@
     "Hoodoo McFiggin's Christmas",
     "A, B, and C",
     "Men Who Have Shaved Me"
+   ]
+  },
+  {
+   "id": 1725,
+   "author": "O. Henry",
+   "year": 1907,
+   "tags": [
+    "humour",
+    "american",
+    "adventure"
+   ],
+   "stories": [
+    "Hearts and Crosses",
+    "The Ransom of Mack",
+    "Telemachus, Friend",
+    "The Handbook of Hymen",
+    "The Pimienta Pancakes",
+    "Seats of the Haughty",
+    "Hygeia at the Solito",
+    "An Afternoon Miracle",
+    "The Higher Abdication",
+    "Cupid À la Carte",
+    "The Caballero’s Way",
+    "The Sphinx Apple",
+    "The Missing Chord",
+    "A Call Loan",
+    "The Princess and the Puma",
+    "The Indian Summer of Dry Valley Johnson",
+    "Christmas by Injunction",
+    "A Chaparral Prince",
+    "The Reformation of Calliope"
+   ]
+  },
+  {
+   "id": 1583,
+   "author": "O. Henry",
+   "year": 1909,
+   "tags": [
+    "humour",
+    "american"
+   ],
+   "stories": [
+    "\"The Rose of Dixie\"",
+    "The Third Ingredient",
+    "The Hiding of Black Bill",
+    "Schools and Schools",
+    "Thimble, Thimble",
+    "Supply and Demand",
+    "Buried Treasure",
+    "To Him Who Waits",
+    "He Also Serves",
+    "The Moment of Victory",
+    "The Head-Hunter",
+    "No Story",
+    "The Higher Pragmatism",
+    "Best-Seller",
+    "Rus in Urbe",
+    "A Poor Rule"
+   ]
+  },
+  {
+   "id": 2851,
+   "author": "O. Henry",
+   "year": 1911,
+   "tags": [
+    "humour",
+    "american"
+   ],
+   "stories": [
+    "The Last of the Troubadours",
+    "The Sleuths",
+    "Witches’ Loaves",
+    "The Pride of the Cities",
+    "Holding Up a Train",
+    "Ulysses and the Dogman",
+    "The Champion of the Weather",
+    "Makes the Whole World Kin",
+    "At Arms with Morpheus",
+    "A Ghost of a Chance",
+    "Jimmy Hayes and Muriel",
+    "The Door of Unrest",
+    "The Duplicity of Hargraves",
+    "Let Me Feel Your Pulse",
+    "October and June",
+    "The Church with an Overshot-Wheel",
+    "New York by Camp Fire Light",
+    "The Adventures of Shamrock Jolnes",
+    "The Lady Higher Up",
+    "The Greater Coney",
+    "Law and Order",
+    "Transformation of Martin Burney",
+    "The Caliph and the Cad",
+    "The Diamond of Kali",
+    "The Day We Celebrate"
+   ]
+  },
+  {
+   "id": 1646,
+   "author": "O. Henry",
+   "year": 1909,
+   "tags": [
+    "humour",
+    "american"
+   ],
+   "stories": [
+    "Roads of Destiny",
+    "The Guardian of the Accolade",
+    "The Discounters of Money",
+    "The Enchanted Profile",
+    "\"Next to Reading Matter\"",
+    "Art and the Bronco",
+    "Phœbe",
+    "A Double-Dyed Deceiver",
+    "The Passing of Black Eagle",
+    "A Retrieved Reformation",
+    "Cherchez la Femme",
+    "Friends in San Rosario",
+    "The Fourth in Salvador",
+    "The Emancipation of Billy",
+    "The Enchanted Kiss",
+    "A Departmental Case",
+    "The Renaissance at Charleroi",
+    "On Behalf of the Management",
+    "Whistling Dick's Christmas Stocking",
+    "The Halberdier of the Little Rheinschloss",
+    "Two Renegades",
+    "The Lonesome Road"
+   ]
+  },
+  {
+   "id": 13419,
+   "author": "Anton Chekhov",
+   "year": 1919,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    "The Bishop",
+    "The Letter",
+    "Easter Eve",
+    "A Nightmare",
+    "The Murder",
+    "Uprooted"
+   ]
+  },
+  {
+   "id": 13409,
+   "author": "Anton Chekhov",
+   "year": 1919,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    "The Horse-Stealers",
+    "The Petchenyeg",
+    "A Dead Body",
+    "A Happy Ending",
+    "The Looking-Glass",
+    "Old Age",
+    "Darkness",
+    "The Beggar",
+    "A Story Without a Title",
+    "In Trouble",
+    "Frost",
+    "A Slander",
+    "Minds in Ferment",
+    "Gone Astray",
+    "An Avenger",
+    "The Jeune Premier",
+    "A Defenceless Creature",
+    "An Enigmatic Nature",
+    "A Happy Man",
+    "A Troublesome Visitor",
+    "An Actor’s End"
+   ]
+  },
+  {
+   "id": 13417,
+   "author": "Anton Chekhov",
+   "year": 1922,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    "The Cook’s Wedding",
+    "Sleepy",
+    "Children",
+    "The Runaway",
+    "Grisha",
+    "Oysters",
+    "Home",
+    "A Classical Student",
+    "Vanka",
+    "An Incident",
+    "A Day in the Country",
+    "Boys",
+    "Shrove Tuesday",
+    "The Old House",
+    "In Passion Week",
+    "Whitebrow",
+    "Kashtanka",
+    "A Chameleon",
+    "The Dependents",
+    "Who Was to Blame?",
+    "The Bird Market",
+    "An Adventure",
+    "The Fish",
+    "Art",
+    "The Swedish Match"
+   ]
+  },
+  {
+   "id": 13413,
+   "author": "Anton Chekhov",
+   "year": 1917,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    "The Party",
+    "Terror",
+    "A Woman’s Kingdom",
+    "A Problem",
+    "The Kiss",
+    "‘Anna on the Neck’",
+    "The Teacher of Literature",
+    "Not Wanted",
+    "Typhus",
+    "A Misfortune",
+    "A Trifle from Life"
+   ]
+  },
+  {
+   "id": 13418,
+   "author": "Anton Chekhov",
+   "year": 1920,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    "The Chorus Girl",
+    "Verotchka",
+    "At a Country House",
+    "A Father",
+    "On the Road",
+    "Rothschild's Fiddle",
+    "Ivan Matveyitch",
+    "Zinotchka",
+    "Bad Weather",
+    "A Gentleman Friend",
+    "A Trivial Incident"
+   ]
+  },
+  {
+   "id": 1477,
+   "author": "Saki",
+   "year": 1919,
+   "tags": [
+    "humour"
+   ],
+   "stories": [
+    "The Toys of Peace",
+    "Louise",
+    "Tea",
+    "The Disappearance of Crispina Umberleigh",
+    "The Wolves of Cernogratz",
+    "Louis",
+    "The Guests",
+    "The Penance",
+    "The Phantom Luncheon",
+    "A Bread and Butter Miss",
+    "Bertie’s Christmas Eve",
+    "Forewarned",
+    "The Interlopers",
+    "Quail Seed",
+    "Canossa",
+    "The Threat",
+    "Excepting Mrs. Pentherby",
+    "Mark",
+    "The Hedgehog",
+    "The Mappined Life",
+    "Fate",
+    "The Bull",
+    "Morlvera",
+    "Shock Tactics",
+    "The Seven Cream Jugs",
+    "The Occasional Garden",
+    "The Sheep",
+    "The Oversight",
+    "Hyacinth",
+    "The Image of the Lost Soul",
+    "The Purple of the Balkan Kings",
+    "The Cupboard of the Yesterdays",
+    "For the Duration of the War"
+   ]
+  },
+  {
+   "id": 1870,
+   "author": "Saki",
+   "year": 1910,
+   "tags": [
+    "humour"
+   ],
+   "stories": [
+    "Reginald in Russia",
+    "The Reticence of Lady Anne",
+    "The Lost Sanjak",
+    "The Sex That Doesn’t Shop",
+    "The Blood-Feud of Toad-Water a West-Country Epic",
+    "A Young Turkish Catastrophe in Two Scenes",
+    "Judkin of the Parcels",
+    "Gabriel-Ernest",
+    "The Saint and the Goblin",
+    "The Soul of Laploshka",
+    "The Bag",
+    "The Strategist",
+    "Cross Currents",
+    "The Baker’s Dozen",
+    "The Mouse"
+   ]
+  },
+  {
+   "id": 7477,
+   "author": "Lord Dunsany",
+   "year": 1912,
+   "tags": [
+    "fairy",
+    "scifi"
+   ],
+   "stories": [
+    "The Bride of the Man-Horse",
+    "Distressing Tale of Thangobrind the Jeweller",
+    "The House of the Sphinx",
+    "Probable Adventure of the Three Literary Men",
+    "The Injudicious Prayers of Pombo the Idolater",
+    "The Loot of Bombasharna",
+    "Miss Cubbidge and the Dragon of Romance",
+    "The Quest of the Queen's Tears",
+    "The Hoard of the Gibbelins",
+    "How Nuth Would Have Practised His Art Upon the Gnoles",
+    "How One Came, as Was Foretold, to the City of Never",
+    "The Coronation of Mr. Thomas Shap",
+    "Chu-Bu and Sheemish",
+    "The Wonderful Window"
+   ]
+  },
+  {
+   "id": 8129,
+   "author": "Lord Dunsany",
+   "year": 1910,
+   "tags": [
+    "fairy",
+    "scifi"
+   ],
+   "stories": [
+    "Poltarnees, Beholder of Ocean",
+    "Blagdaross",
+    "The Madness of Andelsprutz",
+    "Where the Tides Ebb and Flow",
+    "Bethmoora",
+    "Idle Days on the Yann",
+    "The Sword and the Idol",
+    "The Idle City",
+    "The Hashish Man",
+    "Poor Old Bill",
+    "The Beggars",
+    "In Zaccarath",
+    "The Field",
+    "The Day of the Poll",
+    "The Unhappy Body"
+   ]
+  },
+  {
+   "id": 416,
+   "author": "Sherwood Anderson",
+   "year": 1919,
+   "tags": [
+    "american",
+    "modernist"
+   ],
+   "stories": [
+    "The Book of the Grotesque",
+    "Hands",
+    "Paper Pills",
+    "Mother",
+    "The Philosopher",
+    "Nobody Knows",
+    "Godliness",
+    "Surrender",
+    "Terror",
+    "A Man of Ideas",
+    "Adventure",
+    "Respectability",
+    "The Thinker",
+    "Tandy",
+    "The Strength of God",
+    "The Teacher",
+    "Loneliness",
+    "An Awakening",
+    "“Queer”",
+    "The Untold Lie",
+    "Drink",
+    "Death",
+    "Sophistication",
+    "Departure"
+   ]
+  },
+  {
+   "id": 4514,
+   "author": "Edith Wharton",
+   "year": 1910,
+   "tags": [
+    "american",
+    "gothic"
+   ],
+   "stories": [
+    "The Bolted Door",
+    "His Father’s Son",
+    "The Daunt Diana",
+    "The Debt",
+    "Full Circle",
+    "The Legend",
+    "The Eyes",
+    "The Blond Beast",
+    "Afterward",
+    "The Letters"
+   ]
+  },
+  {
+   "id": 1202,
+   "author": "Joseph Conrad",
+   "year": 1898,
+   "tags": [
+    "adventure"
+   ],
+   "stories": [
+    "Karain, a Memory",
+    "The Idiots",
+    "An Outpost of Progress",
+    "The Lagoon"
+   ]
+  },
+  {
+   "id": 7144,
+   "author": "Henry Lawson",
+   "year": 1896,
+   "tags": [
+    "adventure"
+   ],
+   "stories": [
+    "An Old Mate of Your Father’s",
+    "Settling on the Land",
+    "Enter Mitchell",
+    "Stiffner and Jim",
+    "When the Sun Went Down",
+    "The Man Who Forgot",
+    "Hungerford",
+    "A Camp-Fire Yarn",
+    "His Country-After All",
+    "A Day on a Selection",
+    "That There Dog O’ Mine",
+    "Going Blind",
+    "Arvie Aspinall’s Alarm Clock",
+    "Stragglers",
+    "The Union Buries Its Dead",
+    "On the Edge of a Plain",
+    "In a Dry Season",
+    "He’d Come Back",
+    "Another of Mitchell’s Plans for the Future",
+    "Steelman",
+    "Drifted Back",
+    "Remailed",
+    "Mitchell Doesn’t Believe in the Sack",
+    "Shooting the Moon",
+    "His Father’s Mate",
+    "The Shearing of the Cook’s Dog",
+    "“Dossing Out” and “Camping”",
+    "Across the Straits",
+    "“Some Day”",
+    "“Brummy Usen”",
+    "The Drover’s Wife",
+    "Steelman’s Pupil",
+    "An Unfinished Love Story",
+    "Board and Residence",
+    "A Visit of Condolence",
+    "In a Wet Season",
+    "“Rats”",
+    "Mitchell: a Character Sketch",
+    "The Bush Undertaker",
+    "Our Pipes",
+    "Coming Across",
+    "The Story of Malachi",
+    "Two Dogs and a Fence",
+    "Jones’s Alley",
+    "Bogg of Geebung",
+    "She Wouldn’t Speak",
+    "The Geological Spieler",
+    "Macquarie’s Mate",
+    "Baldy Thompson",
+    "For Auld Lang Syne"
+   ]
+  },
+  {
+   "id": 8597,
+   "author": "Ivan Turgenev",
+   "year": 1852,
+   "tags": [
+    "russian"
+   ],
+   "stories": [
+    "Hor and Kalinitch",
+    "Yermolaï and the Miller's Wife",
+    "Raspberry Spring",
+    "The District Doctor",
+    "My Neighbour Radilov",
+    "The Peasant Proprietor Ovsyanikov",
+    "Lgov",
+    "Byezhin Prairie",
+    "Kassyan of Fair Springs",
+    "The Agent",
+    "The Counting-House",
+    "Order",
+    "Biryuk",
+    "Two Country Gentlemen",
+    "Lebedyan"
+   ]
+  },
+  {
+   "id": 6120,
+   "author": "Rudyard Kipling",
+   "year": 1888,
+   "tags": [
+    "adventure"
+   ],
+   "stories": [
+    "The God from the Machine",
+    "Private Learoyd's Story",
+    "The Big Drunk Draf'",
+    "The Wreck of the Visigoth",
+    "The Solid Muldoon",
+    "With the Main Guard",
+    "In the Matter of a Private",
+    "Black Jack",
+    "Poor Dear Mamma",
+    "The World Without",
+    "The Tents of Kedar",
+    "With Any Amazement",
+    "The Garden of Eden",
+    "Fatima",
+    "The Valley of the Shadow",
+    "The Swelling of Jordan",
+    "Dray Wara Yow Dee",
+    "The Judgment of Dungara",
+    "At Howli Thana",
+    "Gemini",
+    "At Twenty-Two",
+    "In Flood Time",
+    "The Sending of Dana Da",
+    "On the City Wall"
+   ]
+  },
+  {
+   "id": 2377,
+   "author": "Jack London",
+   "year": 1900,
+   "tags": [
+    "adventure",
+    "american"
+   ],
+   "stories": [
+    "The White Silence",
+    "The Son of the Wolf",
+    "The Men of Forty Mile",
+    "In a Far Country",
+    "To the Man on the Trail",
+    "The Priestly Prerogative",
+    "The Wisdom of the Trail",
+    "The Wife of a King",
+    "An Odyssey of the North"
+   ]
+  },
+  {
+   "id": 1208,
+   "author": "Jack London",
+   "year": 1911,
+   "tags": [
+    "adventure",
+    "american"
+   ],
+   "stories": [
+    "The House of Mapuhi",
+    "The Whale Tooth",
+    "Mauki",
+    "“Yah! Yah! Yah!”",
+    "The Heathen",
+    "The Terrible Solomons",
+    "The Inevitable White Man",
+    "THE SEED OF McCOY"
+   ]
+  },
+  {
+   "id": 4682,
+   "author": "Stephen Leacock",
+   "year": 1911,
+   "tags": [
+    "humour"
+   ],
+   "stories": [
+    "Maddened by Mystery: or, The Defective Detective",
+    "“Q.” A Psychic Pstory of the Psupernatural",
+    "Guido the Gimlet of Ghent: A Romance of Chivalry",
+    "Gertrude the Governess: or, Simple Seventeen",
+    "A Hero in Homespun: or, The Life Struggle of Hezekiah Hayloft",
+    "Sorrows of a Super Soul: or, The Memoirs of Marie Mushenough",
+    "Hannah of the Highlands: or, The Laird of Loch Aucherlocherty",
+    "Soaked in Seaweed: or, Upset in the Ocean",
+    "Caroline’s Christmas: or, The Inexplicable Infant",
+    "The Man in Asbestos: An Allegory of the Future"
+   ]
+  },
+  {
+   "id": 12133,
+   "author": "W. W. Jacobs",
+   "year": 1902,
+   "tags": [
+    "humour",
+    "gothic"
+   ],
+   "stories": [
+    "The Lady of the Barge",
+    "The Monkey’s Paw",
+    "Bill’s Paper Chase",
+    "The Well",
+    "Cupboard Love",
+    "In the Library",
+    "Captain Rogers",
+    "A Tiger’s Skin",
+    "A Mixed Proposal",
+    "An Adulteration Act",
+    "A Golden Venture",
+    "Three at Table"
+   ]
+  },
+  {
+   "id": 1743,
+   "author": "H. G. Wells",
+   "year": 1903,
+   "tags": [
+    "scifi"
+   ],
+   "stories": [
+    "Filmer",
+    "The Magic Shop",
+    "The Valley of Spiders",
+    "The Truth About Pyecraft",
+    "Mr. Skelmersdale in Fairyland",
+    "The Story of the Inexperienced Ghost",
+    "Jimmy Goggles the God",
+    "The New Accelerator",
+    "Mr. Ledbetter's Vacation",
+    "The Stolen Body",
+    "Mr. Brisher's Treasure",
+    "Miss Winchelsea's Heart",
+    "A Dream of Armageddon"
+   ]
+  },
+  {
+   "id": 6768,
+   "author": "P. G. Wodehouse",
+   "year": 1914,
+   "tags": [
+    "humour"
+   ],
+   "stories": [
+    "The Man Upstairs",
+    "Something to Worry About",
+    "Deep Waters",
+    "When Doctors Disagree",
+    "Rough-Hew Them How We Will",
+    "The Man Who Disliked Cats",
+    "Ruth in Exile",
+    "Archibald's Benefit",
+    "The Man, the Maid, and the Miasma",
+    "The Good Angel",
+    "Pots O'money",
+    "Out of School",
+    "Three from Dunsterville",
+    "The Tuppenny Millionaire",
+    "Ahead of Schedule",
+    "Sir Agravaine a Tale of King Arthur's Round Table",
+    "The Goal-Keeper and the Plutocrat",
+    "In Alcala"
+   ]
+  },
+  {
+   "id": 3047,
+   "author": "Thomas Hardy",
+   "year": 1894,
+   "tags": [],
+   "stories": [
+    "The Son’s Veto",
+    "For Conscience’ Sake",
+    "On the Western Circuit",
+    "To Please His Wife",
+    "The Melancholy Hussar of the German Legion",
+    "The Fiddler of the Reels",
+    "A Tradition of Eighteen Hundred and Four",
+    "A Few Crusted Characters",
+    "Tony Kytes, the Arch-Deceiver",
+    "The History of the Hardcomes",
+    "The Superstitious Man’s Story",
+    "Andrey Satchel and the Parson and Clerk",
+    "Old Andrey’s Experience as a Musician",
+    "Absent-Mindedness in a Parish Choir",
+    "The Winters and the Palmleys",
+    "Incident in the Life of Mr. George Crookhill",
+    "Netty Sargent’s Copyhold"
+   ]
+  },
+  {
+   "id": 9629,
+   "author": "M. R. James",
+   "year": 1911,
+   "tags": [
+    "gothic"
+   ],
+   "stories": [
+    "The Rose Garden",
+    "The Tractate Middoth",
+    "Casting the Runes",
+    "The Stalls of Barchester Cathedral",
+    "Martin's Close",
+    "Mr Humphreys and His Inheritance"
+   ]
+  },
+  {
+   "id": 423,
+   "author": "Arthur Conan Doyle",
+   "year": 1894,
+   "tags": [],
+   "stories": [
+    "Behind the Times",
+    "His First Operation",
+    "A Straggler of ’15",
+    "The Third Generation",
+    "A False Start",
+    "The Curse of Eve",
+    "Sweethearts",
+    "A Physiologist’s Wife",
+    "The Case of Lady Sannox",
+    "A Question of Diplomacy",
+    "A Medical Document",
+    "Lot No. 249",
+    "The Los Amigos Fiasco",
+    "The Doctors of Hoyland",
+    "The Surgeon Talks"
    ]
   }
  ]
