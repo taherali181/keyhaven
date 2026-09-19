@@ -920,6 +920,9 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .kh-slider-sample.is-weight { font-size: 20px; }
 .kh-slider-sample.is-weight.is-low { font-weight: 300; }
 .kh-slider-sample.is-weight.is-high { font-weight: 700; }
+/* Page-edge click zones (Settings → Input): the pointer shows which way a click turns. */
+.reader-stage[data-click-zone="prev"] { cursor: w-resize; }
+.reader-stage[data-click-zone="next"] { cursor: e-resize; }
 /* Page numbers under each page, quiet enough to ignore. */
 .story-folios { display: grid; grid-template-columns: repeat(var(--folio-pages, 1), minmax(0, 1fr)); gap: clamp(24px, 4vw, 64px); margin-top: 6px; color: var(--text-muted); font: 500 .75rem/12px var(--font-interface); font-variant-numeric: tabular-nums; letter-spacing: .02em; opacity: .6; pointer-events: none; }
 .story-folios[data-pages="2"] { --folio-pages: 2; }

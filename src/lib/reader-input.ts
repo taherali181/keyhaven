@@ -41,3 +41,60 @@ export function sanitizeReaderInput(value: unknown): ReaderInputSettings {
     keys: Object.fromEntries(PAGE_ACTIONS.map(action => [action, valid(keys[action], DEFAULT_READER_INPUT.keys[action])])) as ReaderInputSettings['keys']
   };
 }
+
+/** The binding a key press stands for: KeyboardEvent.key (letters lower-cased, "Space" for the space bar), with "Shift+" when Shift is held. */
+export function bindingFor(event: { key: string; shiftKey: boolean }): string {
+  const name = event.key === ' ' ? 'Space' : event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  return event.shiftKey && name !== 'Shift' ? `Shift+${name}` : name;
+}
+
+/** How a key binding reads in the interface. */
+export function bindingLabel(binding: string): string {
+  const shift = binding.startsWith('Shift+') && binding !== 'Shift+';
+  const name = shift ? binding.slice(6) : binding;
+  const label = ({ ArrowRight: '→', ArrowLeft: '←', ArrowUp: '↑', ArrowDown: '↓', PageDown: 'Page Down', PageUp: 'Page Up', Space: 'Space', Escape: 'Esc' } as Record<string, string>)[name]
+    ?? (name.length === 1 ? name.toUpperCase() : name);
+  return shift ? `Shift ${label}` : label;
+}
+
+/**
+ * The page action a key press maps to. An exact match wins; with Shift held and no Shift binding, the unshifted key
+ * still counts (so Shift+Arrow turns pages, while Shift+Space can mean "previous page").
+ */
+export function resolvePageAction(event: { key: string; shiftKey: boolean }, keys: ReaderInputSettings['keys']): PageAction | null {
+  const exact = bindingFor(event);
+  const plain = bindingFor({ key: event.key, shiftKey: false });
+  const find = (binding: string) => PAGE_ACTIONS.find(action => keys[action].includes(binding)) ?? null;
+  return find(exact) ?? (event.shiftKey ? find(plain) : null);
+}
+
+/** Actions already using a binding, other than `except`: for warning about clashes while remapping. */
+export function bindingConflicts(binding: string, keys: ReaderInputSettings['keys'], except: PageAction): PageAction[] {
+  return PAGE_ACTIONS.filter(action => action !== except && keys[action].includes(binding));
+}
+
+/** Keys that can't be mapped: modifiers on their own, and keys the app or browser already relies on. */
+export const RESERVED_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'Tab', 'Escape', 'Enter', 'CapsLock', 'Dead', 'Unidentified']);
+
+export const WHEEL_STEP = 80;
+export const WHEEL_REST_MS = 300;
+
+/**
+ * Turns wheel movement into page steps: movement adds up until it passes WHEEL_STEP, then one step is taken and the
+ * wheel rests. A trackpad keeps sending events after a flick; any that arrive while resting extend the rest, so one
+ * flick turns one page, while separate clicks of a mouse wheel each turn a page.
+ */
+export function createWheelPager(now: () => number = () => performance.now()) {
+  let total = 0;
+  let restUntil = 0;
+  return (deltaY: number): -1 | 1 | null => {
+    const time = now();
+    if (time < restUntil) { restUntil = Math.max(restUntil, time + 100); total = 0; return null; }
+    total += deltaY;
+    if (Math.abs(total) < WHEEL_STEP) return null;
+    const step = total > 0 ? 1 : -1;
+    total = 0;
+    restUntil = time + WHEEL_REST_MS;
+    return step;
+  };
+}

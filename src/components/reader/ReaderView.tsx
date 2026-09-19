@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronUp, Library, Maximize2, Minimize2, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
 import { ContentsMenu, type ContentsEntry } from '@/components/reader/ContentsMenu';
 import { StoryModeToggle } from '@/components/reader/StoryModeToggle';
+import { usePageInput } from '@/hooks/usePageInput';
+import { bindingLabel } from '@/lib/reader-input';
 import { StoryReader, type ReaderLayout } from '@/components/reader/StoryReader';
 import { ReaderBottomBar } from '@/components/reader/ReaderBottomBar';
 import { StoryAtmosphere } from '@/components/reader/StoryAtmosphere';
@@ -343,27 +345,13 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
   useEffect(() => {
     pagerRef.current = step => goToPage(step === 'start' ? 0 : step === 'end' ? pageCount - 1 : page + step * pagesPerView);
   });
-  useEffect(() => {
-    if (!reading) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
-      const target = event.target as HTMLElement | null;
-      // Leave keys alone in fields, menus and open panels (e.g. the library, reading settings).
-      if (target?.closest('input, textarea, select, [contenteditable="true"], [role="listbox"], [role="dialog"], .settings-panel, .story-switcher-menu')) return;
-      const onButton = Boolean(target?.closest('button, a'));
-      let step: PageStep | null = null;
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === 'PageDown') step = 1;
-      else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp' || event.key === 'PageUp') step = -1;
-      else if (event.key === ' ' && !onButton) step = event.shiftKey ? -1 : 1;
-      else if (event.key === 'Home') step = 'start';
-      else if (event.key === 'End') step = 'end';
-      if (step === null) return;
-      event.preventDefault();
-      pagerRef.current(step);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [reading]);
+  // Keys (remappable), the wheel and page-edge clicks, as chosen in Settings → Input.
+  usePageInput({
+    active: reading,
+    input: settings.readerInput,
+    surface: stageRef,
+    onAction: action => pagerRef.current(action === 'next' ? 1 : action === 'prev' ? -1 : action === 'first' ? 'start' : 'end')
+  });
 
   const changeMode = (mode: UserSettings['storyMode']) => {
     if (mode === settings.storyMode) return;
@@ -523,7 +511,9 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
               <span className="story-folio">{folio}</span>
               {pagesPerView === 2 && <span className="story-folio">{page + 1 < pageCount ? folio + 1 : ''}</span>}
             </div>}
-            <p className="typing-hint reading-hint"><kbd aria-label="Left arrow">←</kbd><kbd aria-label="Right arrow">→</kbd> turn pages</p>
+            {(settings.readerInput.keys.prev[0] || settings.readerInput.keys.next[0]) && <p className="typing-hint reading-hint">
+              {[settings.readerInput.keys.prev[0], settings.readerInput.keys.next[0]].filter(Boolean).map(key => <kbd key={key}>{bindingLabel(key)}</kbd>)} turn pages
+            </p>}
           </>
           : <TypingArea targetText={text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="literary" feedbackMode="reader" viewportLines={typingLines} viewportMode="pages" layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerParagraphSpacing}-${settings.readerAlign}-${settings.readerHyphens}-${settings.readerWidth}`} lineHeight={settings.readerLineHeight} onKeyDown={typingKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} onEscape={() => (popup.view === 'toast' ? popup.collapse() : engine.reset())} />}
       </div>
