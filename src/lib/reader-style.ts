@@ -136,6 +136,7 @@ export function readerStyle(settings: UserSettings): CSSProperties {
     '--reader-overlay': `${scenery ? settings.readerOverlay : 100}%`,
     '--reader-blur': `${settings.readerBlur}px`,
     '--reader-width': settings.readerWidth >= TYPE_RANGES.readerWidth.max ? '100%' : `${settings.readerWidth}px`,
+    '--reader-size': passageFontSize(settings.fontSize),
     '--reader-weight': settings.readerFontWeight,
     '--reader-tracking': `${settings.readerLetterSpacing}em`,
     '--reader-word-spacing': `${settings.readerWordSpacing}em`,
