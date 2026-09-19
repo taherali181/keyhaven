@@ -2,6 +2,7 @@
 
 import type { DocumentAssetRecord, DocumentFileRecord, ImportedDocumentRecord, ImportedSection } from '@/types';
 import { imageToken } from '@/lib/reading';
+import { loadPdfJs } from '@/lib/pdf';
 
 const MAX_BYTES = 50 * 1024 * 1024;
 const MAX_PAGES = 500;
@@ -113,8 +114,7 @@ async function importEpub(file: File, onProgress: (progress: ImportProgress) => 
 
 async function importPdf(file: File, onProgress: (progress: ImportProgress) => void, signal: AbortSignal): Promise<ImportResult> {
   onProgress({ phase: 'reading', current: 0, total: 1, message: 'Opening PDF…' });
-  const pdfjs = await import('pdfjs-dist');
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+  const pdfjs = await loadPdfJs();
   const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
   if (pdf.numPages > MAX_PAGES) throw new Error(`This PDF has ${pdf.numPages} pages. The import limit is ${MAX_PAGES}.`);
   const sections: ImportedSection[] = [];

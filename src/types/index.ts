@@ -181,6 +181,8 @@ export interface Work {
   /** A story has a single section; books have one per chapter. */
   sections: WorkSection[];
   updatedAt: number;
+  /** Imports: the file it came from. A PDF can also be read as its original pages. */
+  format?: 'epub' | 'pdf';
 }
 
 /** One entry of public/catalog/stories/index.json. */

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronUp, Highlighter, Library, Maximize2, Minimize2, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
+import { ChevronUp, FileText, Highlighter, Library, Maximize2, Minimize2, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
 import { HighlightPopover } from '@/components/reader/HighlightPopover';
 import { NotesPanel } from '@/components/reader/NotesPanel';
 import { reanchor, segmentParagraph, type Anchor } from '@/lib/highlights';
@@ -18,7 +18,8 @@ import { saveResult, useResultPopup, type HistoryScope, type ReaderResult } from
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { useReadingSession } from '@/hooks/useReadingSession';
-import { openReaderSettings } from '@/lib/reader-events';
+import { openReaderSettings, openSection as openAppSection } from '@/lib/reader-events';
+import { PDF_CURRENT_KEY } from '@/components/pdf/PdfView';
 import { loadTypedParts } from '@/lib/reading-progress';
 import { resolveReaderStats, type ReaderStatContext } from '@/lib/reader-stats';
 import { chunkParagraphs, countWords, DEFAULT_READING_WPM, loadReadingSpeed, sectionName, updateReadingSpeed } from '@/lib/reading';
@@ -561,6 +562,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
             <Library aria-hidden="true" /><span>Library</span>
           </button>
           <span className="story-side-divider" aria-hidden="true" />
+          {work.format === 'pdf' && <button type="button" className="story-bar-button is-icon" onClick={() => { try { localStorage.setItem(PDF_CURRENT_KEY, work.key.slice('import:'.length)); } catch { /* memory only */ } openAppSection('pdf'); }} aria-label="Original pages" title="See the original pages"><FileText aria-hidden="true" /></button>}
           {reading && <button type="button" className="story-bar-button is-icon story-notes-button" onClick={() => setNotesOpen(true)} aria-label="Highlights and notes" title="Highlights and notes">
             <Highlighter aria-hidden="true" />{highlights.length > 0 && <span className="story-notes-count" aria-hidden="true">{highlights.length}</span>}
           </button>}

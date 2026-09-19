@@ -21,7 +21,8 @@ import { ProfileView } from '@/components/profile/ProfileView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { SectionSettings, isSettingsSection } from '@/components/settings/SectionSettings';
 import { rememberWork } from '@/lib/catalog';
-import { OPEN_WORK_EVENT } from '@/lib/reader-events';
+import { OPEN_SECTION_EVENT, OPEN_WORK_EVENT } from '@/lib/reader-events';
+import { PdfView } from '@/components/pdf/PdfView';
 import { useBackupSync } from '@/hooks/useBackupSync';
 import { BACKUP_LABELS, useBackupStatus } from '@/lib/sync/status';
 import { modeFromPath, pathForMode } from '@/lib/navigation';
@@ -48,6 +49,14 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
     };
     window.addEventListener('popstate', onBack);
     return () => window.removeEventListener('popstate', onBack);
+  }, []);
+
+  // Other parts of the app can ask for a section (the reader's "Original pages" opens PDFs).
+  const selectModeRef = useRef<(mode: TypingMode) => void>(() => {});
+  useEffect(() => {
+    const onOpenSection = (event: Event) => selectModeRef.current((event as CustomEvent<{ mode: TypingMode }>).detail.mode);
+    window.addEventListener(OPEN_SECTION_EVENT, onOpenSection);
+    return () => window.removeEventListener(OPEN_SECTION_EVENT, onOpenSection);
   }, []);
 
   // Opening a work from outside the reader (Home, the Library, Profile) switches to Read, which then opens it.
@@ -80,6 +89,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
     if (mode !== currentMode) window.history.pushState({}, '', pathForMode(mode));
     startTransition(() => setCurrentMode(mode));
   };
+  useEffect(() => { selectModeRef.current = selectMode; });
 
   return (
     <MotionConfig reducedMotion="user">
@@ -99,7 +109,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
                 {currentMode === 'arcade' && <ArcadeView settings={sectionSettings} onKeyPress={playKeyPress} />}
                 {currentMode === 'leaderboard' && <LeaderboardView />}
                 {/* PDFs and Write are being built; they stay reachable by address only until then. */}
-                {currentMode === 'pdf' && <section className="speed-shell"><SectionHeader eyebrow="Your documents" title="PDFs" description="Read PDFs as their original pages or as reflowed text. Coming soon." /></section>}
+                {currentMode === 'pdf' && <PdfView settings={sectionSettings} />}
                 {currentMode === 'manuscript' && <section className="speed-shell"><SectionHeader eyebrow="Your writing" title="Write" description="Write your own pieces, then read or type them back. Coming soon." /></section>}
                 {currentMode === 'profile' && <ProfileView
                   settings={settings}

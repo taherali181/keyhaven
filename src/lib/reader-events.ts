@@ -17,6 +17,12 @@ export function openLibraryAt(detail: { bookId?: number; category?: string }) {
   window.dispatchEvent(new CustomEvent<OpenLibraryDetail>(OPEN_LIBRARY_EVENT, { detail: { tab: 'discover', ...detail } }));
 }
 
+/** Asks the app to switch to a section (e.g. the reader's "Original pages" going to PDFs). */
+export const OPEN_SECTION_EVENT = 'keyhaven:open-section';
+export function openSection(mode: import('@/types').TypingMode) {
+  window.dispatchEvent(new CustomEvent(OPEN_SECTION_EVENT, { detail: { mode } }));
+}
+
 export const OPEN_WORK_EVENT = 'keyhaven:open-work';
 /** Opens a story, book or import in the reader, optionally switching between reading and typing. From outside the reader, the app switches to Read first. */
 export function openWork(key: string, mode?: 'read' | 'type') {

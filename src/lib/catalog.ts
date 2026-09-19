@@ -200,7 +200,7 @@ export async function loadWork(key: string): Promise<Work> {
     const document = await db.importedDocuments.get(parsed.id);
     if (!document) throw new WorkLoadError('This imported book was deleted');
     const sections: WorkSection[] = document.sections.map(section => ({ id: section.id, title: section.title, paragraphs: importedParagraphs(section.text) })).filter(section => section.paragraphs.length);
-    return { key, kind: 'import', title: document.title, author: document.author, sections, updatedAt: document.updatedAt };
+    return { key, kind: 'import', title: document.title, author: document.author, sections, updatedAt: document.updatedAt, format: document.format };
   }
 
   const cached = await db.works.get(key).catch(() => undefined);
