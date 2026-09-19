@@ -368,6 +368,18 @@ export interface ReaderBarStyle {
 /** Per-section typography and bottom bar (see src/lib/section-settings.ts). */
 export type SectionPrefs = Pick<UserSettings, 'font' | 'fontSize' | 'readerFontWeight' | 'readerLetterSpacing' | 'readerWordSpacing' | 'readerParagraphSpacing' | 'readerAlign' | 'readerHyphens' | 'readerLineHeight' | 'readerWidth' | 'readerStats' | 'readerBarStyle'>;
 
+/** Reader page-turn actions that keys can be mapped to. */
+export type PageAction = 'next' | 'prev' | 'first' | 'last';
+
+/** How pages turn in Read mode. Set in the main Settings panel (Input). See src/lib/reader-input.ts. */
+export interface ReaderInputSettings {
+  /** The mouse wheel turns pages. */
+  wheel: boolean;
+  /** Clicking the left or right edge of the page turns it. */
+  clickZones: boolean;
+  keys: Record<PageAction, string[]>;
+}
+
 export interface UserSettings {
   theme: ThemeId;
   font: FontFamily;
@@ -421,6 +433,9 @@ export interface UserSettings {
   dailyReadingGoalMinutes: number;
   /** Academy lessons show the keyboard guide under the text. */
   academyGuide: 'on' | 'off';
+  readerInput: ReaderInputSettings;
+  /** Quotes shown in Quotes: every quote, only saved ones, or one category. */
+  quoteFilter: string;
   updatedAt: number;
 }
 

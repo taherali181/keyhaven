@@ -23,7 +23,7 @@ import { useBackupSync } from '@/hooks/useBackupSync';
 import { useBackupStatus, type BackupState } from '@/lib/sync/status';
 import { modeFromPath, pathForMode } from '@/lib/navigation';
 import { hasSceneryImage, readerSurfaceProps } from '@/lib/reader-style';
-import { SECTION_LABELS, sectionUpdate, settingsForSection } from '@/lib/section-settings';
+import { SECTION_LABELS, sectionTypographyDefaults, sectionUpdate, settingsForSection } from '@/lib/section-settings';
 import type { UserSettings } from '@/types';
 
 /** Views that draw their own scenery and have a reading-settings button in their title bar. */
@@ -114,7 +114,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
         />
         {/* The library is part of Read: a window over the reader, opened from its title bar or with Ctrl K. */}
         {currentMode === 'stories' && <LibraryWindow initialOpen={initialLibraryOpen} />}
-        {!settings.zenMode && <ReaderSettings settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} sectionLabel={SECTION_LABELS[currentMode] ?? 'Read'} showTrigger={!READER_VIEWS.includes(currentMode)} />}
+        {!settings.zenMode && <ReaderSettings settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} sectionLabel={SECTION_LABELS[currentMode] ?? 'Read'} typographyDefaults={sectionTypographyDefaults(currentMode)} showTrigger={!READER_VIEWS.includes(currentMode)} />}
       </div>
     </MotionConfig>
   );

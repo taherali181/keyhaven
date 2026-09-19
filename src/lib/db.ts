@@ -4,6 +4,7 @@ import { sanitizeSectionPrefs } from '@/lib/section-settings';
 import { DEFAULT_TYPOGRAPHY, normalizeTypography } from '@/lib/typography';
 import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ReaderToneId, ImportedDocumentRecord, AcademyStateRecord, ShelfRecord, Work, ReadingSessionRecord, PendingDeleteRecord, HighlightRecord, FavoriteRecord, ManuscriptRecord, DocumentAssetRecord, DocumentFileRecord } from '@/types';
 import { installSyncTracking } from '@/lib/sync/tracking';
+import { DEFAULT_READER_INPUT, sanitizeReaderInput } from '@/lib/reader-input';
 
 export class KeyHavenDatabase extends Dexie {
   testResults!: Table<TestResultRecord, number>;
@@ -150,6 +151,8 @@ export const DEFAULT_SETTINGS: UserSettings = {
   dailyTypingGoalMinutes: 15,
   dailyReadingGoalMinutes: 20,
   academyGuide: 'on',
+  readerInput: DEFAULT_READER_INPUT,
+  quoteFilter: 'all',
   readerBackground: 'misty-mountains',
   readerOverlay: 65,
   readerBlur: 2,
@@ -194,7 +197,9 @@ export function normalizeSettings(value: unknown): UserSettings {
     readerStats: sanitizeReaderStats(parsed.readerStats),
     readerBarStyle: { ...DEFAULT_READER_BAR_STYLE, ...(parsed.readerBarStyle ?? {}) },
     ...normalizeTypography(parsed),
-    sectionPrefs: sanitizeSectionPrefs(parsed.sectionPrefs)
+    sectionPrefs: sanitizeSectionPrefs(parsed.sectionPrefs),
+    readerInput: sanitizeReaderInput(parsed.readerInput),
+    quoteFilter: typeof parsed.quoteFilter === 'string' && parsed.quoteFilter.length <= 60 ? parsed.quoteFilter : 'all'
   };
 }
 

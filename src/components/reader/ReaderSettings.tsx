@@ -269,7 +269,7 @@ function TypefacePicker({ value, onChange }: { value: FontFamily; onChange: (fon
 }
 
 /** Reading-only settings: a floating trigger plus a tile-based sheet. Rendered for Stories, Quotes and Library. */
-export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, showTrigger = true, sectionLabel = 'Read' }: { settings: UserSettings; onUpdateSetting: UpdateSetting; onUpdateSettings: (patch: Partial<UserSettings>) => void; showTrigger?: boolean; sectionLabel?: string }) {
+export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, showTrigger = true, sectionLabel = 'Read', typographyDefaults = DEFAULT_TYPOGRAPHY }: { settings: UserSettings; onUpdateSetting: UpdateSetting; onUpdateSettings: (patch: Partial<UserSettings>) => void; showTrigger?: boolean; sectionLabel?: string; typographyDefaults?: Typography }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabId>('look');
   const sceneryInput = useRef<HTMLInputElement>(null);
@@ -376,7 +376,7 @@ export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, sh
 
   type SliderKey = keyof typeof TYPE_RANGES;
   const typeSlider = (key: SliderKey, label: string, format: (value: number) => string, hint?: string) => (
-    <SliderField label={label} value={settings[key]} {...TYPE_RANGES[key]} defaultValue={DEFAULT_TYPOGRAPHY[key]} format={format} hint={hint} visual={key === 'fontSize' ? 'size' : key === 'readerFontWeight' ? 'weight' : undefined} onChange={value => onUpdateSetting(key, value)} />
+    <SliderField label={label} value={settings[key]} {...TYPE_RANGES[key]} defaultValue={typographyDefaults[key]} format={format} hint={hint} visual={key === 'fontSize' ? 'size' : key === 'readerFontWeight' ? 'weight' : undefined} onChange={value => onUpdateSetting(key, value)} />
   );
   const applyTypography = (values: Typography) => onUpdateSettings(values);
   const signed = (value: number, digits: number) => `${value > 0 ? '+' : ''}${value.toFixed(digits)} em`;
@@ -456,7 +456,7 @@ export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, sh
       </div>
     </section>
 
-    <button type="button" className="rs-btn rs-reset" onClick={() => applyTypography(DEFAULT_TYPOGRAPHY)}><RotateCcw aria-hidden="true" />Reset typography for {sectionLabel}</button>
+    <button type="button" className="rs-btn rs-reset" onClick={() => applyTypography(typographyDefaults)}><RotateCcw aria-hidden="true" />Reset typography for {sectionLabel}</button>
   </>;
 
   const sound = <>

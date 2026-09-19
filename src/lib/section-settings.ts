@@ -3,7 +3,7 @@
 import type { SectionPrefs, TypingMode, UserSettings } from '@/types';
 import { DEFAULT_SETTINGS } from '@/lib/db';
 import { sanitizeReaderStats } from '@/lib/reader-stats';
-import { normalizeTypography, TYPOGRAPHY_KEYS } from '@/lib/typography';
+import { DEFAULT_TYPOGRAPHY, normalizeTypography, TYPOGRAPHY_KEYS, type Typography } from '@/lib/typography';
 
 export const SECTION_KEYS = [...TYPOGRAPHY_KEYS, 'readerStats', 'readerBarStyle'] as const;
 
@@ -15,14 +15,23 @@ export function isSectionKey(key: keyof UserSettings): key is keyof SectionPrefs
   return (SECTION_KEYS as readonly string[]).includes(key);
 }
 
-function defaults(): SectionPrefs {
-  return Object.fromEntries(SECTION_KEYS.map(key => [key, DEFAULT_SETTINGS[key]])) as SectionPrefs;
+/** Where a section starts out differently from Read: quotes are short, so they start larger. */
+const SECTION_DEFAULTS: Partial<Record<TypingMode, Partial<SectionPrefs>>> = { quotes: { fontSize: 32 } };
+
+function defaults(mode: TypingMode): SectionPrefs {
+  return { ...Object.fromEntries(SECTION_KEYS.map(key => [key, DEFAULT_SETTINGS[key]])), ...SECTION_DEFAULTS[mode] } as SectionPrefs;
+}
+
+/** The typography a section starts with (and resets to). */
+export function sectionTypographyDefaults(mode: TypingMode): Typography {
+  const base = usesBase(mode) ? DEFAULT_TYPOGRAPHY : { ...DEFAULT_TYPOGRAPHY, ...SECTION_DEFAULTS[mode] };
+  return Object.fromEntries(TYPOGRAPHY_KEYS.map(key => [key, base[key as keyof typeof base]])) as Typography;
 }
 
 /** The settings a section renders with: its own typography and bottom bar over the shared preferences. */
 export function settingsForSection(settings: UserSettings, mode: TypingMode): UserSettings {
   if (usesBase(mode)) return settings;
-  return { ...settings, ...defaults(), ...(settings.sectionPrefs?.[mode] ?? {}) };
+  return { ...settings, ...defaults(mode), ...(settings.sectionPrefs?.[mode] ?? {}) };
 }
 
 /** Where a change belongs: the section's own copy for typography and bar keys, the shared settings otherwise. */

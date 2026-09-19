@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '@/lib/db';
-import { sanitizeSectionPrefs, sectionUpdate, settingsForSection } from '@/lib/section-settings';
+import { sanitizeSectionPrefs, sectionTypographyDefaults, sectionUpdate, settingsForSection } from '@/lib/section-settings';
 
 const read = { ...DEFAULT_SETTINGS, font: 'playfair' as const, fontSize: 31, theme: 'sage' as const };
 
@@ -9,8 +9,15 @@ describe('per-section settings', () => {
     expect(settingsForSection(read, 'stories').font).toBe('playfair');
     const quotes = settingsForSection(read, 'quotes');
     expect(quotes.font).toBe(DEFAULT_SETTINGS.font);
-    expect(quotes.fontSize).toBe(DEFAULT_SETTINGS.fontSize);
     expect(quotes.theme).toBe('sage');
+    expect(settingsForSection(read, 'speed-test').fontSize).toBe(DEFAULT_SETTINGS.fontSize);
+  });
+
+  it('starts quotes larger than Read, resets them to that size, and keeps a size the reader chose', () => {
+    expect(settingsForSection(read, 'quotes').fontSize).toBe(32);
+    expect(sectionTypographyDefaults('quotes').fontSize).toBe(32);
+    expect(sectionTypographyDefaults('stories').fontSize).toBe(DEFAULT_SETTINGS.fontSize);
+    expect(settingsForSection({ ...read, sectionPrefs: { quotes: { fontSize: 26 } } }, 'quotes').fontSize).toBe(26);
   });
 
   it('saves typography changes to the section and shared changes to the top level', () => {
