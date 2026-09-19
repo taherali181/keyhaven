@@ -155,9 +155,9 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
           shell.style.setProperty('--text-bottom-leading', `${Math.max(0, line - glyph.height - top)}px`);
         }
       }
-      // The remainder is split between the space above the text and the space below it, so the text sits centred
-      // between the title bar and the bottom bar (or the page edges when the title bar is hidden).
-      const gaps = 2;
+      // Pinned: the remainder is shared by the four gaps (above the title bar, below it, below the text, below the
+      // bottom bar). Hidden: it is split between the space above the text and the space below it.
+      const gaps = settings.readerBarPinned ? 4 : 2;
       const style = getComputedStyle(stage);
       const inner = stage.getBoundingClientRect().height - Number.parseFloat(style.paddingTop) - Number.parseFloat(style.paddingBottom);
       const room = inner + gaps * extraRef.current;
@@ -447,7 +447,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
     ? `Story · Part ${currentPart + 1} of ${chunkCount}`
     : `${sectionLabel} ${sectionIndex + 1} of ${sectionCount}${chapterName ? ` · ${chapterName}` : ''}${reading ? '' : ` · Part ${chunkIndex + 1} of ${chunkCount}`}`;
   const byline = `${work.author}${work.year ? ` · ${work.year}` : ''}`;
-  const bylineOpen = `${byline} · ${eyebrow}`;
+  const bylineOpen = byline;
   const lastSection = sectionIndex === sectionCount - 1;
   const nextPageLabel = !onLastPage ? 'Next' : !lastSection ? `Next ${unit}` : isStory ? 'Next story' : 'Finish';
   const pinned = settings.readerBarPinned;

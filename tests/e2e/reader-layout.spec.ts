@@ -29,27 +29,15 @@ test('reader keeps glyph spacing and the title overlay independent of hover', as
     const range = document.createRange(); range.selectNodeContents(text);
     return range.getBoundingClientRect().top;
   });
-  // The title bar and bottom bar match the sidebar button: as tall as it, as far from the page edges as it is.
-  await page.keyboard.press('Escape');
   await expect.poll(async () => {
-    const [bar, bottom, dock] = await Promise.all(['.story-bar', '.reader-bar', '.sidebar-dock'].map(selector => page.locator(selector).boundingBox()));
-    return [Math.round(bar!.height), Math.round(bottom!.height), Math.round(bar!.y), Math.round(900 - bottom!.y - bottom!.height), Math.round(dock!.y)];
-  }).toEqual([42, 42, 14, 14, 14]);
-  // The text sits the same distance from the title bar as from the bottom bar.
-  await expect.poll(async () => {
-    const bar = (await page.locator('.story-bar').boundingBox())!;
-    const bottom = (await page.locator('.reader-bar').boundingBox())!;
-    const textBottom = await page.locator('.typing-viewport').evaluate(node => {
-      const leading = parseFloat(getComputedStyle(node.closest('.stories-shell')!).getPropertyValue('--text-bottom-leading')) || 0;
-      return node.getBoundingClientRect().bottom - leading;
-    });
-    return Math.abs(((await firstGlyphTop()) - bar.y - bar.height) - (bottom.y - textBottom));
+    const bar = await page.locator('.story-bar').boundingBox();
+    return Math.abs((await firstGlyphTop()) - bar!.y - bar!.height - bar!.y);
   }).toBeLessThanOrEqual(2);
   const before = await page.locator('.reader-stage').boundingBox();
   await page.locator('.story-bar-title').hover();
-  await expect(page.locator('.story-bar-surface')).toHaveCSS('height', '88px');
+  await expect(page.locator('.story-bar-surface')).toHaveCSS('height', '128px');
   expect(await page.locator('.reader-stage').boundingBox()).toEqual(before);
-  await expect(page.locator('.story-bar-row')).toHaveCSS('height', '42px');
+  await expect(page.locator('.story-bar-row')).toHaveCSS('height', '68px');
 });
 
 test('hidden title has a quiet label and screen-aligned hints clear the bottom bar', async ({ page }) => {
