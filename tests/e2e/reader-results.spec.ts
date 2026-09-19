@@ -77,3 +77,34 @@ test('a finished story part shows its result on the bottom bar and moves on', as
   await expect(toast).toHaveCount(0);
   await expect(page.locator('.rr-chip')).toContainText('Last result');
 });
+
+for (const [name, width, height] of [['laptop', 1280, 720], ['phone', 390, 844]] as const) {
+  test(`the full result never scrolls as a whole, only its list of earlier results (${name})`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    // /profile opens the database; seed thirty earlier quote results into it.
+    await page.goto('/profile');
+    await expect(page.getByRole('heading', { level: 1, name: 'Guest reader' })).toBeVisible();
+    await page.evaluate(async () => {
+      const database = await new Promise<IDBDatabase>((resolve, reject) => { const request = indexedDB.open('KeyHavenDB'); request.onsuccess = () => resolve(request.result); request.onerror = reject; });
+      const transaction = database.transaction(['testResults'], 'readwrite');
+      const now = Date.now();
+      for (let index = 0; index < 30; index++) transaction.objectStore('testResults').put({ clientId: crypto.randomUUID(), mode: 'quotes', subMode: `seed-${index}`, title: `Earlier quote ${index}`, wpm: 50 + index, rawWpm: 60, accuracy: 95, consistency: 80, duration: 20, timestamp: now - (index + 1) * 3_600_000, errors: 1, errorKeys: {}, totalChars: 120, correctChars: 119, incorrectChars: 1, dirty: 0 });
+      await new Promise(resolve => { transaction.oncomplete = resolve; });
+    });
+    await page.goto('/quotes');
+    await page.mouse.move(2, 2);
+    await typePassage(page);
+    await page.locator('.rr-toast').getByRole('button', { name: 'Details' }).click();
+    const dialog = page.getByRole('dialog');
+    if (width < 900) await dialog.getByRole('button', { name: 'Previous results' }).click();
+    await dialog.getByRole('button', { name: /Show more/ }).click();
+    await expect(dialog.locator('.rr-history li')).toHaveCount(16);
+    const scroll = await page.evaluate(() => {
+      const scrolls = (selector: string) => { const node = document.querySelector(selector)!; return node.scrollHeight > node.clientHeight + 1; };
+      return { dialog: scrolls('.rr-dialog'), scrim: scrolls('.rr-dialog-scrim'), list: scrolls('.rr-history') };
+    });
+    expect(scroll).toEqual({ dialog: false, scrim: false, list: true });
+    // The actions stay on screen.
+    await expect(dialog.getByRole('button', { name: 'Retry' })).toBeInViewport();
+  });
+}

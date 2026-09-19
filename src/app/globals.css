@@ -1999,11 +1999,26 @@ select option { background: var(--bg-card); color: var(--text-primary); }
   .rr-chip { position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 5; }
 }
 
-.rr-dialog-scrim { position: fixed; inset: 0; z-index: 90; display: flex; overflow-y: auto; padding: 16px; background: rgb(8 10 9 / .5); animation: kh-fade-in 160ms ease both; }
-.rr-dialog { display: grid; width: min(780px, 100%); margin: auto; gap: 24px; padding: clamp(20px, 3vw, 30px); border: 1px solid color-mix(in oklab, var(--text-primary) 12%, var(--bg-card)); border-radius: var(--r-lg); background: var(--bg-card); color: var(--text-primary); box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-3); }
+.rr-dialog-scrim { position: fixed; inset: 0; z-index: 90; display: flex; overflow: hidden; padding: 16px; background: rgb(8 10 9 / .5); animation: kh-fade-in 160ms ease both; }
+/* The dialog never scrolls as a whole: it fits the screen, and only the list of earlier results scrolls. */
+.rr-dialog { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; width: min(1080px, 100%); max-height: calc(100dvh - 32px); margin: auto; overflow: hidden; gap: 20px; padding: clamp(20px, 3vw, 30px); border: 1px solid color-mix(in oklab, var(--text-primary) 12%, var(--bg-card)); border-radius: var(--r-lg); background: var(--bg-card); color: var(--text-primary); box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-3); }
 .rr-dialog-head-side { display: flex; align-items: center; gap: 6px; }
 .rr-dialog-section { display: grid; gap: 16px; }
-.rr-dialog-section + .rr-dialog-section { padding-top: 24px; border-top: 1px solid var(--glass-border); }
+.rr-dialog-body { display: grid; min-height: 0; gap: 24px; }
+.rr-dialog-attempt { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.rr-dialog-history { grid-template-rows: auto auto minmax(0, 1fr) auto; min-height: 0; }
+.rr-dialog-tabs { display: none; justify-content: center; }
+/* In its column the attempt stacks: the big number, then its three figures across the full width. */
+.rr-dialog-attempt .results-hero { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) {
+  .rr-dialog-body { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+  .rr-dialog-history { padding-left: 24px; border-left: 1px solid var(--glass-border); }
+  .rr-dialog-history .rr-history-summary { grid-template-columns: repeat(3, auto) minmax(64px, 1fr); }
+}
+@media (max-width: 899px) {
+  .rr-dialog-tabs { display: flex; }
+  .rr-dialog-body[data-pane="attempt"] > .rr-dialog-history, .rr-dialog-body[data-pane="history"] > .rr-dialog-attempt { display: none; }
+}
 .rr-dialog h3 { margin: 0; font: 500 1.25rem/1.2 var(--font-wordmark); }
 .rr-dialog-wpm { display: grid; justify-items: start; gap: 8px; }
 .rr-dialog-wpm .rr-compare { margin-left: 0; }
@@ -2012,7 +2027,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .rr-history-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr); gap: 10px; margin: 0; }
 .rr-history-summary > div { display: grid; align-content: start; gap: 6px; padding: 12px 14px; border: 1px solid var(--glass-border); border-radius: var(--r-md); background: color-mix(in oklab, var(--text-primary) 3%, transparent); }
 .rr-history-summary dd strong { font: 600 1.25rem var(--font-mono); font-variant-numeric: tabular-nums; }
-.rr-history { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.rr-history { display: grid; align-content: start; min-height: 0; gap: 2px; margin: 0; padding: 0; overflow-y: auto; overscroll-behavior: contain; list-style: none; scrollbar-width: thin; }
 .rr-history li { display: grid; grid-template-columns: minmax(0, 1fr) auto 76px 64px; align-items: center; gap: 12px; padding: 9px 12px; border-radius: var(--r-sm); }
 .rr-history li:nth-child(odd) { background: color-mix(in oklab, var(--text-primary) 3%, transparent); }
 .rr-history li.is-current { background: color-mix(in oklab, var(--color-accent) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-accent) 30%, transparent); }

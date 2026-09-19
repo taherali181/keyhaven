@@ -30,6 +30,8 @@ export function ResultDialog({ open, result, onClose, onNext, onRetry }: { open:
   const [records, setRecords] = useState<TestResultRecord[] | null>(null);
   const [scopeId, setScopeId] = useState(result.scopes[0]?.id ?? 'all');
   const [shown, setShown] = useState(PAGE);
+  // Narrow screens show one side at a time; wide screens show both side by side.
+  const [pane, setPane] = useState<'attempt' | 'history'>('attempt');
 
   useEffect(() => {
     if (!open) return;
@@ -101,7 +103,12 @@ export function ResultDialog({ open, result, onClose, onNext, onRetry }: { open:
           </div>
         </header>
 
-        <section className="rr-dialog-section" aria-label="This attempt">
+        <div className="rr-dialog-tabs">
+          <Segmented label="Show" layoutId="rr-pane" value={pane} options={[{ value: 'attempt', label: 'This attempt' }, { value: 'history', label: 'Previous results' }]} onChange={value => setPane(value as 'attempt' | 'history')} />
+        </div>
+
+        <div className="rr-dialog-body" data-pane={pane}>
+        <section className="rr-dialog-section rr-dialog-attempt" aria-label="This attempt">
           <div className="results-hero">
             <div className="rr-dialog-wpm">
               <div className="results-wpm"><AnimatedNumber value={stats.wpm} className="results-wpm-value" /><span className="results-wpm-unit">wpm</span></div>
@@ -121,7 +128,7 @@ export function ResultDialog({ open, result, onClose, onNext, onRetry }: { open:
           </div>}
         </section>
 
-        <section className="rr-dialog-section" aria-labelledby={`${titleId}-history`}>
+        <section className="rr-dialog-section rr-dialog-history" aria-labelledby={`${titleId}-history`}>
           <div className="rr-history-head">
             <h3 id={`${titleId}-history`}>Previous results</h3>
             {result.scopes.length > 1 && <Segmented label="Compare with" layoutId="rr-scope" value={scope?.id ?? ''} options={result.scopes.map(item => ({ value: item.id, label: item.label }))} onChange={value => { setScopeId(value); setShown(PAGE); }} />}
@@ -150,6 +157,7 @@ export function ResultDialog({ open, result, onClose, onNext, onRetry }: { open:
             </ol>}
           {scoped.length > shown && <button type="button" className="rs-btn rr-history-more" onClick={() => setShown(value => value + PAGE)}>Show more · {plural(scoped.length - shown, 'attempt')} left</button>}
         </section>
+        </div>
 
         <div className="results-actions">
           <button type="button" className="rs-btn" onClick={onClose}>Close</button>
