@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { acceptedKey } from '@/lib/typing-match';
 import { TypingStats, CharTiming, HistoryPoint, TypingSessionStatus, TypingSessionEvidence } from '@/types';
 import { calculateWPM, calculateRawWPM, calculateAccuracy, calculateConsistency } from '@/lib/metrics';
 
@@ -189,7 +190,8 @@ export function useTypingEngine({
 
   const commitCharacter = useCallback((rawKey: string, now: number) => {
     const targetChar = targetText[typedRef.current.length];
-    const key = targetChar === '\n' && rawKey === 'Enter' ? '\n' : rawKey;
+    // Enter types a line break, and a plain letter types an accented one (é with an e key).
+    const key = targetChar === '\n' && rawKey === 'Enter' ? '\n' : acceptedKey(rawKey, targetChar);
     if (key.length !== 1) return;
 
     if (statusRef.current === 'idle') {

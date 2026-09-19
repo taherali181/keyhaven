@@ -25,6 +25,16 @@ describe('typing session engine', () => {
     expect(complete.mock.calls[0][0].evidence.map((event: { key: string }) => event.key)).toEqual(['a', 'b']);
   });
 
+  it('accepts the plain letter for an accented one, even in strict mode', async () => {
+    const complete = vi.fn();
+    render(<Harness strict text="café" onComplete={complete} />);
+    await act(async () => {});
+    const input = screen.getByLabelText('keys');
+    for (const key of ['c', 'a', 'f', 'e']) fireEvent.keyDown(input, { key });
+    expect(screen.getByTestId('typed').textContent).toBe('café');
+    expect(complete.mock.calls[0][0]).toMatchObject({ correctChars: 4, incorrectChars: 0, accuracy: 100 });
+  });
+
   it('does not advance on an error in strict mode', async () => {
     render(<Harness strict onComplete={vi.fn()} />);
     await act(async () => {});
