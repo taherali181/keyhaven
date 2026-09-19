@@ -17,16 +17,17 @@ export const COMMON_WORDS_200 = [
   "group", "play", "stand", "increase", "early", "course", "change", "help", "line"
 ];
 
-export function generateRandomWords(count: number, withPunctuation = false, withNumbers = false): string {
+/** Random words for speed tests. Pass a seeded `random` (see createRandom) to get the same words every time. */
+export function generateRandomWords(count: number, withPunctuation = false, withNumbers = false, random: () => number = Math.random): string {
   const words: string[] = [];
   for (let i = 0; i < count; i++) {
-    let word = COMMON_WORDS_200[Math.floor(Math.random() * COMMON_WORDS_200.length)];
-    if (withNumbers && Math.random() < 0.15) {
-      word = Math.floor(Math.random() * 1000).toString();
+    let word = COMMON_WORDS_200[Math.floor(random() * COMMON_WORDS_200.length)];
+    if (withNumbers && random() < 0.15) {
+      word = Math.floor(random() * 1000).toString();
     }
-    if (withPunctuation && Math.random() < 0.2) {
+    if (withPunctuation && random() < 0.2) {
       const puncts = [',', '.', '!', '?', ';', '"'];
-      const p = puncts[Math.floor(Math.random() * puncts.length)];
+      const p = puncts[Math.floor(random() * puncts.length)];
       if (p === '"') {
         word = `"${word}"`;
       } else {

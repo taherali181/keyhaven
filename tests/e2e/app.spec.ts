@@ -305,3 +305,13 @@ test('academy exposes placement, daily plan, and the full course', async ({ page
   await page.getByRole('button', { name: 'Course' }).click();
   await expect(page.getByRole('button', { name: /Endurance/ })).toBeVisible();
 });
+
+test('the speed test hydrates without mismatched words', async ({ page }) => {
+  const problems: string[] = [];
+  page.on('console', message => { if (/hydrat/i.test(message.text())) problems.push(message.text().slice(0, 200)); });
+  page.on('pageerror', error => { if (/hydrat/i.test(error.message)) problems.push(error.message.slice(0, 200)); });
+  await page.goto('/speed');
+  await expect(page.locator('.typing-character').first()).toBeVisible();
+  await page.waitForTimeout(1500);
+  expect(problems).toEqual([]);
+});

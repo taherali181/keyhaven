@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, SlidersHorizontal, Trophy } from 'lucide-react';
+import { createRandom } from '@/lib/academy/generate';
 import { generateRandomWords } from '@/data/word-lists';
 import { TestResultRecord, TypingStats, UserSettings } from '@/types';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
@@ -77,7 +78,10 @@ export const SpeedTestView = ({ settings, onKeyPress }: { settings: UserSettings
     return () => { document.removeEventListener('pointerdown', onPointerDown); document.removeEventListener('keydown', onKey); };
   }, [configOpen]);
 
-  const localText = useMemo(() => { void nonce; return generateRandomWords(testType === 'time' ? Math.max(120, timeConfig * 7) : wordConfig, punctuation, numbers); }, [testType, timeConfig, wordConfig, punctuation, numbers, nonce]);
+  // The server and the first client render share a fixed seed, so hydration matches; a random seed follows at once.
+  const [seed, setSeed] = useState('first-render');
+  useEffect(() => { queueMicrotask(() => setSeed(Math.random().toString(36).slice(2))); }, []);
+  const localText = useMemo(() => generateRandomWords(testType === 'time' ? Math.max(120, timeConfig * 7) : wordConfig, punctuation, numbers, createRandom(`${seed}:${nonce}`)), [testType, timeConfig, wordConfig, punctuation, numbers, nonce, seed]);
 
   useEffect(() => {
     if (!syncEnabled()) return;
