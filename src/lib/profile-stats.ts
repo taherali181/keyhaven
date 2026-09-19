@@ -283,7 +283,10 @@ export function academySummary(state: AcademyStateRecord | null) {
 export const ARCADE_GAMES = [
   { id: 'alphabet-sprint', label: 'Alphabet Sprint' },
   { id: 'word-rain', label: 'Word Rain' },
-  { id: 'ghost-racer', label: 'Ghost Racer' }
+  { id: 'ghost-racer', label: 'Ghost Racer' },
+  { id: 'code-symbols', label: 'Code Symbols' },
+  { id: 'accuracy-streak', label: 'Accuracy Streak' },
+  { id: 'word-chain', label: 'Word Chain' }
 ] as const;
 
 export function arcadeBests(scores: ArcadeScoreRecord[]) {
@@ -292,7 +295,9 @@ export function arcadeBests(scores: ArcadeScoreRecord[]) {
     if (!rounds.length) return { ...game, rounds: 0, best: null as string | null };
     const best = game.id === 'alphabet-sprint'
       ? `${(Math.min(...rounds.map(round => finite(round.timeMs) || Number.POSITIVE_INFINITY)) / 1000).toFixed(2)}s`
-      : `${Math.max(...rounds.map(round => finite(round.score)))} pts`;
+      : game.id === 'accuracy-streak'
+        ? (top => `${top} ${top === 1 ? 'word' : 'words'}`)(Math.max(...rounds.map(round => finite(round.score))))
+        : `${Math.max(...rounds.map(round => finite(round.score)))} pts`;
     return { ...game, rounds: rounds.length, best };
   });
 }

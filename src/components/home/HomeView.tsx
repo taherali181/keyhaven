@@ -116,7 +116,7 @@ export function HomeView({ onNavigate }: { onNavigate: (mode: TypingMode) => voi
   const tiles: Array<{ mode: TypingMode; label: string; icon: React.ReactNode; stat: string }> = [
     { mode: 'speed-test', label: 'Speed', icon: <Timer aria-hidden="true" />, stat: practice?.bestSpeed ? `Best ${practice.bestSpeed} wpm` : 'Take a test' },
     { mode: 'learn', label: 'Academy', icon: <GraduationCap aria-hidden="true" />, stat: practice ? `${practice.lessonsPassed} of ${ALL_LESSONS.length} lessons` : '' },
-    { mode: 'arcade', label: 'Arcade', icon: <Gamepad2 aria-hidden="true" />, stat: practice?.arcadeGames ? `${practice.arcadeGames} ${practice.arcadeGames === 1 ? 'game' : 'games'} played` : 'Three games' },
+    { mode: 'arcade', label: 'Arcade', icon: <Gamepad2 aria-hidden="true" />, stat: practice?.arcadeGames ? `${practice.arcadeGames} ${practice.arcadeGames === 1 ? 'game' : 'games'} played` : 'Six games' },
     { mode: 'quotes', label: 'Quotes', icon: <Quote aria-hidden="true" />, stat: practice?.quotesTyped ? `${practice.quotesTyped} typed` : 'Type a line' },
     { mode: 'manuscript', label: 'Write', icon: <PenLine aria-hidden="true" />, stat: practice?.pieces ? `${practice.pieces} ${practice.pieces === 1 ? 'piece' : 'pieces'}` : 'Write your own' },
     { mode: 'pdf', label: 'PDFs', icon: <FileText aria-hidden="true" />, stat: practice?.pdfs ? `${practice.pdfs} ${practice.pdfs === 1 ? 'PDF' : 'PDFs'}` : 'Original pages' }

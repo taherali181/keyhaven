@@ -1437,6 +1437,41 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .arc-result p { margin: 0; font: 500 1.375rem/1.2 var(--font-wordmark); }
 .arc-result[data-result="won"] p { color: var(--color-accent); }
 .arc-result[data-result="lost"] p { color: var(--color-incorrect); }
+.arc-result strong { font-family: var(--font-mono); }
+.arc-result kbd { padding: 1px 7px; border: 1px solid currentColor; border-radius: 5px; font: 600 .9rem var(--font-mono); }
+.arc-rules { margin: 0; color: var(--text-muted); font-size: .75rem; text-align: center; }
+/* Accuracy Streak: a fixed tape, with the key to type always in the middle, so nothing jumps while typing. */
+.arc-streak { outline: none; }
+.arc-streak:focus-visible { border-color: var(--color-accent); box-shadow: inset 0 1px 0 var(--glass-highlight), 0 0 0 3px var(--glow-accent); }
+.arc-streak:not(:focus) .arc-focus-hint { opacity: 1; }
+.arc-streak .arc-focus-hint { text-align: center; }
+.arc-tape { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; padding: 28px 0; font: 500 clamp(1.25rem, 2.4vw, 1.75rem)/1 var(--font-mono); white-space: pre; }
+.arc-tape-done { display: flex; overflow: hidden; justify-content: flex-end; color: color-mix(in oklab, var(--color-accent) 70%, var(--text-muted)); mask-image: linear-gradient(to right, transparent, black 40%); }
+.arc-tape-done > span { flex: none; }
+.arc-tape-current { display: grid; min-width: 1.1em; height: 1.6em; place-items: center; border-radius: 6px; background: var(--color-accent); color: var(--bg-primary); }
+.arc-tape-current[data-miss] { background: var(--color-incorrect); color: #fff; }
+.arc-tape-next { overflow: hidden; color: var(--text-secondary); mask-image: linear-gradient(to left, transparent, black 40%); }
+.arc-streak[data-status="over"] .arc-tape { opacity: .7; }
+/* Word Chain */
+.arc-chain { min-height: 380px; }
+.arc-overlay.is-static { position: static; background: none; }
+.arc-chain-links { display: flex; min-height: 26px; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.arc-chain-links li { color: var(--text-muted); font: 500 .8125rem var(--font-mono); }
+.arc-chain-links li + li::before { margin-right: 6px; color: color-mix(in oklab, var(--color-accent) 60%, transparent); content: '→'; }
+.arc-chain-letter { display: grid; justify-items: center; gap: 4px; }
+.arc-chain-letter small { color: var(--text-muted); font-size: .6875rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.arc-chain-letter strong { display: grid; width: 84px; height: 84px; place-items: center; border: 1px solid color-mix(in oklab, var(--color-accent) 55%, transparent); border-radius: var(--r-lg); background: color-mix(in oklab, var(--color-accent) 14%, transparent); color: var(--color-accent); font: 500 2.5rem/1 var(--font-mono); }
+.arc-chain-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.arc-chain-choices li { display: grid; min-width: 120px; justify-items: center; gap: 4px; padding: 12px 16px; border: 1px solid var(--glass-border); border-radius: var(--r-md); background: var(--bg-card); transition: border-color var(--dur-fast), background var(--dur-fast); }
+.arc-chain-choices li[data-match] { border-color: var(--color-accent); background: color-mix(in oklab, var(--color-accent) 14%, var(--bg-card)); }
+.arc-chain-choices span { color: var(--text-primary); font: 500 1.125rem var(--font-mono); }
+.arc-chain-choices b { color: var(--color-accent); font-weight: 600; }
+.arc-chain-choices small { color: var(--text-muted); font: 500 .6875rem var(--font-mono); }
+.arc-chain-entry { display: flex; justify-content: center; gap: 8px; }
+.arc-chain-entry .arc-input { width: min(420px, 100%); }
+.arc-chain-entry .rs-btn { display: inline-flex; height: auto; align-items: center; gap: 6px; }
+.arc-chain-entry .rs-btn svg, .arc-code .rs-btn svg { width: 14px; height: 14px; }
+.arc-code .rs-btn { display: inline-flex; align-items: center; gap: 6px; }
 
 .lb { display: grid; gap: 20px; }
 .lb-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }

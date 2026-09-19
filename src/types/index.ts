@@ -341,7 +341,7 @@ export interface BookProgressRecord {
 export interface ArcadeScoreRecord {
   id?: number;
   clientId: string;
-  game: 'alphabet-sprint' | 'word-rain' | 'ghost-racer';
+  game: 'alphabet-sprint' | 'word-rain' | 'ghost-racer' | 'code-symbols' | 'accuracy-streak' | 'word-chain';
   score: number;
   wpm: number;
   accuracy: number;
