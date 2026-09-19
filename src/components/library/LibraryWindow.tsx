@@ -207,8 +207,12 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const document = await importDocument(file, setImportState, controller.signal);
-      await db.importedDocuments.put(document);
+      const { document, assets, file: original } = await importDocument(file, setImportState, controller.signal);
+      await db.transaction('rw', [db.importedDocuments, db.documentAssets, db.documentFiles], async () => {
+        await db.importedDocuments.put(document);
+        if (assets.length) await db.documentAssets.bulkPut(assets);
+        if (original) await db.documentFiles.put(original);
+      });
       window.dispatchEvent(new Event('keyhaven:sync'));
       setImportState(null);
       await refresh();
@@ -219,6 +223,8 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
   };
   const deleteImport = async (document: ImportedDocumentRecord) => {
     await db.importedDocuments.delete(document.id);
+    await db.documentAssets.where('documentId').equals(document.id).delete();
+    await db.documentFiles.delete(document.id);
     await db.bookProgress.delete(importKey(document.id));
     await db.shelf.delete(importKey(document.id));
     await refresh();

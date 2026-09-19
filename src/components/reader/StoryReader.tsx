@@ -4,7 +4,41 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { FontFamily } from '@/types';
 import { FONTS } from '@/lib/themes';
 import { passageFontSize } from '@/lib/reader-style';
-import { countWords } from '@/lib/reading';
+import { countWords, imageAssetId } from '@/lib/reading';
+
+/** A picture from an imported EPUB; `url` is null when the picture stayed on the device it was imported on. */
+export interface ReaderFigure { url: string | null; width: number; height: number; alt: string }
+
+/** Pictures missing on this device take this many lines for their note. */
+const MISSING_FIGURE_LINES = 3;
+
+/**
+ * Sizes every picture in `container` to whole lines (never enlarging a small image) and moves any picture that would
+ * straddle a page break onto the next page. Runs the same way on the page, the second page of a spread and the hidden
+ * measuring copy, so page counts and breaks always agree.
+ */
+function layoutFigures(container: HTMLElement, figures: Map<string, ReaderFigure> | undefined, line: number, pageHeight: number) {
+  const elements = [...container.querySelectorAll<HTMLElement>('.story-figure')];
+  if (!elements.length) return;
+  const width = container.getBoundingClientRect().width || container.offsetWidth;
+  const maxLines = Math.max(MISSING_FIGURE_LINES, Math.floor(pageHeight / line) - 1);
+  for (const element of elements) {
+    const figure = figures?.get(element.dataset.figure ?? '');
+    const lines = figure?.url
+      ? Math.min(maxLines, Math.max(2, Math.ceil((Math.min(width, figure.width) * figure.height / Math.max(1, figure.width)) / line)))
+      : MISSING_FIGURE_LINES;
+    element.style.height = `${lines * line}px`;
+    element.style.marginTop = '';
+  }
+  for (const element of elements) {
+    const height = element.offsetHeight;
+    const within = element.offsetTop % pageHeight;
+    if (within + height > pageHeight + 0.5) {
+      const base = Number.parseFloat(getComputedStyle(element).marginTop) || 0;
+      element.style.marginTop = `${base + pageHeight - within}px`;
+    }
+  }
+}
 
 export interface ReaderLayout {
   pagesPerView?: number;
@@ -44,6 +78,8 @@ interface StoryReaderProps {
    * Must not change the paragraph's height: pages are measured from the plain text.
    */
   renderParagraph?: (text: string, paragraph: number) => React.ReactNode;
+  /** Pictures from an imported EPUB, by asset id. */
+  figures?: Map<string, ReaderFigure>;
 }
 
 const MOBILE = '(max-width: 767px)';
@@ -52,7 +88,7 @@ const MOBILE = '(max-width: 767px)';
  * Book-like pages for reading mode. The page height is a whole number of lines and paragraphs are
  * one line apart, so every page break lands between lines. Pages are a translateY over one column.
  */
-export function StoryReader({ parts, sections, page, pageLayout = 'single', font, fontSize, lineHeight, layoutKey, onLayout, renderParagraph }: StoryReaderProps) {
+export function StoryReader({ parts, sections, page, pageLayout = 'single', font, fontSize, lineHeight, layoutKey, onLayout, renderParagraph, figures }: StoryReaderProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
   const [pageHeight, setPageHeight] = useState(0);
@@ -75,10 +111,12 @@ export function StoryReader({ parts, sections, page, pageLayout = 'single', font
       ? Math.max(240, window.innerHeight - frame.getBoundingClientRect().top - 190)
       : frame.getBoundingClientRect().height - Number.parseFloat(frameStyle.paddingTop) - Number.parseFloat(frameStyle.paddingBottom);
     const height = Math.max(3, Math.floor(available / line)) * line;
+    // Pictures first: their size and placement decide where every page after them breaks.
+    for (const container of frame.querySelectorAll<HTMLElement>('.story-reader-copy')) layoutFigures(container, figures, line, height);
 
     const pageCount = Math.max(1, Math.ceil((copy.scrollHeight - 1) / height));
     const copyStyle = getComputedStyle(copy);
-    const key = [copy.getBoundingClientRect().width, height, copyStyle.fontFamily, copyStyle.fontSize, copyStyle.fontWeight, copyStyle.letterSpacing, line, document.fonts.status, layoutKey].join('|');
+    const key = [copy.getBoundingClientRect().width, height, copyStyle.fontFamily, copyStyle.fontSize, copyStyle.fontWeight, copyStyle.letterSpacing, line, document.fonts.status, layoutKey, figures?.size ?? 0].join('|');
     if (sectionPagesRef.current?.key !== key || sectionPagesRef.current.sections !== sections) {
       // Reuse the actual reader styles in a hidden measurement copy. No estimates change as chapters open.
       const probe = copy.cloneNode(false) as HTMLDivElement;
@@ -90,10 +128,16 @@ export function StoryReader({ parts, sections, page, pageLayout = 'single', font
           const nodes = section.map(part => {
             const group = document.createElement('div');
             group.className = 'story-reader-part';
-            group.append(...part.map(text => { const p = document.createElement('p'); p.textContent = text; return p; }));
+            group.append(...part.map(text => {
+              const p = document.createElement('p');
+              const figure = imageAssetId(text);
+              if (figure) { p.className = 'story-figure'; p.dataset.figure = figure; } else p.textContent = text;
+              return p;
+            }));
             return group;
           });
           probe.replaceChildren(...nodes);
+          layoutFigures(probe, figures, line, height);
           return Math.max(1, Math.ceil((probe.scrollHeight - 1) / height));
         });
         sectionPagesRef.current = { key, sections, counts };
@@ -122,7 +166,7 @@ export function StoryReader({ parts, sections, page, pageLayout = 'single', font
       wordsBefore,
       totalWords: words.reduce((sum, count) => sum + count, 0)
     });
-  }, [parts, sections, layoutKey]);
+  }, [parts, sections, layoutKey, figures]);
 
   useEffect(() => {
     let frame = requestAnimationFrame(measure);
@@ -154,6 +198,17 @@ export function StoryReader({ parts, sections, page, pageLayout = 'single', font
   parts.reduce((count, part, index) => { paragraphStart[index] = count; return count + part.length; }, 0);
   const renderPart = (part: string[], index: number) => part.map((text, offset) => {
     const paragraph = paragraphStart[index] + offset;
+    const figureId = imageAssetId(text);
+    if (figureId) {
+      const figure = figures?.get(figureId);
+      return <p key={offset} data-paragraph={paragraph} className="story-figure" data-figure={figureId}>
+        {figure?.url
+          // A local blob URL: next/image can't optimise it, and there's nothing to gain.
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={figure.url} alt={figure.alt} draggable={false} />
+          : <span className="story-figure-missing">This picture stays on the device the book was imported on</span>}
+      </p>;
+    }
     return <p key={offset} data-paragraph={paragraph}>{renderParagraph ? renderParagraph(text, paragraph) : text}</p>;
   });
 

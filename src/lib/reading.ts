@@ -7,8 +7,14 @@ export const DEFAULT_READING_WPM = 238;
 const MIN_WPM = 120;
 const MAX_WPM = 450;
 
+/** A paragraph that stands for a picture from an imported EPUB: `[[kh-img:<asset id>]]`. */
+const IMAGE_TOKEN = /^\[\[kh-img:([\w-]+)\]\]$/;
+export const imageToken = (assetId: string) => `[[kh-img:${assetId}]]`;
+/** The picture's asset id when a paragraph is a picture, otherwise null. */
+export const imageAssetId = (paragraph: string) => paragraph.match(IMAGE_TOKEN)?.[1] ?? null;
+
 export function countWords(text: string) {
-  const trimmed = text.trim();
+  const trimmed = text.replace(/\[\[kh-img:[\w-]+\]\]/g, ' ').trim();
   return trimmed ? trimmed.split(/\s+/).length : 0;
 }
 
@@ -87,7 +93,8 @@ function toChunk(parts: ChunkPart[], words: number): TextChunk {
     if (index > 0 && part.paragraph === parts[index - 1].paragraph) paragraphs[paragraphs.length - 1] += ` ${part.text}`;
     else paragraphs.push(part.text);
   });
-  return { text: paragraphs.join('\n'), words, paragraphs, firstParagraph: parts[0].paragraph, lastParagraph: parts[parts.length - 1].paragraph };
+  // Pictures are for reading; the typed text skips them.
+  return { text: paragraphs.filter(paragraph => !imageAssetId(paragraph)).join('\n'), words, paragraphs, firstParagraph: parts[0].paragraph, lastParagraph: parts[parts.length - 1].paragraph };
 }
 
 /** Splits an over-long paragraph at sentence ends into pieces of roughly `target` words. */

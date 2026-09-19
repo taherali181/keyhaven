@@ -51,3 +51,16 @@ describe('story catalog', () => {
     for (const id of ['gift-of-the-magi', 'the-bet', 'the-happy-prince', 'tell-tale-heart', 'the-mark-on-the-wall', 'the-little-match-girl', 'scandal-in-bohemia']) expect(ids.has(id), id).toBe(true);
   });
 });
+
+describe('pictures in imported books', () => {
+  it('stay in the reading paragraphs but never in the typed text or the word count', async () => {
+    const { chunkParagraphs, countWords, imageAssetId } = await import('@/lib/reading');
+    const [chunk] = chunkParagraphs(['Hello there.', '[[kh-img:abc-1]]', 'Goodbye now.']);
+    expect(chunk.paragraphs).toEqual(['Hello there.', '[[kh-img:abc-1]]', 'Goodbye now.']);
+    expect(chunk.text).toBe('Hello there.\nGoodbye now.');
+    expect(chunk.words).toBe(4);
+    expect(countWords('One [[kh-img:abc-1]] two')).toBe(2);
+    expect(imageAssetId('[[kh-img:abc-1]]')).toBe('abc-1');
+    expect(imageAssetId('Not a picture')).toBeNull();
+  });
+});

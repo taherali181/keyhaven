@@ -9,7 +9,7 @@ import { ContentsMenu, type ContentsEntry } from '@/components/reader/ContentsMe
 import { StoryModeToggle } from '@/components/reader/StoryModeToggle';
 import { usePageInput } from '@/hooks/usePageInput';
 import { bindingLabel } from '@/lib/reader-input';
-import { StoryReader, type ReaderLayout } from '@/components/reader/StoryReader';
+import { StoryReader, type ReaderFigure, type ReaderLayout } from '@/components/reader/StoryReader';
 import { ReaderBottomBar } from '@/components/reader/ReaderBottomBar';
 import { StoryAtmosphere } from '@/components/reader/StoryAtmosphere';
 import { TypingArea } from '@/components/typing/TypingArea';
@@ -93,6 +93,21 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       setFinishedAt(record?.finishedAt);
     }).catch(() => {});
   }, [isStory, work.key, work.title]);
+
+  // Pictures from an imported EPUB, as object URLs for this visit (released when the reader closes).
+  const [figures, setFigures] = useState<Map<string, ReaderFigure> | undefined>(undefined);
+  useEffect(() => {
+    if (work.kind !== 'import') return;
+    const documentId = work.key.slice('import:'.length);
+    let urls: string[] = [];
+    let live = true;
+    void db.documentAssets.where('documentId').equals(documentId).toArray().then(assets => {
+      if (!live) return;
+      urls = assets.map(asset => URL.createObjectURL(asset.blob));
+      setFigures(new Map(assets.map((asset, index) => [asset.id, { url: urls[index], width: asset.width, height: asset.height, alt: asset.alt }])));
+    }).catch(() => {});
+    return () => { live = false; urls.forEach(url => URL.revokeObjectURL(url)); };
+  }, [work.key, work.kind]);
 
   // Highlights and notes (Read mode).
   const [highlights, setHighlights] = useState<HighlightRecord[]>([]);
@@ -559,7 +574,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       <div ref={stageRef} className="reader-stage">
         {reading
           ? <>
-            <StoryReader parts={parts} sections={sectionParts} page={page} pageLayout={settings.readerPageLayout} font={settings.font} fontSize={settings.fontSize} lineHeight={settings.readerLineHeight} layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerParagraphSpacing}-${settings.readerAlign}-${settings.readerHyphens}-${settings.readerWidth}`} onLayout={handleLayout} renderParagraph={renderParagraph} />
+            <StoryReader parts={parts} sections={sectionParts} page={page} pageLayout={settings.readerPageLayout} font={settings.font} fontSize={settings.fontSize} lineHeight={settings.readerLineHeight} layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerParagraphSpacing}-${settings.readerAlign}-${settings.readerHyphens}-${settings.readerWidth}`} onLayout={handleLayout} renderParagraph={renderParagraph} figures={figures} />
             {/* Page numbers, bottom-right of each page like a printed book: the page within the whole book. */}
             {layout && <div className="story-folios" data-pages={pagesPerView} aria-hidden="true">
               <span className="story-folio">{folio}</span>
@@ -569,6 +584,8 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
               {[settings.readerInput.keys.prev[0], settings.readerInput.keys.next[0]].filter(Boolean).map(key => <kbd key={key}>{bindingLabel(key)}</kbd>)} turn pages
             </p>}
           </>
+          : !text.trim()
+            ? <div className="reader-picture-part"><p>This part of the book is a picture. Pictures show in Read mode.</p><button type="button" className="rs-btn" onClick={next}>{atEnd ? 'Done' : `Next ${chunkIndex === chunkCount - 1 ? unit : 'part'}`}</button></div>
           : <TypingArea targetText={text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="literary" feedbackMode="reader" viewportLines={typingLines} viewportMode="pages" layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerParagraphSpacing}-${settings.readerAlign}-${settings.readerHyphens}-${settings.readerWidth}`} lineHeight={settings.readerLineHeight} onKeyDown={typingKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} onEscape={() => (popup.view === 'toast' ? popup.collapse() : engine.reset())} />}
       </div>
 
