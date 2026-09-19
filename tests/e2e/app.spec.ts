@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { seedSettings } from './helpers';
 
 // Read opens a random story on each visit; tests that depend on the text pin one with ?story=.
 const STORY = '/read?story=gift-of-the-magi';
+
+// Stories open in Read mode by default; most reader tests here type, so they start in Type mode.
+test.beforeEach(async ({ page }) => { await seedSettings(page, { storyMode: 'type' }); });
 
 test('story mode renders the literary surface', async ({ page }) => {
   await page.goto(STORY);

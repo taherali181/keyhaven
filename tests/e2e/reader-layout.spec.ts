@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { seedSettings } from './helpers';
 
 const STORY = '/read?story=gift-of-the-magi';
 
@@ -20,6 +21,7 @@ test('mobile hidden chapter label sits below navigation and its pill reveals the
 
 test('reader keeps glyph spacing and the title overlay independent of hover', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
+  await seedSettings(page, { storyMode: 'type' });
   await page.goto(STORY);
   await page.locator('.typing-character').first().waitFor();
   const firstGlyphTop = () => page.locator('.typing-character').first().evaluate(node => {
@@ -68,6 +70,7 @@ test('hidden title has a quiet label and screen-aligned hints clear the bottom b
 });
 
 test('reading segments represent pages and typing segments still represent parts', async ({ page }) => {
+  await seedSettings(page, { storyMode: 'type' });
   await page.goto(STORY);
   await page.locator('.typing-character').first().waitFor();
   const parts = Number((await page.locator('.story-bar .eyebrow').textContent())!.match(/of (\d+)/)![1]);
@@ -154,4 +157,11 @@ test('long chapters use a continuous page progress bar', async ({ page }) => {
   await expect.poll(fill).toBeCloseTo(1 / count, 4);
   await page.keyboard.press('ArrowRight');
   await expect.poll(fill).toBeCloseTo(2 / count, 4);
+});
+
+test('a new reader opens stories in Read mode', async ({ page }) => {
+  await page.goto(STORY);
+  await page.locator('.story-reader-copy p').first().waitFor();
+  await expect(page.getByRole('radio', { name: 'Reading mode' })).toBeChecked();
+  await expect(page.getByLabel('Typing input')).toHaveCount(0);
 });

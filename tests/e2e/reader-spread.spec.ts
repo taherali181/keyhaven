@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { seedSettings } from './helpers';
 
 test('two-page reading advances consecutive spreads and falls back on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
+  await seedSettings(page, { storyMode: 'type' });
   await page.goto('/read?story=gift-of-the-magi');
   await page.locator('.typing-character').first().waitFor();
   await page.locator('.story-side').getByText('Read', { exact: true }).click();

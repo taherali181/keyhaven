@@ -1,20 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
+import { seedSettings, typePassage } from './helpers';
 
 test.setTimeout(90_000);
 
-/** Types the whole passage on screen, once the first keystroke is known to count (the page may still be hydrating). */
-async function typePassage(page: Page) {
-  await page.locator('.typing-character').first().waitFor();
-  const text = await page.locator('.typing-copy .typing-character:not(.typing-end-marker)').evaluateAll(nodes => nodes.map(node => node.textContent || '\n').join(''));
-  const input = page.getByLabel('Typing input');
-  const progress = page.getByText(/^\d+ of \d+ characters complete\.$/);
-  await expect(progress).toHaveText(/^0 of/);
-  await expect(async () => {
-    if (/^0 of/.test((await progress.textContent()) ?? '')) await input.press(text[0]);
-    await expect(progress).toHaveText(/^1 of/, { timeout: 1_000 });
-  }).toPass({ timeout: 15_000 });
-  await input.pressSequentially(text.slice(1));
-}
+// Stories open in Read mode by default; these tests type.
+test.beforeEach(async ({ page }) => { await seedSettings(page, { storyMode: 'type' }); });
 
 const moreHeight = (page: Page) => page.locator('.rr-toast .rr-toast-more').evaluate(node => node.getBoundingClientRect().height);
 

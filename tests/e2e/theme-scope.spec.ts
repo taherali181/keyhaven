@@ -4,7 +4,7 @@ const STORY = '/read?story=gift-of-the-magi';
 
 async function withSettings(page: Page, theme: string, customTones: unknown[] = []) {
   await page.addInitScript(([themeId, tones]) => {
-    localStorage.setItem('keyhaven_settings_v1', JSON.stringify({ theme: themeId, customTones: tones, updatedAt: 1 }));
+    localStorage.setItem('keyhaven_settings_v1', JSON.stringify({ theme: themeId, customTones: tones, storyMode: 'type', updatedAt: 1 }));
     localStorage.setItem('keyhaven_sidebar_v2', 'pinned');
   }, [theme, customTones] as const);
 }

@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { seedSettings } from './helpers';
 
 for (const reducedMotion of ['no-preference', 'reduce'] as const) {
   test(`title bar can be repeatedly hidden and pinned without moving its mode selection (${reducedMotion})`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion });
+    await seedSettings(page, { storyMode: 'type' });
     await page.goto('/read?story=gift-of-the-magi');
     const toggle = page.getByRole('radiogroup', { name: 'Story mode' });
     await expect(toggle).toBeVisible();
