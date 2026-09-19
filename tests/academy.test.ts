@@ -12,8 +12,8 @@ const stats = (overrides: Partial<TypingStats> = {}): TypingStats => ({
 });
 
 describe('academy course', () => {
-  it('has ten units, unique lessons, one Endurance lesson and a checkpoint ending every lesson', () => {
-    expect(UNITS).toHaveLength(10);
+  it('has eleven units, unique lessons, one Endurance lesson and a checkpoint ending every lesson', () => {
+    expect(UNITS).toHaveLength(11);
     expect(new Set(ALL_LESSONS.map(lesson => lesson.id)).size).toBe(ALL_LESSONS.length);
     expect(ALL_LESSONS.filter(lesson => /Endurance/.test(`${lesson.title} ${lesson.goal}`))).toHaveLength(1);
     for (const lesson of ALL_LESSONS) expect(lesson.steps[lesson.steps.length - 1].kind, lesson.id).toBe('checkpoint');

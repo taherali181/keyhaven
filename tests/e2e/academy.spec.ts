@@ -50,3 +50,19 @@ test('passing a checkpoint unlocks the next lesson', async ({ page }) => {
   await expect(page.getByRole('button', { name: /The whole home row/ })).toBeEnabled();
   await expect(page.getByRole('button', { name: /F, J, D and K/ })).toContainText('Passed');
 });
+
+test('the Academy plan offers a daily challenge, and the course has the new lessons', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/academy');
+  const challenge = page.getByRole('button', { name: /Daily challenge/ });
+  await expect(challenge).toContainText(/Reach \d+ wpm at 96%/);
+  await challenge.click();
+  await expect(page.getByText('Daily challenge', { exact: true })).toBeVisible();
+  await expect(page.locator('.typing-character').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Academy' }).first().click();
+
+  await page.getByRole('button', { name: 'Course' }).click();
+  for (const title of ['Acronyms and title case', 'Brackets and braces', 'At, hash and friends', 'Code basics', 'Code in context', 'Awkward pairs', 'Sprint drills']) {
+    await expect(page.getByRole('button', { name: new RegExp(title) })).toBeVisible();
+  }
+});

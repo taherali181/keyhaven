@@ -48,7 +48,7 @@ export function migrateAcademy(record?: AcademyStateRecord | null): AcademyState
   if (!record) return initialAcademy();
   const state: AcademyState = {
     ...initialAcademy(), ...record, id: 'academy', version: 2,
-    lessons: { ...(record.lessons ?? {}) }, keyStats: { ...(record.keyStats ?? {}) }, practiceLog: { ...(record.practiceLog ?? {}) },
+    lessons: { ...(record.lessons ?? {}) }, challenges: { ...(record.challenges ?? {}) }, keyStats: { ...(record.keyStats ?? {}) }, practiceLog: { ...(record.practiceLog ?? {}) },
     dailyGoalMinutes: record.dailyGoalMinutes || DEFAULT_GOAL_MINUTES
   };
   if (record.version !== 2) {
@@ -176,7 +176,7 @@ export function recordPlacement(state: AcademyState, runs: Array<{ stats: Typing
 
 // ── Daily plan ──
 
-export interface PlanItem { id: 'continue' | 'review' | 'retry'; label: string; title: string; detail: string; lessonId?: string; keys?: string[] }
+export interface PlanItem { id: 'continue' | 'review' | 'retry' | 'challenge'; label: string; title: string; detail: string; lessonId?: string; keys?: string[] }
 
 export function dailyPlan(state: AcademyState, weak: string[]): PlanItem[] {
   const current = findLesson(state.currentLessonId);

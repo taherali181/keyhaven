@@ -8,8 +8,7 @@ import { TypingStats } from '@/types';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { SpeedChart } from '@/components/typing/SpeedChart';
 import { ease, spring } from '@/lib/motion';
-import { missedKeys } from '@/components/reader/results/ResultBits';
-import { describeKey } from '@/components/typing/VirtualKeyboardHeatmap';
+import { missLabel, missedKeys } from '@/components/reader/results/ResultBits';
 
 interface TestResultsModalProps {
   stats: TypingStats | null;
@@ -72,7 +71,7 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({ stats, isOpe
         <div className="results-misses">
           <small>Most missed keys</small>
           {misses.length
-            ? <ul aria-label="Most missed keys">{misses.map(([key, count]) => <li key={key} title={`${describeKey(key)}: ${count} ${count === 1 ? 'miss' : 'misses'}`}><kbd>{key === ' ' ? '␣' : key}</kbd><span>{count}</span></li>)}</ul>
+            ? <ul aria-label="Most missed keys">{misses.map(([key, count]) => <li key={key} title={`${missLabel(key)}: ${count} ${count === 1 ? 'miss' : 'misses'}`}><kbd>{key === ' ' ? '␣' : key}</kbd><span>{count}</span></li>)}</ul>
             : <span className="results-clean">None. A clean run.</span>}
         </div>
 

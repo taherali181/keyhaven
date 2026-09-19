@@ -4,9 +4,8 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Check, ChevronUp, Maximize2, RotateCcw, X } from 'lucide-react';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
-import { describeKey } from '@/components/typing/VirtualKeyboardHeatmap';
 import { spring } from '@/lib/motion';
-import { ComparisonChip, missedKeys, Sparkline } from './ResultBits';
+import { ComparisonChip, missLabel, missedKeys, Sparkline } from './ResultBits';
 import { ResultDialog } from './ResultDialog';
 import { focusTyping, type ReaderResult, type ResultPopupState } from './useResultPopup';
 
@@ -74,7 +73,7 @@ function ResultToast({ result, onNext, onRetry, onDetails, onDismiss }: { result
           <div className="rr-toast-misses">
             <small>Missed keys</small>
             {misses.length
-              ? <span>{misses.map(([key, count]) => <kbd key={key} title={`${describeKey(key)}: ${count}`}>{key === ' ' ? '␣' : key}<i>{count}</i></kbd>)}</span>
+              ? <span>{misses.map(([key, count]) => <kbd key={key} title={`${missLabel(key)}: ${count}`}>{key === ' ' ? '␣' : key}<i>{count}</i></kbd>)}</span>
               : <span className="rr-muted">None, clean run</span>}
           </div>
           <div className="rr-toast-trend">

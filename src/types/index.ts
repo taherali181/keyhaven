@@ -513,6 +513,8 @@ export interface AcademyStateRecord {
   /** Minutes practised per local day (YYYY-MM-DD). */
   practiceLog?: Record<string, number>;
   dailyGoalMinutes: number;
+  /** Daily challenge results by local day (YYYY-MM-DD): the best attempt of each day. */
+  challenges?: Record<string, { wpm: number; accuracy: number; passed: boolean }>;
   /** Version 1 fields. */
   completedExercises?: string[];
   mastery?: Record<string, number>;

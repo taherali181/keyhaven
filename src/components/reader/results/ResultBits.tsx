@@ -3,6 +3,7 @@
 import React from 'react';
 import { Trophy } from 'lucide-react';
 import type { ReaderResult } from './useResultPopup';
+import { describeKey } from '@/components/typing/VirtualKeyboardHeatmap';
 
 /** A tiny line of recent speeds; the newest point is marked. */
 export function Sparkline({ values, className = 'rr-spark', label }: { values: number[]; className?: string; label?: string }) {
@@ -27,6 +28,12 @@ export function ComparisonChip({ result }: { result: ReaderResult }) {
   if (summary.deltaWpm === null) return <span className="rr-compare">First attempt</span>;
   const delta = summary.deltaWpm;
   return <span className={`rr-compare ${delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : ''}`}>{delta > 0 ? '+' : ''}{delta} vs average</span>;
+}
+
+/** "E (left middle finger)" for a missed key's tooltip. */
+export function missLabel(key: string) {
+  const found = describeKey(key);
+  return found ? `${found.label} (${found.finger})` : key;
 }
 
 export const missedKeys = (errorKeys: Record<string, number>, limit = 3) => Object.entries(errorKeys).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, limit);

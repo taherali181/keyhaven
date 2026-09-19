@@ -11,6 +11,7 @@ import { describeKey, VirtualKeyboardHeatmap } from '@/components/typing/Virtual
 import { UNITS, nextLessonAfter, unitOf } from '@/data/academy/units';
 import type { AcademyLesson } from '@/lib/academy/types';
 import { reviewText, stepText } from '@/lib/academy/generate';
+import { challengePassed, recordChallenge, type DailyChallenge } from '@/lib/academy/challenge';
 import { PASSING_STEP_ACCURACY, PLACEMENT_PASSAGES, addMinutes, recordPlacement, recordStep, updateKeyStats, type AcademyState, type StepOutcome } from '@/lib/academy/progress';
 
 type UpdateSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
@@ -161,6 +162,38 @@ export function ReviewRun({ keys, academy, settings, onKeyPress, onUpdateSetting
       <button type="button" className="rs-btn" onClick={onExit}>Back to the plan</button>
       <button type="button" className="rs-btn is-primary" onClick={() => { setDone(null); setAttempt(value => value + 1); }}><RotateCcw aria-hidden="true" />Another review</button>
     </>}>Every review updates how confident each key looks on your Academy page.</Summary> : null}
+  />;
+}
+
+export function ChallengeRun({ challenge, academy, settings, onKeyPress, onUpdateSetting, onSave, onExit }: SessionProps & { challenge: DailyChallenge }) {
+  const [attempt, setAttempt] = useState(0);
+  const [done, setDone] = useState<TypingStats | null>(null);
+  const academyRef = useLatest(academy);
+  const { wpm, accuracy } = challenge.target;
+
+  const complete = (stats: TypingStats) => {
+    const state = academyRef.current;
+    const now = Date.now();
+    const next = recordChallenge({ ...state, keyStats: updateKeyStats(state.keyStats, stats, challenge.text, settings.strictMode), practiceLog: addMinutes(state.practiceLog, now, stats.timeElapsed / 60) }, challenge, stats, now);
+    onSave(next, { title: `Daily challenge · ${challenge.day}`, subMode: 'Challenge', stats });
+    setDone(stats);
+  };
+  const passed = done ? challengePassed(done, challenge) : false;
+
+  return <PracticeSession
+    settings={settings} onKeyPress={onKeyPress} onUpdateSetting={onUpdateSetting}
+    eyebrow="Daily challenge"
+    title={`Reach ${wpm} wpm at ${accuracy}%`}
+    subtitle={`Today's passage leans on ${challenge.keys.map(key => key.toUpperCase()).join(' · ')}.`}
+    text={challenge.text}
+    sessionKey={`challenge:${challenge.day}:${attempt}`}
+    focusKeys={challenge.keys}
+    onBack={onExit}
+    onComplete={complete}
+    summary={done ? <Summary eyebrow={passed ? 'Challenge complete' : 'Not yet'} stats={done} actions={<>
+      <button type="button" className="rs-btn" onClick={onExit}>Back to the plan</button>
+      {!passed && <button type="button" className="rs-btn is-primary" onClick={() => { setDone(null); setAttempt(value => value + 1); }}><RotateCcw aria-hidden="true" />Try again</button>}
+    </>}>{passed ? 'Done for today. A new challenge arrives tomorrow.' : `Aim for ${wpm} wpm at ${accuracy}% accuracy. Accuracy first; the speed follows.`}</Summary> : null}
   />;
 }
 
