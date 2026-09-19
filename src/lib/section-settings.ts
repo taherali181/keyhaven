@@ -7,7 +7,7 @@ import { normalizeTypography, TYPOGRAPHY_KEYS } from '@/lib/typography';
 
 export const SECTION_KEYS = [...TYPOGRAPHY_KEYS, 'readerStats', 'readerBarStyle'] as const;
 
-export const SECTION_LABELS: Partial<Record<TypingMode, string>> = { stories: 'Read', quotes: 'Quotes', 'speed-test': 'Speed', learn: 'Academy', arcade: 'Arcade', leaderboard: 'Speed', profile: 'Profile' };
+export const SECTION_LABELS: Partial<Record<TypingMode, string>> = { stories: 'Read', quotes: 'Quotes', 'speed-test': 'Speed', learn: 'Academy', arcade: 'Arcade', leaderboard: 'Speed', profile: 'Profile', home: 'Home', pdf: 'PDFs', manuscript: 'Write' };
 
 const usesBase = (mode: TypingMode) => mode === 'stories';
 

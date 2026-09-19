@@ -1,8 +1,8 @@
 import { TypingMode } from '@/types';
 
-export const MODES: TypingMode[] = ['stories', 'speed-test', 'quotes', 'learn', 'arcade', 'leaderboard', 'profile'];
+export const MODES: TypingMode[] = ['stories', 'speed-test', 'quotes', 'learn', 'arcade', 'leaderboard', 'profile', 'pdf', 'manuscript'];
 
-export const ROUTE_ALIASES: Record<string, TypingMode> = { read: 'stories', academy: 'learn', speed: 'speed-test' };
+export const ROUTE_ALIASES: Record<string, TypingMode> = { read: 'stories', academy: 'learn', speed: 'speed-test', write: 'manuscript', pdfs: 'pdf' };
 
 export function modeFromPath(pathname: string): TypingMode | null {
   const path = pathname.replace(/^\//, '');
@@ -13,6 +13,8 @@ export function modeFromPath(pathname: string): TypingMode | null {
 }
 
 export function pathForMode(mode: TypingMode) {
+  if (mode === 'home') return '/';
+  if (mode === 'manuscript') return '/write';
   if (mode === 'stories') return '/read';
   if (mode === 'library') return '/read';
   if (mode === 'learn') return '/academy';

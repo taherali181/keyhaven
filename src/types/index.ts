@@ -6,7 +6,10 @@ export type TypingMode =
   | 'learn'
   | 'arcade'
   | 'leaderboard'
-  | 'profile';
+  | 'profile'
+  | 'home'
+  | 'pdf'
+  | 'manuscript';
 
 export type ReaderBackground = 'none' | 'plain' | 'custom' | 'cherry-blossoms' | 'misty-mountains' | 'quiet-lake' | 'soft-forest' | 'mountain-valley' | 'alpine-lake' | 'forest-sunset' | 'twilight-peaks';
 

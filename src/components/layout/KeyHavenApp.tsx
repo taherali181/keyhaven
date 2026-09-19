@@ -17,6 +17,7 @@ import { LearnView } from '@/components/learn/LearnView';
 import { ArcadeView } from '@/components/arcade/ArcadeView';
 import { LeaderboardView } from '@/components/analytics/LeaderboardView';
 import { ProfileView } from '@/components/profile/ProfileView';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 import { rememberWork } from '@/lib/catalog';
 import { useBackupSync } from '@/hooks/useBackupSync';
 import { useBackupStatus, type BackupState } from '@/lib/sync/status';
@@ -85,6 +86,9 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
                 {currentMode === 'learn' && <LearnView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
                 {currentMode === 'arcade' && <ArcadeView settings={sectionSettings} onKeyPress={playKeyPress} />}
                 {currentMode === 'leaderboard' && <LeaderboardView />}
+                {/* PDFs and Write are being built; they stay reachable by address only until then. */}
+                {currentMode === 'pdf' && <section className="speed-shell"><SectionHeader eyebrow="Your documents" title="PDFs" description="Read PDFs as their original pages or as reflowed text. Coming soon." /></section>}
+                {currentMode === 'manuscript' && <section className="speed-shell"><SectionHeader eyebrow="Your writing" title="Write" description="Write your own pieces, then read or type them back. Coming soon." /></section>}
                 {currentMode === 'profile' && <ProfileView
                   settings={settings}
                   onUpdateSetting={settingsApi.updateSetting}
