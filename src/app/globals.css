@@ -1842,10 +1842,13 @@ select option { background: var(--bg-card); color: var(--text-primary); }
   }
   /* The pill and the chapter title, as one group, sit centred in the space above the text. */
   .reader-shell.stories-shell[data-width="full"] {
-    --edge-space: var(--gap);
+    --edge-space: max(var(--gap), var(--dock-clear, 0px));
     width: calc(100% - 2 * var(--edge-space));
   }
-  .reader-shell.stories-shell[data-width="full"][data-titlebar="auto"] { --edge-space: var(--text-space); }
+  .reader-shell.stories-shell[data-width="full"][data-titlebar="auto"] { --edge-space: max(var(--text-space), var(--dock-clear, 0px)); }
+  /* While the sidebar is hidden, its menu button (14px in, 42px wide) floats top-left: keep the reader clear of it. */
+  :root:not([data-sidebar="open"]) .reader-shell.stories-shell { --dock-clear: 70px; width: min(calc(var(--reader-width, 780px) + 320px), calc(100% - 2 * var(--dock-clear))); }
+  :root:not([data-sidebar="open"]) .reader-shell.stories-shell[data-width="full"] { width: calc(100% - 2 * var(--edge-space)); }
   /* Hidden: the title bar drops in at the height it has when shown, over the page, instead of below the text's first line. */
   .stories-shell[data-titlebar="auto"] > .story-bar-row { position: absolute; top: var(--reader-gap-pinned); right: 0; left: 0; margin-bottom: 0; }
   /* The pill and chapter label are centred between the page top and the tops of the first line's letters, which sit
