@@ -315,3 +315,23 @@ test('the speed test hydrates without mismatched words', async ({ page }) => {
   await page.waitForTimeout(1500);
   expect(problems).toEqual([]);
 });
+
+test('practice sections have their own small settings, and other pages none', async ({ page }) => {
+  await page.goto('/speed');
+  await expect(page.locator('.typing-character').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Speed settings' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Speed settings' });
+  await expect(sheet.getByRole('radio', { name: /Geist Mono/ })).toHaveAttribute('aria-checked', 'true');
+  await expect(sheet.getByText('Scenery')).toHaveCount(0);
+  await sheet.getByRole('radio', { name: /Literata/ }).click();
+  await expect(page.locator('.typing-surface.font-serif')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(sheet).toHaveCount(0);
+  // Speed's typeface is its own: Academy still starts in monospace.
+  await page.goto('/academy');
+  await page.getByRole('button', { name: 'Academy settings' }).click();
+  await expect(page.getByRole('dialog', { name: 'Academy settings' }).getByRole('radio', { name: /Geist Mono/ })).toHaveAttribute('aria-checked', 'true');
+  await page.goto('/profile');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('.reader-settings-trigger')).toHaveCount(0);
+});

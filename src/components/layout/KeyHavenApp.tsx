@@ -18,6 +18,7 @@ import { ArcadeView } from '@/components/arcade/ArcadeView';
 import { LeaderboardView } from '@/components/analytics/LeaderboardView';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
+import { SectionSettings, isSettingsSection } from '@/components/settings/SectionSettings';
 import { rememberWork } from '@/lib/catalog';
 import { useBackupSync } from '@/hooks/useBackupSync';
 import { BACKUP_LABELS, useBackupStatus } from '@/lib/sync/status';
@@ -107,7 +108,9 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
         />
         {/* The library is part of Read: a window over the reader, opened from its title bar or with Ctrl K. */}
         {currentMode === 'stories' && <LibraryWindow initialOpen={initialLibraryOpen} />}
-        {!settings.zenMode && <ReaderSettings settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} sectionLabel={SECTION_LABELS[currentMode] ?? 'Read'} typographyDefaults={sectionTypographyDefaults(currentMode)} showTrigger={!READER_VIEWS.includes(currentMode)} />}
+        {/* Read and Quotes open the full reading settings from their title bar; practice sections have their own small sheet. */}
+        {!settings.zenMode && <ReaderSettings settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} sectionLabel={SECTION_LABELS[currentMode] ?? 'Read'} typographyDefaults={sectionTypographyDefaults(currentMode)} />}
+        {!settings.zenMode && isSettingsSection(currentMode) && <SectionSettings key={currentMode} mode={currentMode} settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} />}
       </div>
     </MotionConfig>
   );

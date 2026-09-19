@@ -255,6 +255,10 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .app-actions .rs-btn, .app-keys-reset { display: inline-flex; align-items: center; gap: 6px; }
 .app-actions .rs-btn svg, .app-keys-reset svg { width: 14px; height: 14px; stroke-width: 1.75; }
 .settings-note.is-error { color: var(--color-incorrect); }
+/* Speed, Academy and Arcade: a narrower sheet with only typing settings. */
+.rs-panel.section-settings { width: min(420px, calc(100vw - 24px)); }
+.section-faces { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.section-size { margin-top: 16px; }
 /* Page tones as small swatches: each tile is the tone itself. */
 .app-tones { display: flex; flex-wrap: wrap; gap: 8px; }
 .app-tone { display: grid; width: 40px; height: 40px; place-items: center; padding: 0; border: 1px solid color-mix(in oklab, var(--tone-fg) 18%, transparent); border-radius: var(--r-sm); background: var(--tone-bg); color: var(--tone-fg); font: 500 .9375rem/1 var(--font-literary); transition: transform var(--dur-fast), box-shadow var(--dur-fast); }

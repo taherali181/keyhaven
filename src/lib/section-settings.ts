@@ -15,8 +15,14 @@ export function isSectionKey(key: keyof UserSettings): key is keyof SectionPrefs
   return (SECTION_KEYS as readonly string[]).includes(key);
 }
 
-/** Where a section starts out differently from Read: quotes are short, so they start larger. */
-const SECTION_DEFAULTS: Partial<Record<TypingMode, Partial<SectionPrefs>>> = { quotes: { fontSize: 32 } };
+/** Where a section starts out differently from Read: quotes are short, so they start larger; practice sections start in monospace. */
+const SECTION_DEFAULTS: Partial<Record<TypingMode, Partial<SectionPrefs>>> = {
+  quotes: { fontSize: 32 },
+  // Practice sections start in an even monospace, at the sizes they have always used.
+  'speed-test': { font: 'jetbrains' },
+  learn: { font: 'jetbrains', fontSize: 27 },
+  arcade: { font: 'jetbrains', fontSize: 19 }
+};
 
 function defaults(mode: TypingMode): SectionPrefs {
   return { ...Object.fromEntries(SECTION_KEYS.map(key => [key, DEFAULT_SETTINGS[key]])), ...SECTION_DEFAULTS[mode] } as SectionPrefs;

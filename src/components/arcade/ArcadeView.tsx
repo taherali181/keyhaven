@@ -263,7 +263,7 @@ function GhostRacer({ settings, onKeyPress, onRecorded }: ArcadeViewProps & { on
         <RaceLane label={`Ghost · ${ghostWpm} wpm`} progress={ghostProgress} />
       </div>
       {!racing && !result && <div className="arc-race-start"><button type="button" onClick={start} className="rs-btn is-primary"><Play aria-hidden="true" />Start race</button></div>}
-      {(racing || result) && <TypingArea targetText={RACE_TEXT} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font="jetbrains" fontSize={19} wrapMode="whole-word" onKeyDown={racing ? engine.handleKeyDown : event => event.preventDefault()} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={racing ? engine.handleCompositionEnd : undefined} onReset={start} />}
+      {(racing || result) && <TypingArea targetText={RACE_TEXT} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" onKeyDown={racing ? engine.handleKeyDown : event => event.preventDefault()} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={racing ? engine.handleCompositionEnd : undefined} onReset={start} />}
       {result && <div className="arc-result" data-result={result} role="status"><p>{result === 'won' ? 'You outran the ghost.' : 'The ghost reached the line first.'}</p><button type="button" onClick={start} className="rs-btn"><RotateCcw aria-hidden="true" />Race again</button></div>}
     </div>
   );

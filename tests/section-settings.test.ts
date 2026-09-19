@@ -30,6 +30,13 @@ describe('per-section settings', () => {
     expect(sectionUpdate(read, 'stories', 'fontSize', 19)).toEqual({ fontSize: 19 });
   });
 
+  it('starts practice sections in monospace at the sizes they always used', () => {
+    expect(settingsForSection(read, 'speed-test').font).toBe('jetbrains');
+    expect(settingsForSection(read, 'learn')).toMatchObject({ font: 'jetbrains', fontSize: 27 });
+    expect(settingsForSection(read, 'arcade')).toMatchObject({ font: 'jetbrains', fontSize: 19 });
+    expect(sectionTypographyDefaults('arcade').fontSize).toBe(19);
+  });
+
   it('treats the new spacing and layout options as per-section typography', () => {
     expect(sectionUpdate(read, 'quotes', 'readerWordSpacing', 0.1)).toEqual({ sectionPrefs: { quotes: { readerWordSpacing: 0.1 } } });
     expect(sectionUpdate(read, 'quotes', 'readerAlign', 'justify')).toEqual({ sectionPrefs: { quotes: { readerAlign: 'justify' } } });

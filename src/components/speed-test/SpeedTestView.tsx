@@ -151,7 +151,7 @@ export const SpeedTestView = ({ settings, onKeyPress }: { settings: UserSettings
           </AnimatePresence>
         </div>
       </div>
-      <TypingArea targetText={targetText} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font="jetbrains" fontSize={settings.fontSize} wrapMode="whole-word" viewportLines={3} viewportMode="centered" lineHeight={1.8} onKeyDown={engine.handleKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={restart} />
+      <TypingArea targetText={targetText} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" viewportLines={3} viewportMode="centered" lineHeight={1.8} onKeyDown={engine.handleKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={restart} />
       <SpeedRecords subMode={subMode} version={recordsVersion} />
       <LiveStatsBar wpm={engine.wpm} accuracy={engine.accuracy} timeRemaining={engine.timeRemaining} timeElapsed={engine.timeElapsed} isTimed={testType === 'time'} onReset={restart} showLiveWpm={settings.showLiveWpm} showLiveAccuracy={settings.showLiveAccuracy} />
       <TestResultsModal stats={completed} isOpen={resultOpen} title={`Speed Test · ${subMode}`} onRetry={restart} />

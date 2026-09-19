@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AudioWaveform, Check, ChevronDown, ChevronUp, CloudRain, Coffee, Flame, Headphones, PanelBottom, Palette, Plus, RotateCcw, SlidersHorizontal, Trees, Type, VolumeX, Waves, X } from 'lucide-react';
+import { AudioWaveform, Check, ChevronDown, ChevronUp, CloudRain, Coffee, Flame, Headphones, PanelBottom, Palette, Plus, RotateCcw, Trees, Type, VolumeX, Waves, X } from 'lucide-react';
 import { AmbientSound, CustomReaderTone, FontFamily, ReaderBackground, ReaderToneId, ThemeId, UserSettings } from '@/types';
 import { FONTS } from '@/lib/themes';
 import { CUSTOM_TONE_PREFIX, EXTRA_TONES, MAIN_TONES, RECIPE_TONES, contrastRatio, hasSceneryImage, readerSurfaceProps, toneName, toneVariables } from '@/lib/reader-style';
@@ -269,7 +269,7 @@ function TypefacePicker({ value, onChange }: { value: FontFamily; onChange: (fon
 }
 
 /** Reading-only settings: a floating trigger plus a tile-based sheet. Rendered for Stories, Quotes and Library. */
-export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, showTrigger = true, sectionLabel = 'Read', typographyDefaults = DEFAULT_TYPOGRAPHY }: { settings: UserSettings; onUpdateSetting: UpdateSetting; onUpdateSettings: (patch: Partial<UserSettings>) => void; showTrigger?: boolean; sectionLabel?: string; typographyDefaults?: Typography }) {
+export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, sectionLabel = 'Read', typographyDefaults = DEFAULT_TYPOGRAPHY }: { settings: UserSettings; onUpdateSetting: UpdateSetting; onUpdateSettings: (patch: Partial<UserSettings>) => void; sectionLabel?: string; typographyDefaults?: Typography }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabId>('look');
   const sceneryInput = useRef<HTMLInputElement>(null);
@@ -470,10 +470,6 @@ export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, sh
   </>;
 
   return <>
-    {showTrigger && <motion.button type="button" className="reader-settings-trigger glass glass-pill" onClick={() => setOpen(true)} aria-label="Reading settings" title="Reading settings">
-      <SlidersHorizontal /><span>Reading</span>
-    </motion.button>}
-
     <AnimatePresence>
       {open && <motion.div key="rs-scrim" className="rs-scrim" variants={fade} initial="hidden" animate="show" exit="exit" onClick={close} />}
       {open && (

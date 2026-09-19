@@ -63,7 +63,7 @@ function PracticeSession({ settings, onKeyPress, onUpdateSetting, eyebrow, title
       </div>
       <button type="button" className="ac-guide-toggle" aria-pressed={guideOn} onClick={() => onUpdateSetting('academyGuide', guideOn ? 'off' : 'on')}><Keyboard aria-hidden="true" />Guide</button>
     </header>
-    <TypingArea targetText={text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font="jetbrains" fontSize={27} wrapMode="whole-word" viewportLines={3} lineHeight={1.8} onKeyDown={engine.handleKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} />
+    <TypingArea targetText={text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" viewportLines={3} lineHeight={1.8} onKeyDown={engine.handleKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} />
     {summary}
     {guideOn && <KeyGuide nextChar={nextChar} focusKeys={focusKeys} />}
     {!summary && <LiveStatsBar wpm={engine.wpm} accuracy={engine.accuracy} timeElapsed={engine.timeElapsed} onReset={() => engine.reset()} showLiveWpm={settings.showLiveWpm} showLiveAccuracy={settings.showLiveAccuracy} />}
