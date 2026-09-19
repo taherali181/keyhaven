@@ -37,6 +37,11 @@ interface StoryReaderProps {
   /** Change when CSS-driven typography (weight, letter spacing) changes, so pages are re-measured. */
   layoutKey?: string;
   onLayout: (layout: ReaderLayout) => void;
+  /**
+   * Renders a paragraph's contents (for example with highlights). `paragraph` counts from the start of the section.
+   * Must not change the paragraph's height: pages are measured from the plain text.
+   */
+  renderParagraph?: (text: string, paragraph: number) => React.ReactNode;
 }
 
 const MOBILE = '(max-width: 767px)';
@@ -45,7 +50,7 @@ const MOBILE = '(max-width: 767px)';
  * Book-like pages for reading mode. The page height is a whole number of lines and paragraphs are
  * one line apart, so every page break lands between lines. Pages are a translateY over one column.
  */
-export function StoryReader({ parts, sections, page, pageLayout = 'single', font, fontSize, lineHeight, layoutKey, onLayout }: StoryReaderProps) {
+export function StoryReader({ parts, sections, page, pageLayout = 'single', font, fontSize, lineHeight, layoutKey, onLayout, renderParagraph }: StoryReaderProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
   const [pageHeight, setPageHeight] = useState(0);
@@ -141,19 +146,27 @@ export function StoryReader({ parts, sections, page, pageLayout = 'single', font
     );
   }, [page]);
 
+  // Each paragraph's index within the section, so highlights and notes can find it again.
+  const paragraphStart: number[] = [];
+  parts.reduce((count, part, index) => { paragraphStart[index] = count; return count + part.length; }, 0);
+  const renderPart = (part: string[], index: number) => part.map((text, offset) => {
+    const paragraph = paragraphStart[index] + offset;
+    return <p key={offset} data-paragraph={paragraph}>{renderParagraph ? renderParagraph(text, paragraph) : text}</p>;
+  });
+
   const fontClass = FONTS[font]?.class ?? 'font-serif';
   return <div ref={frameRef} className={`story-reader ${fontClass}`} data-page-layout={pageLayout} style={{ fontSize: passageFontSize(fontSize), lineHeight }}>
     <div className="story-reader-viewport" style={pageHeight ? { height: pageHeight } : undefined}>
       <div ref={copyRef} className="story-reader-copy" style={{ transform: `translateY(${-page * pageHeight}px)` }}>
         {parts.map((part, index) => <div key={index} className="story-reader-part" data-part={index + 1}>
-          {part.map((text, paragraph) => <p key={paragraph}>{text}</p>)}
+          {renderPart(part, index)}
         </div>)}
       </div>
     </div>
     {pageLayout === 'spread' && <div className="story-reader-viewport story-reader-second-page" aria-hidden="true" style={pageHeight ? { height: pageHeight } : undefined}>
       <div className="story-reader-copy" style={{ transform: `translateY(${-(page + 1) * pageHeight}px)` }}>
         {parts.map((part, index) => <div key={index} className="story-reader-part">
-          {part.map((text, paragraph) => <p key={paragraph}>{text}</p>)}
+          {renderPart(part, index)}
         </div>)}
       </div>
     </div>}
