@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronUp, Library, Maximize2, Minimize2, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
+import { ChevronUp, Highlighter, Library, Maximize2, Minimize2, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
+import { HighlightPopover } from '@/components/reader/HighlightPopover';
+import { NotesPanel } from '@/components/reader/NotesPanel';
+import { reanchor, segmentParagraph, type Anchor } from '@/lib/highlights';
 import { ContentsMenu, type ContentsEntry } from '@/components/reader/ContentsMenu';
 import { StoryModeToggle } from '@/components/reader/StoryModeToggle';
 import { usePageInput } from '@/hooks/usePageInput';
@@ -21,11 +24,11 @@ import { resolveReaderStats, type ReaderStatContext } from '@/lib/reader-stats';
 import { chunkParagraphs, countWords, DEFAULT_READING_WPM, loadReadingSpeed, sectionName, updateReadingSpeed } from '@/lib/reading';
 import { createClientId, db } from '@/lib/db';
 import { readerSurfaceProps } from '@/lib/reader-style';
-import type { BookProgressRecord, TestResultRecord, TypingStats, UserSettings, Work } from '@/types';
+import type { BookProgressRecord, HighlightColor, HighlightRecord, TestResultRecord, TypingStats, UserSettings, Work } from '@/types';
 
 type UpdateSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
 /** Where reading mode should land once the reader has measured its pages. */
-type PageAnchor = { kind: 'part'; part: number } | { kind: 'fraction'; value: number } | { kind: 'words'; value: number; part?: number };
+type PageAnchor = { kind: 'part'; part: number } | { kind: 'fraction'; value: number } | { kind: 'words'; value: number; part?: number } | { kind: 'paragraph'; paragraph: number };
 type PageStep = 1 | -1 | 'start' | 'end';
 
 export interface ReaderPosition {
@@ -90,6 +93,47 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       setFinishedAt(record?.finishedAt);
     }).catch(() => {});
   }, [isStory, work.key, work.title]);
+
+  // Highlights and notes (Read mode).
+  const [highlights, setHighlights] = useState<HighlightRecord[]>([]);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const refreshHighlights = useCallback(() => { void db.highlights.where('workKey').equals(work.key).toArray().then(setHighlights).catch(() => {}); }, [work.key]);
+  useEffect(() => { refreshHighlights(); }, [refreshHighlights]);
+  const createHighlight = async (anchor: Anchor, color: HighlightColor, note?: string) => {
+    const now = Date.now();
+    const record: HighlightRecord = { id: createClientId(), workKey: work.key, sectionIndex, paragraph: anchor.paragraph, start: anchor.start, end: anchor.end, quote: anchor.quote, color, ...(note ? { note } : {}), createdAt: now, updatedAt: now };
+    await db.highlights.put(record);
+    setHighlights(current => [...current, record]);
+    return record;
+  };
+  const updateHighlight = (id: string, patch: Partial<Pick<HighlightRecord, 'color' | 'note'>>) => {
+    const updatedAt = Date.now();
+    setHighlights(current => current.map(item => (item.id === id ? { ...item, ...patch, updatedAt } : item)));
+    void db.highlights.update(id, { ...patch, updatedAt }).catch(() => {});
+  };
+  const removeHighlight = (id: string) => {
+    setHighlights(current => current.filter(item => item.id !== id));
+    void db.highlights.delete(id).catch(() => {});
+  };
+  // This section's highlights by paragraph, found again if a paragraph's text has shifted.
+  const sectionHighlights = useMemo(() => {
+    const byParagraph = new Map<number, HighlightRecord[]>();
+    for (const highlight of highlights) {
+      if (highlight.sectionIndex !== sectionIndex) continue;
+      const place = reanchor(highlight, section.paragraphs[highlight.paragraph] ?? '');
+      if (!place) continue;
+      byParagraph.set(highlight.paragraph, [...(byParagraph.get(highlight.paragraph) ?? []), { ...highlight, ...place }]);
+    }
+    return byParagraph;
+  }, [highlights, sectionIndex, section]);
+  const renderParagraph = useCallback((text: string, paragraph: number) => {
+    const marks = sectionHighlights.get(paragraph);
+    if (!marks) return text;
+    return segmentParagraph(text, marks).map((segment, index) => segment.highlight
+      ? <mark key={index} className="hl" data-color={segment.highlight.color} data-id={segment.highlight.id} data-note={segment.highlight.note ? 'true' : undefined} title={segment.highlight.note || undefined}>{segment.text}</mark>
+      : <React.Fragment key={index}>{segment.text}</React.Fragment>);
+  }, [sectionHighlights]);
+  const sectionTitleFor = (index: number) => (isStory ? work.title : sectionName(work.sections[index]?.title ?? '') || `${sectionLabel} ${index + 1}`);
 
   // Reading mode state.
   const [page, setPage] = useState(0);
@@ -279,6 +323,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       let target = 0;
       if (anchor.kind === 'part') target = nextLayout.partStartPage[Math.min(anchor.part, nextLayout.partStartPage.length - 1)] ?? 0;
       else if (anchor.kind === 'fraction') target = Math.round(anchor.value * last);
+      else if (anchor.kind === 'paragraph') target = Math.floor((nextLayout.paragraphTop[anchor.paragraph] ?? 0) / Math.max(1, nextLayout.pageHeight));
       // The page holding that word: the last page that starts at or before it.
       else while (target < last && nextLayout.wordsBefore[target + 1] <= anchor.value) target++;
       target = Math.min(last, Math.max(0, target));
@@ -339,6 +384,12 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       markSectionRead(sectionIndex);
       if (sectionIndex === sectionCount - 1) markFinished();
     }
+  };
+
+  const jumpToHighlight = (highlight: HighlightRecord) => {
+    setNotesOpen(false);
+    if (highlight.sectionIndex === sectionIndex && layout) goToPage(Math.floor((layout.paragraphTop[highlight.paragraph] ?? 0) / Math.max(1, layout.pageHeight)));
+    else openSection(highlight.sectionIndex, { kind: 'paragraph', paragraph: highlight.paragraph });
   };
 
   const pagerRef = useRef<(step: PageStep) => void>(() => {});
@@ -495,6 +546,9 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
             <Library aria-hidden="true" /><span>Library</span>
           </button>
           <span className="story-side-divider" aria-hidden="true" />
+          {reading && <button type="button" className="story-bar-button is-icon story-notes-button" onClick={() => setNotesOpen(true)} aria-label="Highlights and notes" title="Highlights and notes">
+            <Highlighter aria-hidden="true" />{highlights.length > 0 && <span className="story-notes-count" aria-hidden="true">{highlights.length}</span>}
+          </button>}
           {fullscreen.supported && <button type="button" className="story-bar-button is-icon" onClick={fullscreen.toggle} aria-label={fullscreen.active ? 'Exit full screen' : 'Enter full screen'} title={fullscreen.active ? 'Exit full screen' : 'Full screen'}>{fullscreen.active ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}</button>}
           <button type="button" className="story-bar-button is-icon" onClick={() => onUpdateSetting('muted', !settings.muted)} aria-label="Mute sound" aria-pressed={settings.muted} title={settings.muted ? 'Unmute sound' : 'Mute sound'}>{settings.muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}</button>
           {!settings.zenMode && <button type="button" className="story-bar-button is-icon story-settings-button" onClick={openReaderSettings} aria-label="Reading settings" title="Reading settings"><SlidersHorizontal aria-hidden="true" /></button>}
@@ -505,7 +559,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
       <div ref={stageRef} className="reader-stage">
         {reading
           ? <>
-            <StoryReader parts={parts} sections={sectionParts} page={page} pageLayout={settings.readerPageLayout} font={settings.font} fontSize={settings.fontSize} lineHeight={settings.readerLineHeight} layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerParagraphSpacing}-${settings.readerAlign}-${settings.readerHyphens}-${settings.readerWidth}`} onLayout={handleLayout} />
+            <StoryReader parts={parts} sections={sectionParts} page={page} pageLayout={settings.readerPageLayout} font={settings.font} fontSize={settings.fontSize} lineHeight={settings.readerLineHeight} layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerParagraphSpacing}-${settings.readerAlign}-${settings.readerHyphens}-${settings.readerWidth}`} onLayout={handleLayout} renderParagraph={renderParagraph} />
             {/* Page numbers, bottom-right of each page like a printed book: the page within the whole book. */}
             {layout && <div className="story-folios" data-pages={pagesPerView} aria-hidden="true">
               <span className="story-folio">{folio}</span>
@@ -542,5 +596,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
         <ResultPopup popup={popup} onNext={next} onRetry={() => engine.reset()} />
       </ReaderBottomBar>
     </div>
+    <HighlightPopover surface={stageRef} active={reading} highlights={highlights} onCreate={createHighlight} onUpdate={updateHighlight} onRemove={removeHighlight} closeKey={`${sectionIndex}-${page}`} />
+    <NotesPanel open={notesOpen} onClose={() => setNotesOpen(false)} title={work.title} author={work.author} highlights={highlights} sectionTitle={sectionTitleFor} onJump={jumpToHighlight} />
   </section>;
 }

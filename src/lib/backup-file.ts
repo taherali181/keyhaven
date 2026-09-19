@@ -1,7 +1,7 @@
 // A single-file backup of everything on this device, and a restore that only ever adds or updates with newer copies.
 import type { Table } from 'dexie';
 import { db } from '@/lib/db';
-import type { AcademyStateRecord, ArcadeScoreRecord, BookProgressRecord, ImportedDocumentRecord, ReadingSessionRecord, ShelfRecord, TestResultRecord, UserSettings } from '@/types';
+import type { AcademyStateRecord, ArcadeScoreRecord, BookProgressRecord, FavoriteRecord, HighlightRecord, ImportedDocumentRecord, ManuscriptRecord, ReadingSessionRecord, ShelfRecord, TestResultRecord, UserSettings } from '@/types';
 
 interface BackupFile {
   app: 'keyhaven';
@@ -15,14 +15,19 @@ interface BackupFile {
   shelf: ShelfRecord[];
   importedDocuments: ImportedDocumentRecord[];
   academyState: AcademyStateRecord | null;
+  /** Added later; older files simply don't have them. */
+  highlights?: HighlightRecord[];
+  favorites?: FavoriteRecord[];
+  manuscripts?: ManuscriptRecord[];
 }
 
 export async function exportBackupBlob(settings: UserSettings) {
-  const [testResults, arcadeScores, readingSessions, bookProgress, shelf, importedDocuments, academyState] = await Promise.all([
+  const [testResults, arcadeScores, readingSessions, bookProgress, shelf, importedDocuments, academyState, highlights, favorites, manuscripts] = await Promise.all([
     db.testResults.toArray(), db.arcadeScores.toArray(), db.readingSessions.toArray(), db.bookProgress.toArray(),
-    db.shelf.toArray(), db.importedDocuments.toArray(), db.academyState.get('academy')
+    db.shelf.toArray(), db.importedDocuments.toArray(), db.academyState.get('academy'),
+    db.highlights.toArray(), db.favorites.toArray(), db.manuscripts.toArray()
   ]);
-  const file: BackupFile = { app: 'keyhaven', version: 1, exportedAt: Date.now(), settings, testResults, arcadeScores, readingSessions, bookProgress, shelf, importedDocuments, academyState: academyState ?? null };
+  const file: BackupFile = { app: 'keyhaven', version: 1, exportedAt: Date.now(), settings, testResults, arcadeScores, readingSessions, bookProgress, shelf, importedDocuments, academyState: academyState ?? null, highlights, favorites, manuscripts };
   return new Blob([JSON.stringify(file)], { type: 'application/json' });
 }
 
@@ -57,6 +62,21 @@ async function addMissing<R extends { clientId: string }>(table: Table<R, number
   return fresh.length;
 }
 
+/** Keyed records newer in the file than here (or missing here), written with their key intact. */
+async function putNewer<R extends { updatedAt: number }>(table: Table<R, string>, rows: R[], keyField: keyof R & string) {
+  const valid = rows.filter(row => typeof row[keyField] === 'string' && typeof row.updatedAt === 'number');
+  if (!valid.length) return 0;
+  const local = await table.bulkGet(valid.map(row => row[keyField] as unknown as string));
+  const newer = valid.filter((row, index) => !local[index] || row.updatedAt > local[index]!.updatedAt).map(row => {
+    const copy = { ...row } as R & { dirty?: unknown; syncedAt?: unknown };
+    delete copy.dirty;
+    delete copy.syncedAt;
+    return copy as R;
+  });
+  if (newer.length) await table.bulkPut(newer);
+  return newer.length;
+}
+
 /** Adds records from a backup file that aren't here yet, and keyed records where the file's copy is newer. */
 export async function importBackupFile(file: File): Promise<{ added: number; settings: UserSettings | null }> {
   let data: Partial<BackupFile>;
@@ -85,10 +105,12 @@ export async function importBackupFile(file: File): Promise<{ added: number; set
   added += newerShelf.length;
 
   const documents = list<ImportedDocumentRecord>(data.importedDocuments).filter(record => typeof record.id === 'string' && Array.isArray(record.sections));
-  const localDocuments = await db.importedDocuments.bulkGet(documents.map(record => record.id));
-  const newerDocuments = documents.filter((record, index) => !localDocuments[index] || record.updatedAt > localDocuments[index]!.updatedAt).map(withoutLocalFields);
-  if (newerDocuments.length) await db.importedDocuments.bulkPut(newerDocuments);
-  added += newerDocuments.length;
+  // Imported books are keyed by `id`, so they keep it (stripping it, as for results, would lose the key).
+  added += await putNewer(db.importedDocuments, documents, 'id');
+
+  added += await putNewer(db.highlights, list<HighlightRecord>(data.highlights), 'id');
+  added += await putNewer(db.favorites, list<FavoriteRecord>(data.favorites), 'key');
+  added += await putNewer(db.manuscripts, list<ManuscriptRecord>(data.manuscripts), 'id');
 
   const academy = data.academyState;
   if (academy && typeof academy === 'object' && typeof academy.updatedAt === 'number') {

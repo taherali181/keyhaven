@@ -19,6 +19,8 @@ export interface ReaderLayout {
   partTop: number[];
   partHeight: number[];
   pageHeight: number;
+  /** Top offset (px) of each paragraph in the section, by its data-paragraph index: for jumping to a highlight. */
+  paragraphTop: number[];
   /** wordsBefore[p] = words on pages before page p (length pageCount + 1, last entry = totalWords). */
   wordsBefore: number[];
   totalWords: number;
@@ -116,6 +118,7 @@ export function StoryReader({ parts, sections, page, pageLayout = 'single', font
       partTop: nodes.map(node => node.offsetTop),
       partHeight: nodes.map(node => Math.max(1, node.offsetHeight)),
       pageHeight: height,
+      paragraphTop: [...copy.querySelectorAll<HTMLElement>('[data-paragraph]')].reduce<number[]>((tops, element) => { tops[Number(element.dataset.paragraph)] = element.offsetTop; return tops; }, []),
       wordsBefore,
       totalWords: words.reduce((sum, count) => sum + count, 0)
     });
