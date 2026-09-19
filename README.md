@@ -21,11 +21,14 @@ Most typing apps place controls, charts, and live metrics at the center of the e
 
 | Space | Purpose |
 | --- | --- |
-| **Read** | Open a full short story on arrival, then read or type through stories, public-domain books, EPUBs, and PDFs in one reader. |
-| **Quotes** | Type a single quotation at a time, filtered by category, in the same reader layout. |
-| **Academy** | Follow an adaptive beginner-to-advanced curriculum shaped by placement and weak-key analysis. |
-| **Speed** | Run timed or word-count tests in a stable three-line viewport and compare verified results. |
-| **Arcade** | Practice through Alphabet Sprint, Word Rain, Ghost Racer, and a rotating daily challenge. |
+| **Home** | Your library at a glance: continue reading, your shelves, the story of the day, and quick links to every section. |
+| **Read** | Read or type through stories, public-domain books, EPUBs, and PDFs in one reader, with highlights and notes. |
+| **PDFs** | See a PDF's original pages, or switch to the same document as reflowed text, at the same page. |
+| **Write** | Write your own pieces, then read them back as a book or type them out for practice. |
+| **Quotes** | Type a single verified quotation at a time, by category, and save the ones you love. |
+| **Academy** | Follow an adaptive beginner-to-advanced course with a daily plan and a daily challenge. |
+| **Speed** | Time, word-count, quote, custom-text, and zen tests in a stable three-line viewport. |
+| **Arcade** | Six typing games, from Alphabet Sprint to Word Chain, with a daily challenge. |
 
 ## Highlights
 
@@ -40,15 +43,19 @@ Most typing apps place controls, charts, and live metrics at the center of the e
 - A separate **Random story** button beside the bar, and a turn-pages hint in the corner
 - Stable page numbers across a whole book, with even spacing around the text in every layout
 - Stable overlay caret that never shifts line wrapping while you type
+- Page numbers on every page, one on each page of a two-page spread
+- **Highlights and notes** in Read mode: five colours, a note on any highlight, a notes panel per book, and Markdown export
+- Pictures from imported EPUBs, sized to whole lines so they never break across a page
 
 ### Library
 
 Press the Library button or <kbd>Ctrl</kbd> <kbd>K</kbd> to open a large library window:
 
 - **My library** — books you have started or imported, with saved progress
-- **Stories** — 320 hand-picked short stories from classic collections, cleaned so every character is typeable
+- **Stories** — 620 short stories from classic collections, cleaned so every character is typeable (accented letters can be typed with the plain key)
 - **Discover** — the 5,000 most-downloaded English books on Project Gutenberg, browsable by category and searchable across the full English catalog
 - Book text is fetched on demand through a small server route (`/api/gutenberg/[id]`) that only contacts gutenberg.org and caches responses
+- **Your writing** — pieces from Write, ready to read or type
 - Import EPUB or PDF files directly in the browser, with spine-order and metadata extraction, native PDF text, and English OCR fallback for scanned pages (50 MB and 500-page limits; original files stay on the device)
 
 ### Make it yours, per section
@@ -60,6 +67,10 @@ Read and Quotes each keep their own typography and bottom bar, while theme, scen
 - **Ambience** — rain, forest, river, fireplace, café, or alpha waves, plus switch sounds and a one-click mute
 - **Bottom bar** — choose up to six stats (time left in chapter or book, page in book, WPM, accuracy, raw WPM, elapsed time, clock, and more), labels, and how faint the compact strip should be
 
+### Settings that fit how you read
+
+The sidebar's **Settings** panel covers general behaviour, typing, sound, data and backups, and **input**: turn pages with the mouse wheel or by clicking the page edges, and remap the page-turn keys. Speed, Academy, and Arcade each have a small settings sheet of their own.
+
 ### Designed to stay light
 
 - Glass surfaces (sidebar, settings, library window, title and bottom bars) use a shared set of design tokens and blur only where content sits behind them
@@ -68,11 +79,15 @@ Read and Quotes each keep their own typography and bottom bar, while theme, scen
 
 ### Practice that grows with you
 
-The Academy includes a placement assessment, adaptive daily plan, weak-key drills, mastery tracking, practice goals, and a twelve-stage course spanning fundamentals through endurance.
+The Academy includes a placement assessment, an adaptive daily plan, weak-key reviews, a **daily challenge** built around your weakest keys, practice goals, and an eleven-unit course (24 lessons) from the home row through symbols, programming, and endurance. The profile tracks 21 **achievements** across typing, reading, habits, practice, and writing.
 
 ### Tests that behave like tests
 
-Speed mode supports 15, 30, 60, and 120-second sessions or 10, 25, 50, and 100-word sessions. Punctuation and numbers are optional. The active line stays centered inside an exact three-line viewport, timers end once at their real deadline, and results include WPM, raw WPM, accuracy, consistency, and error data.
+Speed mode offers **Time** (15, 30, 60, or 120 seconds), **Words** (10, 25, 50, or 100), **Quote** (a line from the quote collection, with its author), **Custom** (your own pasted text), and **Zen** (no clock; <kbd>Shift</kbd> <kbd>Enter</kbd> ends it). Punctuation and numbers are optional, and your last setup is remembered. The active line stays centered inside an exact three-line viewport, timers end once at their real deadline, and results include WPM, raw WPM, accuracy, consistency, and the keys you missed most.
+
+### Arcade
+
+Alphabet Sprint, Word Rain, and Ghost Racer are joined by **Code Symbols** (real lines of code, scored speed × accuracy), **Accuracy Streak** (one wrong key ends the run), and **Word Chain** (each word starts with the last letter of the one before). The daily challenge rotates through all six.
 
 ## Keyboard shortcuts
 
@@ -80,12 +95,13 @@ Speed mode supports 15, 30, 60, and 120-second sessions or 10, 25, 50, and 100-w
 | --- | --- |
 | <kbd>Ctrl</kbd> <kbd>K</kbd> | Open or close the Library |
 | <kbd>Ctrl</kbd> <kbd>\\</kbd> | Hide or show the sidebar |
-| <kbd>←</kbd> <kbd>→</kbd> / <kbd>Space</kbd> / <kbd>Home</kbd> <kbd>End</kbd> | Turn pages, or jump to the first or last page, in Read mode |
+| <kbd>←</kbd> <kbd>→</kbd> / <kbd>Space</kbd> / <kbd>Home</kbd> <kbd>End</kbd> | Turn pages, or jump to the first or last page, in Read mode and PDFs (remappable in Settings → Input) |
+| <kbd>Ctrl</kbd> <kbd>S</kbd> | Save right away in Write (it also saves as you type) |
 | <kbd>Esc</kbd> | Restart the current part while typing; close windows |
 
 ## Local-first by default
 
-KeyHaven works without an account or server database. Settings, reading progress, imported text, Academy state, typing history, and arcade scores are stored in IndexedDB through Dexie.
+KeyHaven works without an account or server database. Settings, reading progress, imported text, highlights, saved quotes, your writing, Academy state, typing history, and arcade scores are stored in IndexedDB through Dexie.
 
 Cloud mode is optional. When configured, signed-in users can sync their normalized library text and progress across devices, maintain a public handle, and participate in leaderboards. Email/password and Google sign-in are supported; password-reset email is delivered through Resend.
 
@@ -128,6 +144,7 @@ The story and book catalogs in `public/catalog/` are generated and checked in. T
 
 ```bash
 node scripts/catalog/build-stories.mjs                        # Stories from scripts/catalog/story-sources.json
+node scripts/catalog/build-quotes.mjs                         # Quotes from scripts/catalog/quote-sources.txt, each checked against its Gutenberg source
 node scripts/catalog/build-books.mjs path/to/rdf-files.tar.bz2  # Discover catalog from Gutenberg's offline catalogs
 ```
 
@@ -146,7 +163,7 @@ Then configure the values you need:
 | Variable | Required for | Description |
 | --- | --- | --- |
 | `DATABASE_URL` | Accounts and sync | PostgreSQL connection string; Neon is the current serverless driver. |
-| `NEXT_PUBLIC_KEYHAVEN_CLOUD` | Accounts and sync | Set to `true` to enable client-side cloud synchronization. |
+| `NEXT_PUBLIC_KEYHAVEN_SYNC` | Accounts and sync | Set to `true` to enable client-side cloud synchronization. The older name `NEXT_PUBLIC_KEYHAVEN_CLOUD` still works. |
 | `AUTH_SECRET` | Authentication | A strong random secret used by Auth.js. |
 | `AUTH_GOOGLE_ID` | Google sign-in | Google OAuth client ID. |
 | `AUTH_GOOGLE_SECRET` | Google sign-in | Google OAuth client secret. |
@@ -175,11 +192,15 @@ keyhaven/
 ├── src/
 │   ├── app/                    # Next.js routes, auth pages, and API handlers (incl. Gutenberg proxy)
 │   ├── components/
-│   │   ├── reader/             # Unified reader, quotes, title and bottom bars, reading settings
+│   │   ├── home/               # Home: your library at a glance
+│   │   ├── reader/             # Unified reader, quotes, highlights and notes, title and bottom bars, reading settings
 │   │   ├── library/            # Library window: my library, stories, discover, imports
+│   │   ├── pdf/                # PDF section: original pages with pdf.js
+│   │   ├── manuscript/         # Write: your own pieces
+│   │   ├── settings/           # Main settings panel and per-section settings
 │   │   ├── learn/              # Adaptive Academy
 │   │   ├── speed-test/         # Timed and word-count tests
-│   │   ├── arcade/             # Typing games and daily challenge
+│   │   ├── arcade/             # Game registry, one file per game in games/
 │   │   ├── analytics/          # Progress and leaderboards
 │   │   ├── typing/             # Shared typing surface, caret, and results
 │   │   └── ui/                 # Shared controls, brand, and tooltips
@@ -208,7 +229,8 @@ The interface also includes visible keyboard focus, tooltips on keyboard focus, 
 ## Data and privacy notes
 
 - Guest data stays in the browser unless cloud mode is enabled and the user signs in.
-- Imported EPUB and PDF binaries are not uploaded by the application.
+- Imported EPUB and PDF binaries are not uploaded by the application. Pictures from EPUBs and original PDF files stay on the device that imported them; other devices get the text.
+- Highlights, saved quotes, and your writing sync when cloud mode is on (migration `drizzle/0003_user_items.sql`).
 - Discover books are fetched from Project Gutenberg through the app's server route; no user data is sent with those requests.
 - Cloud sync stores extracted plain-text sections when enabled.
 - OCR runs in the browser and may download Tesseract language assets when first needed.
@@ -216,7 +238,7 @@ The interface also includes visible keyboard focus, tooltips on keyboard focus, 
 
 ## Credits
 
-Stories and books come from [Project Gutenberg](https://www.gutenberg.org/) and are in the public domain in the United States. Please check the copyright laws of your country before redistributing them.
+Stories, books, and quotations come from [Project Gutenberg](https://www.gutenberg.org/) and are in the public domain in the United States. Please check the copyright laws of your country before redistributing them.
 
 ## Current status
 
