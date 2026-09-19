@@ -77,8 +77,7 @@ describe('turning pages with keys', () => {
 
 describe('turning pages with the wheel', () => {
   it('turns one page once enough movement adds up', () => {
-    let now = 0;
-    const pager = createWheelPager(() => now);
+    const pager = createWheelPager(() => 0);
     expect(pager(40)).toBeNull();
     expect(pager(50)).toBe(1);
   });

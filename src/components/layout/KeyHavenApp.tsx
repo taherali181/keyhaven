@@ -20,7 +20,7 @@ import { ProfileView } from '@/components/profile/ProfileView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { rememberWork } from '@/lib/catalog';
 import { useBackupSync } from '@/hooks/useBackupSync';
-import { useBackupStatus, type BackupState } from '@/lib/sync/status';
+import { BACKUP_LABELS, useBackupStatus } from '@/lib/sync/status';
 import { modeFromPath, pathForMode } from '@/lib/navigation';
 import { hasSceneryImage, readerSurfaceProps } from '@/lib/reader-style';
 import { SECTION_LABELS, sectionTypographyDefaults, sectionUpdate, settingsForSection } from '@/lib/section-settings';
@@ -29,14 +29,6 @@ import type { UserSettings } from '@/types';
 /** Views that draw their own scenery and have a reading-settings button in their title bar. */
 const READER_VIEWS: TypingMode[] = ['stories', 'quotes'];
 
-const BACKUP_LABELS: Record<BackupState, string> = {
-  off: 'Saved on this device',
-  'signed-out': 'Saved on this device',
-  syncing: 'Backing up…',
-  'up-to-date': 'Backed up',
-  offline: 'Offline · backs up later',
-  error: 'Backup paused'
-};
 
 export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = false }: { initialMode?: TypingMode; initialLibraryOpen?: boolean }) {
   const [currentMode, setCurrentMode] = useState<TypingMode>(initialMode);
@@ -111,6 +103,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
           onUpdateCaretStyle={settingsApi.setCaretStyle}
           onUpdateSetting={settingsApi.updateSetting}
           onToggleZenMode={settingsApi.toggleZenMode}
+          onReplaceSettings={settingsApi.replaceSettings}
         />
         {/* The library is part of Read: a window over the reader, opened from its title bar or with Ctrl K. */}
         {currentMode === 'stories' && <LibraryWindow initialOpen={initialLibraryOpen} />}

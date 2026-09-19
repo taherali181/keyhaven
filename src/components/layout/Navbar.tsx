@@ -4,13 +4,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   BookOpen, Focus, Gamepad2, GraduationCap, Menu, Moon, PanelLeftClose,
-  Quote, Settings2, Sun, Timer, User, Volume2, X
+  Quote, Settings2, Sun, Timer, User, X
 } from 'lucide-react';
 import { CaretStyle, SwitchSound, ThemeId, TypingMode, UserSettings } from '@/types';
 import { useSidebarPinned } from '@/hooks/useSidebarPinned';
 import { fade, slideInLeft, slideInRight, spring } from '@/lib/motion';
 import { BrandLogo } from '@/components/ui/BrandLogo';
-import { GlassSelect } from '@/components/ui/GlassSelect';
+import { AppSettings } from '@/components/settings/AppSettings';
 import { isLightTheme } from '@/lib/reader-style';
 
 interface NavbarProps {
@@ -22,6 +22,7 @@ interface NavbarProps {
   onUpdateCaretStyle: (caret: CaretStyle) => void;
   onUpdateSetting: <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
   onToggleZenMode: () => void;
+  onReplaceSettings: (settings: UserSettings) => void;
 }
 
 const sections: Array<{ label: string; mode: TypingMode; icon: React.ReactNode }> = [
@@ -232,62 +233,10 @@ export const Navbar: React.FC<NavbarProps> = props => {
         {settingsOpen && <motion.div key="settings-scrim" className="panel-scrim" variants={fade} initial="hidden" animate="show" exit="exit" onClick={() => setSettingsOpen(false)} />}
         {settingsOpen && (
           <motion.aside key="settings-panel" className="settings-panel glass glass-panel" aria-label="Settings" variants={slideInRight} initial="hidden" animate="show" exit="exit">
-            <SettingsPanel {...props} onClose={() => setSettingsOpen(false)} onProgress={() => choose('profile')} />
+            <AppSettings settings={props.settings} onUpdateSetting={props.onUpdateSetting} onUpdateTheme={props.onUpdateTheme} onReplaceSettings={props.onReplaceSettings} onToggleZenMode={() => { setSettingsOpen(false); props.onToggleZenMode(); }} onOpenProfile={() => { setSettingsOpen(false); choose('profile'); }} onClose={() => setSettingsOpen(false)} />
           </motion.aside>
         )}
       </AnimatePresence>
     </>
   );
 };
-
-function SettingsPanel(props: NavbarProps & { onClose: () => void; onProgress: () => void }) {
-  const { settings } = props;
-  const caretOptions: Array<{ value: CaretStyle; label: string }> = [
-    { value: 'smooth', label: 'Smooth' },
-    { value: 'bar', label: 'Bar' },
-    { value: 'block', label: 'Block' },
-    { value: 'underline', label: 'Underline' },
-    { value: 'glow', label: 'Glow' }
-  ];
-
-  const soundOptions: Array<{ value: SwitchSound; label: string }> = [
-    { value: 'off', label: 'Off' },
-    { value: 'holy-panda', label: 'Holy Panda' },
-    { value: 'cherry-blue', label: 'Cherry Blue' },
-    { value: 'gateron-brown', label: 'Gateron Brown' },
-    { value: 'cherry-red', label: 'Cherry Red' },
-    { value: 'typewriter', label: 'Typewriter' },
-    { value: 'raindrop', label: 'Raindrop' }
-  ];
-
-  return <div className="settings-stack">
-    <header><div><p className="eyebrow">Your space</p><h2>Settings</h2></div><button onClick={props.onClose} aria-label="Close settings"><X /></button></header>
-    <details open><summary>Typing</summary><div className="setting-group">
-      <label>Caret
-        <GlassSelect
-          value={settings.caretStyle}
-          options={caretOptions}
-          onChange={props.onUpdateCaretStyle}
-        />
-      </label>
-      <label className="toggle-row">Strict typing<input type="checkbox" checked={settings.strictMode} onChange={event => props.onUpdateSetting('strictMode', event.target.checked)} /></label>
-      <label className="toggle-row">Show live WPM<input type="checkbox" checked={settings.showLiveWpm} onChange={event => props.onUpdateSetting('showLiveWpm', event.target.checked)} /></label>
-    </div></details>
-    <details><summary>Sound</summary><div className="setting-group">
-      <label>
-        <span className="label-icon"><Volume2 />Key sound</span>
-        <GlassSelect
-          value={settings.switchSound}
-          options={soundOptions}
-          onChange={props.onUpdateSwitchSound}
-        />
-      </label>
-      <label className="toggle-row">Mute all sound<input type="checkbox" checked={settings.muted} onChange={event => props.onUpdateSetting('muted', event.target.checked)} /></label>
-    </div></details>
-    <p className="settings-note">Themes, fonts, scenery and background sound are in <strong>Reading settings</strong> on any Read page.</p>
-    <div className="settings-actions">
-      <button className="quiet-action" onClick={props.onToggleZenMode}><Focus />Enter focus mode</button>
-      <button className="quiet-action" onClick={props.onProgress}><User />Open profile</button>
-    </div>
-  </div>;
-}

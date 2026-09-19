@@ -15,6 +15,16 @@ export interface BackupStatus {
   skippedManuscripts?: number;
 }
 
+/** How each backup state reads in the interface. */
+export const BACKUP_LABELS: Record<BackupState, string> = {
+  off: 'Saved on this device',
+  'signed-out': 'Saved on this device',
+  syncing: 'Backing up…',
+  'up-to-date': 'Backed up',
+  offline: 'Offline · backs up later',
+  error: 'Backup paused'
+};
+
 export const BACKUP_NOW_EVENT = 'keyhaven:backup-now';
 
 const INITIAL: BackupStatus = { state: 'off', lastSyncedAt: null };

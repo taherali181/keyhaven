@@ -60,3 +60,35 @@ test('clicking the page edges turns pages when click zones are on', async ({ pag
   await page.waitForTimeout(300);
   await expect(pageText(page)).toHaveAttribute('aria-valuetext', /^Page 1 of/);
 });
+
+test('page keys can be remapped from the main settings', async ({ page }) => {
+  await open(page, {});
+  await page.mouse.move(2, 450);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const panel = page.getByRole('complementary', { name: 'Settings' });
+  await panel.getByRole('tab', { name: 'Input' }).click();
+  const row = (label: string) => panel.locator('.app-key-row').filter({ has: page.locator('.app-key-action', { hasText: new RegExp(`^${label}$`) }) });
+  const nextRow = row('Next page');
+  await nextRow.getByRole('button', { name: 'Add key' }).click();
+  await expect(nextRow.getByRole('button', { name: 'Press a key…' })).toBeVisible();
+  await page.keyboard.press('j');
+  await expect(nextRow.locator('kbd')).toContainText(['J']);
+  // Taking a key from another action moves it.
+  await nextRow.getByRole('button', { name: 'Add key' }).click();
+  await page.keyboard.press('ArrowLeft');
+  await expect(panel.getByText('← moved here from previous page.')).toBeVisible();
+  await expect(row('Previous page').locator('kbd')).not.toContainText(['←']);
+  // Escape while listening cancels without closing the panel.
+  await nextRow.getByRole('button', { name: 'Add key' }).click();
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeVisible();
+  await expect(nextRow.getByRole('button', { name: 'Add key' })).toBeVisible();
+  await panel.getByRole('button', { name: 'Close settings' }).click();
+  await until(page, () => page.keyboard.press('j'), /^Page 2 of/);
+  // Reset brings the usual keys back.
+  await page.mouse.move(2, 450);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await panel.getByRole('tab', { name: 'Input' }).click();
+  await panel.getByRole('button', { name: 'Reset to defaults' }).click();
+  await expect(nextRow.locator('kbd')).not.toContainText(['J']);
+});
