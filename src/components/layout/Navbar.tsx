@@ -9,7 +9,7 @@ import {
 import { CaretStyle, SwitchSound, ThemeId, TypingMode, UserSettings } from '@/types';
 import { useSidebarPinned } from '@/hooks/useSidebarPinned';
 import { fade, slideInLeft, slideInRight, spring } from '@/lib/motion';
-import { BrandIcon, BrandLogo } from '@/components/ui/BrandLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { GlassSelect } from '@/components/ui/GlassSelect';
 import { isLightTheme } from '@/lib/reader-style';
 
@@ -207,7 +207,7 @@ export const Navbar: React.FC<NavbarProps> = props => {
             animate={{ opacity: 1, x: 0, scale: 1, transition: spring.snappy }}
             exit={{ opacity: 0, x: -10, scale: 0.88, transition: { duration: 0.14 } }}
           >
-            <BrandIcon size={22} />
+            <Menu size={20} strokeWidth={1.75} aria-hidden="true" />
           </motion.button>
         )}
       </AnimatePresence>
