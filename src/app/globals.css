@@ -102,6 +102,9 @@
   --sidebar-width: 244px;
   --sidebar-gap: 12px;
   --sidebar-space: calc(var(--sidebar-width) + var(--sidebar-gap));
+  /* Floating chrome (the sidebar button, the reader's title bar and bottom bar) shares one height and edge inset. */
+  --chrome-size: 42px;
+  --chrome-inset: 14px;
 }
 /* Content only makes room for a pinned sidebar; auto-hide peeks over the page without moving it. */
 :root:not([data-sidebar="open"]) { --sidebar-space: 0px; }
@@ -214,8 +217,8 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .sidebar-footer { display: grid; gap: 2px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--glass-border); }
 .sidebar-shortcut { margin-left: auto; border: 1px solid var(--glass-border); border-radius: 5px; padding: 2px 5px; color: var(--text-muted); font: 500 .625rem/1 var(--font-mono); }
 .sidebar-dock {
-  position: fixed; top: 14px; left: 14px; z-index: 46;
-  display: grid; width: 42px; height: 42px; place-items: center;
+  position: fixed; top: var(--chrome-inset); left: var(--chrome-inset); z-index: 46;
+  display: grid; width: var(--chrome-size); height: var(--chrome-size); place-items: center;
   border-radius: 50%; padding: 0;
   color: var(--color-accent); cursor: pointer;
   transition: transform var(--dur-fast), background var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast), color var(--dur-fast);
@@ -822,18 +825,18 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 /* ── Story bar: title, part progress and story controls on one slim line ── */
 /* The bar reserves a fixed compact height; the glass surface is an absolute layer that can grow
    past it on hover, so the page never reflows. Only the surface height, transforms and opacity move. */
-.story-bar { --bar-h: 68px; --bar-h-open: 128px; --bar-ease: var(--ease-out-expo); --bar-dur: 440ms; position: relative; z-index: 20; display: grid; height: var(--bar-h); grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 20px; padding: 0 12px 0 22px; }
+.story-bar { --bar-h: var(--chrome-size); --bar-h-open: 88px; --bar-ease: var(--ease-out-expo); --bar-dur: 440ms; position: relative; z-index: 20; display: grid; height: var(--bar-h); grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 0 4px 0 16px; }
 /* Title bar and a separate glass group (Library, reading settings) share one row. */
 .story-bar-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
 .story-bar-row > .story-bar { flex: 1; min-width: 0; }
 /* Side box: browse (Stories, Library) | view (full screen, settings). Above the passage so the Ctrl K menu floats over it. */
-.story-side { position: relative; z-index: 20; display: flex; flex: none; height: 68px; align-items: center; gap: 4px; padding: 0 12px; border-radius: var(--r-md); backdrop-filter: blur(3px) saturate(125%); }
-.story-side-divider { flex: none; width: 1px; height: 24px; margin: 0 8px; background: var(--glass-border); }
+.story-side { position: relative; z-index: 20; display: flex; flex: none; height: var(--chrome-size); align-items: center; gap: 2px; padding: 0 4px; border-radius: var(--r-md); backdrop-filter: blur(3px) saturate(125%); }
+.story-side-divider { flex: none; width: 1px; height: 20px; margin: 0 6px; background: var(--glass-border); }
 .story-settings-button svg { transition: transform var(--dur-slow) var(--ease-spring); }
 .story-settings-button:hover svg { transform: rotate(-12deg) scale(1.1); }
 /* Left group: Read/Type and reading settings, divided from the title like the right-hand actions. */
 /* Read / Type and full screen in their own glass box, matching the title bar's height and glass. */
-.story-mode-box { position: relative; display: flex; flex: none; height: 68px; align-items: center; padding: 0 12px 0 14px; border-radius: var(--r-md); backdrop-filter: blur(3px) saturate(125%); }
+.story-mode-box { position: relative; display: flex; flex: none; height: var(--chrome-size); align-items: center; padding: 0 12px 0 14px; border-radius: var(--r-md); backdrop-filter: blur(3px) saturate(125%); }
 .story-mode-box .story-mode-toggle, .story-side .story-mode-toggle { border-color: transparent; }
 .story-side .story-mode-toggle { margin-right: 2px; }
 .story-side .story-bar-button:not(.is-icon) { padding: 0 12px 0 10px; }
@@ -841,11 +844,17 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .story-bar-surface { position: absolute; inset: 0 0 auto; z-index: -1; backdrop-filter: blur(3px) saturate(125%); height: var(--bar-h); border-radius: var(--r-md); pointer-events: none; transition: height var(--bar-dur) var(--bar-ease) 90ms, box-shadow var(--bar-dur) var(--bar-ease) 90ms; }
 .story-bar-title { position: relative; display: flex; min-width: 0; align-self: stretch; align-items: center; }
 .story-bar-copy { position: relative; width: 100%; min-width: 0; }
-.story-bar .eyebrow { display: block; margin: 0 0 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: transform var(--bar-dur) var(--bar-ease) 90ms; }
-.story-bar-heading { display: flex; min-width: 0; align-items: baseline; gap: 12px; }
-.story-bar h1 { flex: 0 1 auto; min-width: 0; margin: 0; overflow: hidden; color: var(--text-primary); font: 500 1.75rem/1.1 var(--font-wordmark); letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; transform-origin: left top; transition: transform var(--bar-dur) var(--bar-ease) 90ms; }
+/* One line at rest: title, byline, then where you are. */
+.story-bar-copy { display: flex; align-items: baseline; gap: 12px; }
+.story-bar-title { container-type: inline-size; }
+/* Where you are gives way first when the bar is narrow; it is also on the hover card. */
+.story-bar .eyebrow { order: 2; display: block; flex: 0 1000 auto; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: opacity 240ms ease 200ms; }
+.story-bar-heading { display: flex; flex: 0 1 auto; min-width: 0; align-items: baseline; gap: 12px; }
+.story-bar h1 { flex: 0 1 auto; min-width: 0; margin: 0; overflow: hidden; color: var(--text-primary); font: 500 1.3rem/1.1 var(--font-wordmark); letter-spacing: -.015em; text-overflow: ellipsis; white-space: nowrap; transform-origin: left top; transition: transform var(--bar-dur) var(--bar-ease) 90ms; }
 .story-bar-byline { flex: none; color: var(--text-muted); font-size: .75rem; white-space: nowrap; transition: opacity 240ms ease 200ms; }
 .story-bar-byline-open { position: absolute; top: 100%; left: 0; margin: 0; color: var(--text-muted); font-size: .8125rem; white-space: nowrap; opacity: 0; transform: translateY(20px); pointer-events: none; transition: opacity 160ms ease 90ms, transform var(--bar-dur) var(--bar-ease) 90ms; }
+
+@container (max-width: 460px) { .story-bar .eyebrow { display: none; } }
 
 /* Hover the title: grow back to the full card, then settle back when the pointer leaves.
    Mouse devices only, and never while the story switcher is open. */
@@ -854,10 +863,9 @@ select option { background: var(--bg-card); color: var(--text-primary); }
   .story-bar-row:not(:has([aria-haspopup="listbox"][aria-expanded="true"])) .story-bar:has(.story-bar-title:hover) {
     & .story-bar-title::after { height: calc(var(--bar-h-open) - var(--bar-h)); }
     & .story-bar-surface { height: var(--bar-h-open); box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-2); }
-    & .eyebrow { transform: translateY(8px); }
-    & h1 { transform: translateY(10px) scale(1.49); }
-    & .story-bar-byline { opacity: 0; transition: opacity 120ms ease 60ms; }
-    & .story-bar-byline-open { opacity: 1; transform: translateY(33px); transition: opacity 280ms ease 220ms, transform var(--bar-dur) var(--bar-ease) 90ms; }
+    & h1 { transform: translateY(4px) scale(1.35); }
+    & :is(.eyebrow, .story-bar-byline) { opacity: 0; transition: opacity 120ms ease 60ms; }
+    & .story-bar-byline-open { opacity: 1; transform: translateY(20px); transition: opacity 280ms ease 220ms, transform var(--bar-dur) var(--bar-ease) 90ms; }
   }
 }
 /* Part progress sits in the bottom bar between Previous and Next. */
@@ -869,11 +877,11 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .story-segments i { position: relative; flex: 1; height: 4px; overflow: hidden; border-radius: 99px; background: color-mix(in oklab, var(--text-primary) 12%, transparent); }
 .story-segments i.is-done { background: color-mix(in oklab, var(--color-accent) 70%, transparent); }
 .story-segments b { position: absolute; inset: 0; border-radius: inherit; background: var(--color-accent); box-shadow: 0 0 8px var(--glow-accent); transform-origin: left; transition: transform 180ms var(--ease-out-expo); }
-.story-bar-button { display: flex; height: 40px; align-items: center; gap: 8px; padding: 0 8px 0 12px; border: 1px solid transparent; border-radius: var(--r-sm); background: transparent; color: var(--text-secondary); font-size: .8125rem; font-weight: 500; transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast), transform var(--dur-fast); }
+.story-bar-button { display: flex; height: 34px; align-items: center; gap: 8px; padding: 0 8px 0 12px; border: 1px solid transparent; border-radius: var(--r-sm); background: transparent; color: var(--text-secondary); font-size: .8125rem; font-weight: 500; transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast), transform var(--dur-fast); }
 .story-bar-button:hover, .story-bar-button[aria-expanded="true"] { border-color: var(--glass-border); background: color-mix(in oklab, var(--text-primary) 7%, transparent); color: var(--text-primary); }
 .story-bar-button:active { transform: scale(.97); }
 .story-bar-button svg { width: 17px; height: 17px; stroke-width: 1.75; }
-.story-bar-button.is-icon { width: 40px; justify-content: center; padding: 0; }
+.story-bar-button.is-icon { width: 34px; justify-content: center; padding: 0; }
 /* Ctrl K hint: a small chip that floats under the Stories button on hover/focus, so the box never changes width. */
 .story-switcher-trigger, .story-library-trigger { position: relative; }
 .story-switcher-hint { position: absolute; top: calc(100% + 8px); left: 50%; z-index: 30; padding: 3px 6px; border: 1px solid var(--glass-border); border-radius: 6px; background: var(--bg-card); box-shadow: var(--elev-1); color: var(--text-muted); font: 500 .6875rem/1 var(--font-mono); white-space: nowrap; opacity: 0; translate: -50% -2px; pointer-events: none; transition: opacity var(--dur-fast), translate var(--dur-fast); }
@@ -885,7 +893,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 /* Tint the track around a clear selection: the selected surface is the actual title-bar glass,
    without stacking another translucent fill over it. Text colour makes the track lighter on dark
    tones and darker on light tones, including custom page tones. */
-.story-mode-toggle { position: relative; isolation: isolate; display: flex; height: 40px; align-items: stretch; overflow: hidden; border: 1px solid var(--glass-border); border-radius: var(--r-sm); background: transparent; }
+.story-mode-toggle { position: relative; isolation: isolate; display: flex; height: 34px; align-items: stretch; overflow: hidden; border: 1px solid var(--glass-border); border-radius: var(--r-sm); background: transparent; }
 .story-mode-toggle button { position: relative; display: flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 0; background: transparent; color: var(--text-secondary); font-size: .8125rem; font-weight: 500; transition: color var(--dur-fast); }
 .story-mode-toggle button:hover, .story-mode-toggle button[aria-checked="true"] { color: var(--text-primary); }
 .story-mode-toggle button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
@@ -1689,13 +1697,13 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .reader-bar-nav { display: flex; min-width: 0; align-items: center; gap: 8px; }
 .reader-bar .pagination-progress { padding: 0 8px; }
 .reader-bar .story-segments { width: clamp(88px, 9vw, 132px); }
-.reader-bar-step { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--text-secondary); font-size: .8rem; white-space: nowrap; transition: background var(--dur-fast), color var(--dur-fast); }
+.reader-bar-step { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 0; border-radius: 999px; background: transparent; color: var(--text-secondary); font-size: .8rem; white-space: nowrap; transition: background var(--dur-fast), color var(--dur-fast); }
 .reader-bar-step svg { width: 15px; transition: transform var(--dur-base) var(--ease-spring); }
 .reader-bar-step:hover:not(:disabled) { background: color-mix(in oklab, var(--text-primary) 8%, transparent); color: var(--text-primary); }
 .reader-bar-step:hover:not(:disabled) svg:first-child { transform: translateX(-3px); }
 .reader-bar-step:hover:not(:disabled) svg:last-child:not(:first-child) { transform: translateX(3px); }
 .reader-bar-step:disabled { opacity: .3; cursor: default; }
-.reader-bar-icon { display: grid; width: 34px; height: 34px; flex: none; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--text-muted); transition: background var(--dur-fast), color var(--dur-fast); }
+.reader-bar-icon { display: grid; width: 32px; height: 32px; flex: none; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--text-muted); transition: background var(--dur-fast), color var(--dur-fast); }
 .reader-bar-icon svg { width: 15px; height: 15px; transition: transform var(--dur-slow) var(--ease-out-expo); }
 .reader-bar-icon:hover { background: color-mix(in oklab, var(--text-primary) 8%, transparent); color: var(--text-primary); }
 .reader-bar-nav .reader-bar-icon:hover svg { transform: rotate(-18deg) scale(1.08); }
@@ -1716,7 +1724,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 
 /* ── Auto-hiding title bar ── */
 .stories-shell > .story-bar-row { position: relative; z-index: 40; transform: translateY(0); opacity: 1; transition: transform 320ms var(--ease-out-expo), opacity 220ms ease; }
-.stories-shell[data-titlebar="auto"] > .story-bar-row { position: sticky; top: var(--reader-gap-pinned, 36px); z-index: 40; margin-bottom: calc(-1 * var(--bar-row-h, 68px)); opacity: 0; transform: translateY(calc(-100% - var(--reader-gap-pinned, 36px))); pointer-events: none; }
+.stories-shell[data-titlebar="auto"] > .story-bar-row { position: sticky; top: var(--chrome-inset); z-index: 40; margin-bottom: calc(-1 * var(--bar-row-h, 42px)); opacity: 0; transform: translateY(calc(-100% - var(--chrome-inset))); pointer-events: none; }
 .stories-shell[data-titlebar="auto"] > .story-bar-row:is([data-revealed="true"], :focus-within, :has([aria-expanded="true"])) { opacity: 1; transform: none; pointer-events: auto; }
 .stories-shell[data-titlebar="auto"] > .story-bar-row .story-side,
 .stories-shell[data-titlebar="auto"] > .story-bar-row .story-mode-box,
@@ -1804,32 +1812,40 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .stories-shell[data-titlebar="auto"] > .story-bar-row :is(.story-side, .story-bar-surface) { --g-bg: color-mix(in oklab, var(--bg-card) 86%, transparent); backdrop-filter: blur(var(--blur-lg)) saturate(150%); }
 
 /* ── Reader layout: even space around the text ──
-   Pinned: top edge · title bar · text · bottom bar · bottom edge, four equal gaps.
-   Hidden: the title bar takes no room, so three. Whole lines rarely fill the stage exactly; ReaderView measures
-   the remainder and shares it across the gaps (--reader-extra), so the text never sits off-centre. */
+   Pinned: the title bar and bottom bar sit --chrome-inset from the page edges, level with the sidebar button and as
+   tall as it, and the text has equal gaps to both bars. Hidden: the title bar takes no room. Whole lines rarely fill
+   the stage exactly; ReaderView measures the remainder and shares it across the two text gaps (--reader-extra). */
 @media (min-width: 768px) {
   .reader-shell.stories-shell {
-    --bar-h: 68px; --reader-gap-pinned: clamp(20px, 4vh, 40px); --reader-gap: var(--reader-gap-pinned); --reader-extra: 0px; --bar-slot: 46px;
+    --bar-h: var(--chrome-size); --reader-gap-pinned: clamp(20px, 3.5vh, 36px); --reader-gap: var(--reader-gap-pinned); --reader-extra: 0px; --bar-slot: var(--chrome-size);
     --gap: calc(var(--reader-gap) + var(--reader-extra));
-    position: relative; height: 100vh; height: 100dvh; padding-top: var(--gap); padding-bottom: calc(var(--gap) * 2 + var(--bar-slot) - var(--text-bottom-leading, 0px));
+    /* Distance from the bottom of the page to the bottom bar. */
+    --bar-bottom: var(--chrome-inset);
+    /* Room kept on each side: clear of the sidebar button while the sidebar is hidden. */
+    --dock-clear: calc(var(--chrome-inset) * 2 + var(--chrome-size));
+    position: relative; width: min(calc(var(--reader-width, 780px) + 320px), calc(100% - 2 * var(--dock-clear))); height: 100vh; height: 100dvh;
+    padding-top: var(--chrome-inset); padding-bottom: calc(var(--gap) + var(--bar-slot) + var(--bar-bottom) - var(--text-bottom-leading, 0px));
   }
+  :root[data-sidebar="open"] .reader-shell.stories-shell { --dock-clear: 24px; }
+  /* Hidden: the title bar slides in over the page at the same inset as when it is shown. */
+  .stories-shell[data-titlebar="auto"] > .story-bar-row { position: absolute; top: var(--chrome-inset); right: 0; left: 0; margin-bottom: 0; }
   /* Hidden: the space from the top of the page to the text (pill and chapter label included) equals the space from
      the text to the bottom of the page. The slim bottom bar sits centred inside that bottom space, and leftover room
      from whole lines is split evenly between top and bottom. */
   .reader-shell.stories-shell[data-titlebar="auto"] {
     --bar-slot: 30px; --peek-bottom: 38px; --hidden-text-gap: clamp(14px, 2.4vh, 22px);
     --text-space: calc(var(--peek-bottom) + var(--hidden-text-gap) + var(--reader-extra));
-    /* --gap is the bottom bar's distance from the page bottom (the bar and the corner hint use it). */
+    /* The slim bar is centred in the space under the text. */
     --gap: calc((var(--text-space) - var(--bar-slot)) / 2);
+    --bar-bottom: var(--gap);
     padding-top: calc(var(--text-space) - var(--text-half-leading, 0px));
     padding-bottom: calc(var(--text-space) - var(--text-bottom-leading, 0px));
   }
   /* The pill and the chapter title, as one group, sit centred in the space above the text. */
   .reader-shell.stories-shell[data-width="full"] {
-    --edge-space: var(--gap);
+    --edge-space: var(--dock-clear);
     width: calc(100% - 2 * var(--edge-space));
   }
-  .reader-shell.stories-shell[data-width="full"][data-titlebar="auto"] { --edge-space: var(--text-space); }
   .reader-shell.stories-shell[data-titlebar="auto"] { --peek-group: 25px; --peek-top: calc((var(--text-space) - var(--peek-group)) / 2); }
   .stories-shell[data-titlebar="auto"] .story-bar-handle { top: calc(var(--peek-top) + 2.5px - 15px); }
   .stories-shell[data-titlebar="auto"] .story-bar-peek { top: calc(var(--peek-top) + 9px); }
@@ -1839,18 +1855,18 @@ select option { background: var(--bg-card); color: var(--text-primary); }
   .stories-shell .reader-stage .typing-surface { min-height: 0; padding: 0; overflow: visible; }
   /* Page controls sit in the bottom-right corner, level with the typing hint on the left, so the gap under the
      text stays as clear as the gap above it. */
-  .stories-shell .typing-page-controls { position: fixed; top: auto; left: auto; right: 24px; bottom: calc(var(--gap) + var(--bar-slot) + 12px); width: max-content; height: 28px; gap: 16px; margin: 0; line-height: 18px; translate: none; }
+  .stories-shell .typing-page-controls { position: fixed; top: auto; left: auto; right: 24px; bottom: calc(var(--bar-bottom) + var(--bar-slot) + 12px); width: max-content; height: 28px; gap: 16px; margin: 0; line-height: 18px; translate: none; }
   .stories-shell .typing-page-controls button { padding: 4px 0; }
   .stories-shell .story-reader { padding: 0; }
 
   /* The bottom bar floats in its own slot, so it never pushes the page. */
-  .stories-shell > .reader-bar-dock { position: absolute; right: 0; bottom: var(--gap); left: 0; display: grid; height: var(--bar-slot); grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; pointer-events: none; }
+  .stories-shell > .reader-bar-dock { position: absolute; right: 0; bottom: var(--bar-bottom); left: 0; display: grid; height: var(--bar-slot); grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; pointer-events: none; }
   .stories-shell .reader-bar-dock > * { pointer-events: auto; }
   .stories-shell .reader-bar { grid-column: 2; height: var(--bar-slot); margin: 0; transition: height 260ms var(--ease-out-expo), bottom 260ms var(--ease-out-expo), padding 260ms var(--ease-out-expo), background var(--dur-base), box-shadow var(--dur-base), border-color var(--dur-base); }
   /* Hidden: a thin strip with small text, centred in the slot; hover or focus brings back the regular bar. */
   .stories-shell[data-titlebar="auto"] .reader-bar { height: 30px; padding: 2px 10px; }
   /* Grows 8px into the gap above and below, so it stays centred on its row and nothing else moves. */
-  .stories-shell[data-titlebar="auto"] .reader-bar:is(:hover, :focus-within) { height: 46px; padding: 5px; }
+  .stories-shell[data-titlebar="auto"] .reader-bar:is(:hover, :focus-within) { height: var(--chrome-size); padding: 4px; }
   .stories-shell[data-titlebar="auto"] .reader-bar .reader-bar-stat strong { font-size: .6875rem; transition: font-size 260ms var(--ease-out-expo); }
   .stories-shell[data-titlebar="auto"] .reader-bar:is(:hover, :focus-within) .reader-bar-stat strong { font-size: .8125rem; }
   .stories-shell[data-titlebar="auto"] .reader-bar .reader-bar-stats { gap: 10px; transition: gap 260ms var(--ease-out-expo); }
@@ -1859,9 +1875,9 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 
   /* Screen-aligned hints sit above the bar, including when the sidebar is pinned. */
   /* The corner hint shares the bottom bar's row in every mode: bottom-left, level with the bar. */
-  .stories-shell .reader-stage .typing-hint { position: fixed; top: auto; left: calc(var(--sidebar-space, 0px) + 24px); bottom: calc(var(--gap) + var(--bar-slot) / 2); margin: 0; translate: 0 50%; }
+  .stories-shell .reader-stage .typing-hint { position: fixed; top: auto; left: calc(var(--sidebar-space, 0px) + 24px); bottom: calc(var(--bar-bottom) + var(--bar-slot) / 2); margin: 0; translate: 0 50%; }
   /* Hidden: the page controls join that row too. */
-  .stories-shell[data-titlebar="auto"] .typing-page-controls { bottom: calc(var(--gap) + var(--bar-slot) / 2); translate: 0 50%; }
+  .stories-shell[data-titlebar="auto"] .typing-page-controls { bottom: calc(var(--bar-bottom) + var(--bar-slot) / 2); translate: 0 50%; }
 }
 
 /* ── Site-wide reading preferences: scenery behind every page, not just the reader ── */
@@ -1869,7 +1885,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .app-scenery::before { content: ""; position: fixed; inset: 0; z-index: -3; background-image: var(--reader-image, none); background-size: cover; background-position: center; filter: blur(var(--reader-blur, 0)); transform: scale(1.04); }
 .app-scenery::after { content: ""; position: fixed; inset: 0; z-index: -2; background: color-mix(in srgb, var(--bg-primary) var(--reader-overlay, 100%), transparent); }
 /* Quotes uses the reader layout; the category picker sits in the control box. */
-.quotes-shell .story-side .glass-select-trigger { height: 40px; }
+.quotes-shell .story-side .glass-select-trigger { height: 34px; }
 /* The preference wrapper is its own stacking context (so the ambient light and scenery paint above the body's
    background, not beneath it) and re-applies the text colour, since inherited colour was computed from the theme. */
 .app-surface { position: relative; isolation: isolate; color: var(--text-primary); }
@@ -1882,7 +1898,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 
 /* ── Random story / shuffle quote: its own button, just left of the bottom bar ── */
 .reader-bar-dock { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.reader-random { display: inline-flex; height: 46px; align-items: center; gap: 8px; padding: 0 16px 0 14px; border-radius: 999px; --g-bg: var(--glass-fill); box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-1); backdrop-filter: blur(3px) saturate(125%); color: var(--text-secondary); font-size: .8rem; font-weight: 500; white-space: nowrap; transition: height 260ms var(--ease-out-expo), padding 260ms var(--ease-out-expo), font-size 260ms var(--ease-out-expo), background var(--dur-fast), color var(--dur-fast); }
+.reader-random { display: inline-flex; height: var(--chrome-size); align-items: center; gap: 8px; padding: 0 16px 0 14px; border-radius: 999px; --g-bg: var(--glass-fill); box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-1); backdrop-filter: blur(3px) saturate(125%); color: var(--text-secondary); font-size: .8rem; font-weight: 500; white-space: nowrap; transition: height 260ms var(--ease-out-expo), padding 260ms var(--ease-out-expo), font-size 260ms var(--ease-out-expo), background var(--dur-fast), color var(--dur-fast); }
 .reader-random svg { width: 15px; height: 15px; color: var(--color-accent); transition: transform var(--dur-slow) var(--ease-out-expo); }
 .reader-random:hover { --g-bg: var(--glass-fill-strong); color: var(--text-primary); }
 .reader-random:hover svg { transform: rotate(-18deg) scale(1.08); }
@@ -1897,7 +1913,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 @media (min-width: 768px) {
   /* Hidden: the dock is as tall as the hovered bar and centred on the resting bar, so hovering grows the bar
      evenly up and down from where it sits instead of pushing it downward. */
-  .stories-shell[data-titlebar="auto"] > .reader-bar-dock { height: 46px; bottom: calc(var(--gap) - 8px); }
+  .stories-shell[data-titlebar="auto"] > .reader-bar-dock { height: var(--chrome-size); bottom: calc(var(--bar-bottom) - (var(--chrome-size) - var(--bar-slot)) / 2); }
 }
 
 /* ── Reader results: the card that rises from the bottom bar, the chip it tucks into, and the full dialog ── */
