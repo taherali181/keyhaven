@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  BookOpen, Focus, Gamepad2, GraduationCap, Menu, Moon, PanelLeftClose,
+  BookOpen, Focus, House, Gamepad2, GraduationCap, Menu, Moon, PanelLeftClose,
   Quote, Settings2, Sun, Timer, User, X
 } from 'lucide-react';
 import { CaretStyle, SwitchSound, ThemeId, TypingMode, UserSettings } from '@/types';
@@ -27,6 +27,7 @@ interface NavbarProps {
 }
 
 const sections: Array<{ label: string; mode: TypingMode; icon: React.ReactNode }> = [
+  { label: 'Home', mode: 'home', icon: <House /> },
   { label: 'Read', mode: 'stories', icon: <BookOpen /> },
   { label: 'Quotes', mode: 'quotes', icon: <Quote /> },
   { label: 'Academy', mode: 'learn', icon: <GraduationCap /> },
@@ -133,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = props => {
   const renderNav = (scope: 'desktop' | 'mobile') => (
     <>
       <div className="sidebar-brand">
-        <button className="brand-home" onClick={() => choose('stories')} aria-label="KeyHaven home"><BrandLogo /></button>
+        <button className="brand-home" onClick={() => choose('home')} aria-label="KeyHaven home"><BrandLogo /></button>
         <div className="sidebar-brand-actions">
           <button
             className="sidebar-icon-button"
@@ -217,7 +218,7 @@ export const Navbar: React.FC<NavbarProps> = props => {
 
       <header className="mobile-bar glass glass-pill">
         <button onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu /></button>
-        <button className="brand-home" onClick={() => choose('stories')} aria-label="KeyHaven home"><BrandLogo /></button>
+        <button className="brand-home" onClick={() => choose('home')} aria-label="KeyHaven home"><BrandLogo /></button>
         <button onClick={() => choose('profile')} aria-label="Profile"><User /></button>
       </header>
 

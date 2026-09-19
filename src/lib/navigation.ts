@@ -6,6 +6,7 @@ export const ROUTE_ALIASES: Record<string, TypingMode> = { read: 'stories', acad
 
 export function modeFromPath(pathname: string): TypingMode | null {
   const path = pathname.replace(/^\//, '');
+  if (path === '') return 'home';
   // The library is a window over Read; /read/quotes is the old address of Quotes.
   if (path.startsWith('read/')) return ({ stories: 'stories', quotes: 'quotes', library: 'stories' } as Record<string, TypingMode>)[path.split('/')[1]] ?? null;
   if (ROUTE_ALIASES[path]) return ROUTE_ALIASES[path];

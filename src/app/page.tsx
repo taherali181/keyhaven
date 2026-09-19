@@ -1,5 +1,5 @@
 import { KeyHavenApp } from '@/components/layout/KeyHavenApp';
 
 export default function HomePage() {
-  return <KeyHavenApp />;
+  return <KeyHavenApp initialMode="home" />;
 }

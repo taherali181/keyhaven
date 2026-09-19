@@ -8,11 +8,12 @@ import {
   authorLine, BOOK_CATEGORIES, bookKey, booksInCategory, importKey, lifeYears, loadAuthors, loadBookCatalog, loadFullIndex,
   loadStoryIndex, loadSummary, parseKey, rememberedWork, searchBooks, searchFullIndex, searchStories, STORY_LISTS, storyKey
 } from '@/lib/catalog';
-import { OPEN_LIBRARY_EVENT, openWork, type LibraryTab } from '@/lib/reader-events';
+import { OPEN_LIBRARY_EVENT, openWork, type LibraryTab, type OpenLibraryDetail } from '@/lib/reader-events';
 import { db } from '@/lib/db';
 import { importDocument, type ImportProgress } from '@/lib/document-import';
 import { DEFAULT_READING_WPM, formatReadTime, loadReadingSpeed } from '@/lib/reading';
 import { fade, spring } from '@/lib/motion';
+import { BookCover, EmptyState, ProgressRing, hueFor, shortTitle } from './LibraryBits';
 
 const PAGE_SIZE = 48;
 const ROW_SIZE = 14;
@@ -29,31 +30,6 @@ interface WorkRef { key: string; kind: WorkKind; title: string; author: string }
 
 const timestamp = () => Date.now();
 const focusReader = () => requestAnimationFrame(() => document.querySelector<HTMLElement>('.typing-input, .story-library-trigger')?.focus());
-const shortTitle = (title: string) => title.split(/[;:]\s/)[0];
-/** A stable, well-spread cover hue per title (FNV-1a). */
-const hueFor = (seed: string) => {
-  let hash = 2166136261;
-  for (let index = 0; index < seed.length; index++) hash = Math.imul(hash ^ seed.charCodeAt(index), 16777619);
-  return (hash >>> 0) % 360;
-};
-
-function BookCover({ title, author, large = false }: { title: string; author: string; large?: boolean }) {
-  return <span className={`book-cover ${large ? 'is-large' : ''}`} style={{ '--cover-hue': hueFor(`${title}${author}`) } as React.CSSProperties} aria-hidden="true">
-    <span className="book-cover-title">{shortTitle(title)}</span>
-    <span className="book-cover-author">{author}</span>
-  </span>;
-}
-
-function ProgressRing({ percent, finished }: { percent: number; finished?: boolean }) {
-  return <span className={`library-ring ${finished ? 'is-finished' : ''}`} style={{ '--p': `${finished ? 100 : percent}%` } as React.CSSProperties} aria-label={finished ? 'Finished' : `${percent}% read`}>
-    {finished ? <Check aria-hidden="true" /> : <span aria-hidden="true">{percent}</span>}
-  </span>;
-}
-
-function EmptyState({ icon, title, children }: { icon: React.ReactNode; title: string; children?: React.ReactNode }) {
-  return <div className="library-empty">{icon}<p><strong>{title}</strong></p>{children}</div>;
-}
-
 /** The Library: your books and stories, the short-story catalog, and thousands of public-domain books. */
 export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }) {
   const [open, setOpen] = useState(initialOpen);
@@ -91,6 +67,8 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
   const [importState, setImportState] = useState<ImportProgress | null>(null);
   const [importError, setImportError] = useState('');
   const abortRef = useRef<AbortController | null>(null);
+  // A book asked for before the catalog has loaded opens once it has.
+  const pendingBookRef = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
     const [records, saved, documents, results] = await Promise.all([
@@ -115,7 +93,9 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
 
   useEffect(() => {
     const onOpen = (event: Event) => {
-      const detail = (event as CustomEvent<{ tab?: LibraryTab; focusSearch?: boolean }>).detail ?? {};
+      const detail = (event as CustomEvent<OpenLibraryDetail>).detail ?? {};
+      if (detail.category) { setCategory(detail.category); setAuthorName(null); setBookQuery(''); setVisible(PAGE_SIZE); }
+      pendingBookRef.current = detail.bookId ?? null;
       show(detail.tab, detail.focusSearch);
     };
     const onKey = (event: KeyboardEvent) => {
@@ -156,6 +136,14 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
     });
     return () => cancelAnimationFrame(frame);
   }, [open, tab]);
+
+  useEffect(() => {
+    const id = pendingBookRef.current;
+    if (!open || !books || id === null) return;
+    pendingBookRef.current = null;
+    const book = books.find(item => item.id === id);
+    if (book) queueMicrotask(() => setDetail({ id: book.id, title: book.title, author: authorLine(book), book }));
+  }, [open, books]);
 
   useEffect(() => {
     if (!detail) return;

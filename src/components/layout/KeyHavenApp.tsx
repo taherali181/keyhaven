@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useEffect, useState, ViewTransition } from 'react';
+import { startTransition, useEffect, useRef, useState, ViewTransition } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { TypingMode } from '@/types';
 import { useSettings } from '@/hooks/useSettings';
@@ -10,6 +10,7 @@ import { AmbientBackdrop } from '@/components/layout/AmbientBackdrop';
 import { Tooltips } from '@/components/ui/Tooltips';
 import { ReaderSettings } from '@/components/reader/ReaderSettings';
 import { ReaderHome } from '@/components/reader/ReaderHome';
+import { HomeView } from '@/components/home/HomeView';
 import { LibraryWindow } from '@/components/library/LibraryWindow';
 import { SpeedTestView } from '@/components/speed-test/SpeedTestView';
 import { QuotesView } from '@/components/reader/QuotesView';
@@ -20,6 +21,7 @@ import { ProfileView } from '@/components/profile/ProfileView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { SectionSettings, isSettingsSection } from '@/components/settings/SectionSettings';
 import { rememberWork } from '@/lib/catalog';
+import { OPEN_WORK_EVENT } from '@/lib/reader-events';
 import { useBackupSync } from '@/hooks/useBackupSync';
 import { BACKUP_LABELS, useBackupStatus } from '@/lib/sync/status';
 import { modeFromPath, pathForMode } from '@/lib/navigation';
@@ -48,6 +50,22 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
     return () => window.removeEventListener('popstate', onBack);
   }, []);
 
+  // Opening a work from outside the reader (Home, the Library, Profile) switches to Read, which then opens it.
+  const updateSettingRef = useRef(settingsApi.updateSetting);
+  useEffect(() => { updateSettingRef.current = settingsApi.updateSetting; });
+  useEffect(() => {
+    if (currentMode === 'stories') return;
+    const onOpenWork = (event: Event) => {
+      const { key, mode } = (event as CustomEvent<{ key: string; mode?: UserSettings['storyMode'] }>).detail;
+      rememberWork(key);
+      if (mode) updateSettingRef.current('storyMode', mode);
+      window.history.pushState({}, '', pathForMode('stories'));
+      startTransition(() => setCurrentMode('stories'));
+    };
+    window.addEventListener(OPEN_WORK_EVENT, onOpenWork);
+    return () => window.removeEventListener(OPEN_WORK_EVENT, onOpenWork);
+  }, [currentMode]);
+
   // Each section renders with its own typography and bottom bar; changes made from it are saved to that section.
   const sectionSettings = settingsForSection(settings, currentMode);
   const updateSectionSettings = (patch: Partial<UserSettings>) => settingsApi.updateSettingsWith(previous =>
@@ -73,6 +91,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
           <main className="app-content">
             <ViewTransition key={currentMode} enter="mode-enter" exit="mode-exit" default="none">
               <div className="mode-view-root">
+                {currentMode === 'home' && <HomeView onNavigate={selectMode} />}
                 {currentMode === 'stories' && <ReaderHome settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
                 {currentMode === 'speed-test' && <SpeedTestView settings={sectionSettings} onKeyPress={playKeyPress} />}
                 {currentMode === 'quotes' && <QuotesView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
@@ -107,7 +126,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
           onReplaceSettings={settingsApi.replaceSettings}
         />
         {/* The library is part of Read: a window over the reader, opened from its title bar or with Ctrl K. */}
-        {currentMode === 'stories' && <LibraryWindow initialOpen={initialLibraryOpen} />}
+        {(currentMode === 'stories' || currentMode === 'home') && <LibraryWindow initialOpen={initialLibraryOpen} />}
         {/* Read and Quotes open the full reading settings from their title bar; practice sections have their own small sheet. */}
         {!settings.zenMode && <ReaderSettings settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} sectionLabel={SECTION_LABELS[currentMode] ?? 'Read'} typographyDefaults={sectionTypographyDefaults(currentMode)} />}
         {!settings.zenMode && isSettingsSection(currentMode) && <SectionSettings key={currentMode} mode={currentMode} settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} />}

@@ -11,6 +11,7 @@ describe('section addresses', () => {
     expect(modeFromPath('/pdfs')).toBe('pdf');
     expect(modeFromPath('/read/library')).toBe('stories');
     expect(modeFromPath('/nope')).toBeNull();
+    expect(modeFromPath('/')).toBe('home');
   });
 
   it('gives each section one canonical address that leads back to it', () => {
