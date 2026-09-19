@@ -67,3 +67,26 @@ export function parseCsv(source) {
   if (field || row.length) { row.push(field); rows.push(row); }
   return rows;
 }
+
+/** Straight quotes and plain dashes, so every character in a story can be typed on a normal keyboard. */
+export function typeable(text) {
+  return cleanText(text)
+    .replace(/[‘’‛′]/g, "'")
+    .replace(/[“”„″]/g, '"')
+    .replace(/\s*[—―]\s*/g, ' - ')
+    .replace(/–/g, '-')
+    .replace(/…/g, '...')
+    .replace(/×/g, 'x')
+    .replace(/½/g, '1/2')
+    .replace(/¼/g, '1/4')
+    .replace(/¾/g, '3/4')
+    .replace(/´/g, "'")
+    .replace(/æ/g, 'ae').replace(/Æ/g, 'Ae').replace(/œ/g, 'oe').replace(/Œ/g, 'Oe')
+    .replace(/\s*°/g, ' degrees')
+    .replace(/­/g, '')
+    .replace(/\s*[\[(]\*?\d*[\])]/g, (match) => (/\d|\*/.test(match) ? '' : match)) // footnote markers like [1], (*1) or (*)
+    .replace(/ {2,}/g, ' ')
+    .replace(/\s+([,.;:!?])/g, '$1')
+    .replace(/^- /, '')
+    .trim();
+}

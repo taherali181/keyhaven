@@ -231,12 +231,16 @@ export interface ShelfRecord {
   updatedAt: number;
 }
 
+/** A public-domain quote, checked against its source on Project Gutenberg (public/catalog/quotes.json). */
 export interface Quote {
   id: string;
   text: string;
   author: string;
+  /** The work it comes from. */
   source?: string;
-  category: 'Stoicism' | 'Eastern Philosophy' | 'Science & Tech' | 'Literature' | 'Motivational';
+  category: string;
+  /** Project Gutenberg book id of the source. */
+  gutenberg?: number;
   length: 'short' | 'medium' | 'long';
 }
 

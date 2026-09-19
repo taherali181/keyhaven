@@ -10,7 +10,7 @@ export type Typography = Pick<UserSettings, TypographyKey>;
 export interface Range { min: number; max: number; step: number }
 
 export const TYPE_RANGES = {
-  fontSize: { min: 14, max: 44, step: 1 },
+  fontSize: { min: 14, max: 56, step: 1 },
   readerFontWeight: { min: 300, max: 700, step: 50 },
   readerLineHeight: { min: 1.2, max: 2.6, step: 0.05 },
   readerLetterSpacing: { min: -0.03, max: 0.12, step: 0.005 },

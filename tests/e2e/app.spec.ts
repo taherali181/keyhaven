@@ -370,3 +370,22 @@ test('the library lists categories in its rail and shows book details beside the
   await library.getByRole('group', { name: 'Story collections' }).getByRole('button', { name: 'Humour' }).click();
   await expect(library.locator('.library-shelf h3').first()).toContainText('Humour');
 });
+
+test('a quote can be saved and found again under Saved', async ({ page }) => {
+  await page.goto('/quotes');
+  const star = page.getByRole('button', { name: 'Save quote' });
+  await expect(star).toBeEnabled();
+  const author = await page.locator('.story-bar h1').innerText();
+  await star.click();
+  await expect(page.getByRole('button', { name: 'Saved quote' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('combobox', { name: 'Quote category' }).click();
+  await page.getByRole('option', { name: /Saved/ }).click();
+  await page.reload();
+  // The filter is remembered, and the saved quote is the only one there.
+  await expect(page.locator('.story-bar h1')).toHaveText(author);
+  await expect(page.getByRole('button', { name: 'Saved quote' })).toBeVisible();
+  await page.getByRole('button', { name: 'Saved quote' }).click();
+  await expect(page.getByText('No saved quotes yet')).toBeVisible();
+  await page.getByRole('button', { name: 'Show all quotes' }).click();
+  await expect(page.locator('.typing-character').first()).toBeVisible();
+});

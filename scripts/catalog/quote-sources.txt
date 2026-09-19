@@ -1,0 +1,573 @@
+# Quotes for Quotes, checked against their sources by build-quotes.mjs.
+# "## Category" starts a category. Each line: Author | Work @gutenbergId | words to find in the source.
+# Every author died long ago and every work here is in the public domain.
+
+## Stoicism
+Marcus Aurelius | Meditations @15877 | Do not act as if thou wert going to live ten thousand years. Death hangs over thee. While thou livest, while it is in thy power, be good
+Marcus Aurelius | Meditations @15877 | Take away thy opinion, and then there is taken away the complaint, I have been harmed. Take away the complaint, I have been harmed, and the harm is taken away
+Marcus Aurelius | Meditations @15877 | Look within. Within is the fountain of good, and it will ever bubble up, if thou wilt ever dig
+Marcus Aurelius | Meditations @15877 | The best way of avenging thyself is not to become like the wrong doer
+Marcus Aurelius | Meditations @15877 | If it is not right, do not do it: if it is not true, do not say it
+Marcus Aurelius | Meditations @15877 | Men seek retreats for themselves, houses in the country, sea-shores, and mountains
+Marcus Aurelius | Meditations @15877 | nowhere either with more quiet or more freedom from trouble does a man retire than into his own soul
+Marcus Aurelius | Meditations @15877 | Accustom thyself to attend carefully to what is said by another, and as much as it is possible, be in the speaker's mind
+Marcus Aurelius | Meditations @15877 | Be like the promontory against which the waves continually break, but it stands firm and tames the fury of the water around it
+Marcus Aurelius | Meditations @15877 | Everything is only for a day, both that which remembers and that which is remembered
+Marcus Aurelius | Meditations @15877 | Such as are thy habitual thoughts, such also will be the character of thy mind; for the soul is dyed by the thoughts
+Marcus Aurelius | Meditations @15877 | Confine thyself to the present
+Marcus Aurelius | Meditations @15877 | Let it make no difference to thee whether thou art cold or warm, if thou art doing thy duty
+Marcus Aurelius | Meditations @15877 | The art of life is more like the wrestler's art than the dancer's
+Marcus Aurelius | Meditations @15877 | Short then is the time which every man lives, and small the nook of the earth where he lives
+Marcus Aurelius | Meditations @15877 | That which is not good for the swarm, neither is it good for the bee
+Marcus Aurelius | Meditations @15877 | Nothing happens to any man which he is not formed by nature to bear
+Marcus Aurelius | Meditations @15877 | Adapt thyself to the things with which thy lot has been cast
+Epictetus | Golden Sayings @871 | No man is free who is not master of himself
+Epictetus | Golden Sayings @871 | What then is the chastisement of those who accept it not? To be as they are
+Seneca | Morals of a Happy Life @56075 | The greatest loss of time is delay and expectation, which depend upon the future
+Seneca | Morals of a Happy Life @56075 | He that does good to another man does good also to himself
+Seneca | Morals of a Happy Life @56075 | He that would be happy must take an account of his time
+
+Marcus Aurelius | Meditations @15877 | Begin the morning by saying to thyself, I shall meet with the busybody, the ungrateful, arrogant, deceitful, envious, unsocial
+Marcus Aurelius | Meditations @15877 | How much trouble he avoids who does not look to see what his neighbor says or does or thinks, but only to what he does himself, that it may be just and pure
+Marcus Aurelius | Meditations @15877 | every man lives only this present time, which is an indivisible point, and that all the rest of his life is either past or it is uncertain
+Marcus Aurelius | Meditations @15877 | Never value anything as profitable to thyself which shall compel thee to break thy promise, to lose thy self-respect, to hate any man
+Marcus Aurelius | Meditations @15877 | thou wilt give thyself relief if thou doest every act of thy life as if it were the last
+Marcus Aurelius | Meditations @15877 | If thou art pained by any external thing, it is not this thing that disturbs thee, but thy own judgment about it
+Epictetus | Golden Sayings @871 | Not death or pain is to be feared, but the fear of death or pain
+Epictetus | Enchiridion @45109 | Men are disturbed not by things, but by the views which they take of things
+Epictetus | Enchiridion @45109 | If you would improve, be content to be thought foolish and dull with regard to externals
+Epictetus | Enchiridion @45109 | Never say of anything, "I have lost it," but, "I have restored it."
+Epictetus | Enchiridion @45109 | Remember that you are an actor in a drama of such sort as the Author chooses
+Seneca | Morals of a Happy Life @56075 | The true felicity of life is to be free from perturbations, to understand our duties towards God and man
+Seneca | Morals of a Happy Life @56075 | I do not reckon him poor that has but a little, but he is so that covets more
+Seneca | Morals of a Happy Life @56075 | the anger itself is much more hurtful for us than the injury that provokes it
+Seneca | Morals of a Happy Life @56075 | a good man can never be miserable, nor a wicked man happy
+
+## Eastern Philosophy
+Confucius | Analects @3330 | Learning without thought is labour lost; thought without learning is perilous
+Confucius | Analects @3330 | When we see men of worth, we should think of equalling them
+Sun Tzu | Art of War @132 | supreme excellence consists in breaking the enemy's resistance without fighting
+The Buddha | Dhammapada @2017 | Earnestness is the path of immortality (Nirvana), thoughtlessness the path of death
+The Buddha | Dhammapada @2017 | As a solid rock is not shaken by the wind, wise people falter not amidst blame and praise
+Rabindranath Tagore | Stray Birds @6524 | Clouds come floating into my life from other days no longer to shed rain or usher storm but to give colour to my sunset sky
+Laozi | Tao Teh King @216 | The Tao that can be trodden is not the enduring and unchanging Tao
+Laozi | Tao Teh King @216 | There is no guilt greater than to sanction ambition; no calamity greater than to be discontented with one's lot
+Laozi | Tao Teh King @216 | He who knows other men is discerning; he who knows himself is intelligent
+Laozi | Tao Teh King @216 | He who overcomes others is strong; he who overcomes himself is mighty
+Laozi | Tao Teh King @216 | He who is satisfied with his lot is rich
+Laozi | Tao Teh King @216 | There is nothing in the world more soft and weak than water, and yet for attacking things that are firm and strong there is nothing that can take precedence of it
+Laozi | Tao Teh King @216 | The journey of a thousand li commenced with a single step
+Laozi | Tao Teh King @216 | The sage does not accumulate for himself
+Laozi | Tao Teh King @216 | Governing a great state is like cooking small fish
+Confucius | Analects @3330 | Is it not pleasant to learn with a constant perseverance and application
+Confucius | Analects @3330 | When you know a thing, to hold that you know it; and when you do not know a thing, to allow that you do not know it; this is knowledge
+Confucius | Analects @3330 | The superior man is modest in his speech, but exceeds in his actions
+Confucius | Analects @3330 | Hold faithfulness and sincerity as first principles
+Confucius | Analects @3330 | What you do not want done to yourself, do not do to others
+Confucius | Analects @3330 | Have no friends not equal to yourself. When you have faults, do not fear to abandon them
+Confucius | Analects @3330 | The superior man is satisfied and composed; the mean man is always full of distress
+Confucius | Analects @3330 | The superior man thinks of virtue; the small man thinks of comfort
+Confucius | Analects @3330 | I am not concerned that I have no place, I am concerned how I may fit myself for one
+Confucius | Analects @3330 | To see what is right and not to do it is want of courage
+Confucius | Analects @3330 | The man of virtue makes the difficulty to be overcome his first business, and success only a subsequent consideration
+Confucius | Analects @3330 | The wise find pleasure in water; the virtuous find pleasure in hills
+Sun Tzu | Art of War @132 | If you know the enemy and know yourself, you need not fear the result of a hundred battles
+Sun Tzu | Art of War @132 | Let your plans be dark and impenetrable as night, and when you move, fall like a thunderbolt
+Sun Tzu | Art of War @132 | All warfare is based on deception
+Sun Tzu | Art of War @132 | Water shapes its course according to the nature of the ground over which it flows
+The Buddha | Dhammapada @2017 | All that we are is the result of what we have thought
+The Buddha | Dhammapada @2017 | Hatred does not cease by hatred at any time: hatred ceases by love, this is an old rule
+The Buddha | Dhammapada @2017 | As rain breaks through an ill-thatched house, passion will break through an unreflecting mind
+The Buddha | Dhammapada @2017 | If one man conquer in battle a thousand times thousand men, and if another conquer himself, he is the greatest of conquerors
+The Buddha | Dhammapada @2017 | As the bee collects nectar and departs without injuring the flower, or its colour or scent, so let a sage dwell in his village
+The Buddha | Dhammapada @2017 | Let a man overcome anger by love, let him overcome evil by good
+The Buddha | Dhammapada @2017 | Health is the greatest of gifts, contentedness the best riches
+Rabindranath Tagore | Stray Birds @6524 | If you shed tears when you miss the sun, you also miss the stars
+Rabindranath Tagore | Stray Birds @6524 | Let life be beautiful like summer flowers and death like autumn leaves
+Rabindranath Tagore | Stray Birds @6524 | We read the world wrong and say that it deceives us
+Rabindranath Tagore | Stray Birds @6524 | The fish in the water is silent, the animal on the earth is noisy, the bird in the air is singing
+Rabindranath Tagore | Stray Birds @6524 | Every child comes with the message that God is not yet discouraged of man
+Rabindranath Tagore | Stray Birds @6524 | Man goes into the noisy crowd to drown his own clamour of silence
+Rabindranath Tagore | Gitanjali @7164 | Where the mind is without fear and the head is held high
+Rabindranath Tagore | Gitanjali @7164 | The same stream of life that runs through my veins night and day runs through the world and dances in rhythmic measures
+Kakuzo Okakura | Book of Tea @769 | Teaism is a cult founded on the adoration of the beautiful among the sordid facts of everyday existence
+Kakuzo Okakura | Book of Tea @769 | Those who cannot feel the littleness of great things in themselves are apt to overlook the greatness of little things in others
+Kakuzo Okakura | Book of Tea @769 | The art of life lies in a constant readjustment to our surroundings
+Inazo Nitobe | Bushido @12096 | Rectitude is the power of deciding upon a certain course of conduct in accordance with reason, without wavering
+Edwin Arnold | Bhagavad-Gita @2388 | Never the spirit was born; the spirit shall cease to be never
+
+## Literature
+Jane Austen | Pride and Prejudice @1342 | It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife
+Jane Austen | Pride and Prejudice @1342 | I could easily forgive his pride, if he had not mortified mine
+Jane Austen | Pride and Prejudice @1342 | Vanity and pride are different things, though the words are often used synonymously. A person may be proud without being vain
+Jane Austen | Pride and Prejudice @1342 | For what do we live, but to make sport for our neighbours, and laugh at them in our turn
+Jane Austen | Pride and Prejudice @1342 | Think only of the past as its remembrance gives you pleasure
+Jane Austen | Pride and Prejudice @1342 | I have been a selfish being all my life, in practice, though not in principle
+Jane Austen | Emma @158 | One half of the world cannot understand the pleasures of the other
+Jane Austen | Emma @158 | Silly things do cease to be silly if they are done by sensible people in an impudent way
+Jane Austen | Persuasion @105 | You pierce my soul. I am half agony, half hope
+Jane Austen | Northanger Abbey @121 | The person, be it gentleman or lady, who has not pleasure in a good novel, must be intolerably stupid
+Jane Austen | Sense and Sensibility @161 | I will be calm; I will be mistress of myself
+Charles Dickens | A Tale of Two Cities @98 | It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness
+Charles Dickens | A Tale of Two Cities @98 | It is a far, far better thing that I do, than I have ever done; it is a far, far better rest that I go to than I have ever known
+Charles Dickens | Great Expectations @1400 | Heaven knows we need never be ashamed of our tears, for they are rain upon the blinding dust of earth, overlying our hard hearts
+Charles Dickens | Great Expectations @1400 | In a word, I was too cowardly to do what I knew to be right, as I had been too cowardly to avoid doing what I knew to be wrong
+Charles Dickens | David Copperfield @766 | Annual income twenty pounds, annual expenditure nineteen nineteen and six, result happiness
+Charles Dickens | David Copperfield @766 | Whether I shall turn out to be the hero of my own life, or whether that station will be held by anybody else, these pages must show
+Charles Dickens | A Christmas Carol @46 | I will honour Christmas in my heart, and try to keep it all the year
+Charles Dickens | A Christmas Carol @46 | No space of regret can make amends for one life's opportunity misused
+Charles Dickens | A Christmas Carol @46 | There is nothing in the world so irresistibly contagious as laughter and good-humour
+Charlotte Bronte | Jane Eyre @1260 | I am no bird; and no net ensnares me: I am a free human being with an independent will
+Charlotte Bronte | Jane Eyre @1260 | Life appears to me too short to be spent in nursing animosity or registering wrongs
+Charlotte Bronte | Jane Eyre @1260 | I would always rather be happy than dignified
+Charlotte Bronte | Jane Eyre @1260 | Conventionality is not morality. Self-righteousness is not religion
+Emily Bronte | Wuthering Heights @768 | Whatever our souls are made of, his and mine are the same
+George Eliot | Middlemarch @145 | What do we live for, if it is not to make life less difficult to each other
+George Eliot | Middlemarch @145 | the growing good of the world is partly dependent on unhistoric acts
+George Eliot | Middlemarch @145 | If we had a keen vision and feeling of all ordinary human life, it would be like hearing the grass grow and the squirrel's heart beat
+Oscar Wilde | The Picture of Dorian Gray @174 | There is only one thing in the world worse than being talked about, and that is not being talked about
+Oscar Wilde | The Picture of Dorian Gray @174 | The only way to get rid of a temptation is to yield to it
+Oscar Wilde | The Picture of Dorian Gray @174 | Experience was of no ethical value. It was merely the name men gave to their mistakes
+Oscar Wilde | The Picture of Dorian Gray @174 | There is no such thing as a moral or an immoral book. Books are well written, or badly written
+Oscar Wilde | The Picture of Dorian Gray @174 | The books that the world calls immoral are books that show the world its own shame
+Oscar Wilde | The Picture of Dorian Gray @174 | Nothing can cure the soul but the senses, just as nothing can cure the senses but the soul
+Herman Melville | Moby Dick @2701 | Call me Ishmael
+Herman Melville | Moby Dick @2701 | I love to sail forbidden seas, and land on barbarous coasts
+Nathaniel Hawthorne | The Scarlet Letter @33 | No man, for any considerable period, can wear one face to himself and another to the multitude, without finally getting bewildered as to which may be the true
+Mark Twain | Adventures of Huckleberry Finn @76 | All right, then, I'll go to hell
+Mark Twain | Adventures of Huckleberry Finn @76 | Hain't we got all the fools in town on our side? And ain't that a big enough majority in any town
+Mark Twain | The Adventures of Tom Sawyer @74 | Work consists of whatever a body is obliged to do, and that Play consists of whatever a body is not obliged to do
+Louisa May Alcott | Little Women @514 | I'm not afraid of storms, for I'm learning how to sail my ship
+Louisa May Alcott | Little Women @514 | Love is the only thing that we can carry with us when we go, and it makes the end so easy
+Lewis Carroll | Alice's Adventures in Wonderland @11 | Curiouser and curiouser
+Lewis Carroll | Alice's Adventures in Wonderland @11 | It's no use going back to yesterday, because I was a different person then
+Lewis Carroll | Alice's Adventures in Wonderland @11 | Everything's got a moral, if only you can find it
+Lewis Carroll | Alice's Adventures in Wonderland @11 | we're all mad here. I'm mad. You're mad
+Lewis Carroll | Through the Looking-Glass @12 | it takes all the running you can do, to keep in the same place
+Mary Shelley | Frankenstein @84 | Beware; for I am fearless, and therefore powerful
+Mary Shelley | Frankenstein @84 | Nothing is so painful to the human mind as a great and sudden change
+Mary Shelley | Frankenstein @84 | I was benevolent and good; misery made me a fiend
+Mary Shelley | Frankenstein @84 | Learn from me, if not by my precepts, at least by my example, how dangerous is the acquirement of knowledge
+Leo Tolstoy | Anna Karenina @1399 | Happy families are all alike; every unhappy family is unhappy in its own way
+Fyodor Dostoyevsky | Crime and Punishment @2554 | Pain and suffering are always inevitable for a large intelligence and a deep heart
+Fyodor Dostoyevsky | Crime and Punishment @2554 | To go wrong in one's own way is better than to go right in someone else's
+Fyodor Dostoyevsky | The Brothers Karamazov @28054 | Above all, don't lie to yourself
+Victor Hugo | Les Miserables @135 | He never went out without a book under his arm
+Alexandre Dumas | The Three Musketeers @1257 | All for one, one for all
+Robert Louis Stevenson | Treasure Island @120 | Fifteen men on the dead man's chest, Yo-ho-ho, and a bottle of rum
+J. M. Barrie | Peter Pan @16 | All children, except one, grow up
+J. M. Barrie | Peter Pan @16 | To die will be an awfully big adventure
+Edith Wharton | The Age of Innocence @541 | Each time you happen to me all over again
+F. Scott Fitzgerald | The Great Gatsby @64317 | So we beat on, boats against the current, borne back ceaselessly into the past
+F. Scott Fitzgerald | The Great Gatsby @64317 | I hope she'll be a fool, that's the best thing a girl can be in this world, a beautiful little fool
+Joseph Conrad | Heart of Darkness @219 | We live, as we dream, alone
+Joseph Conrad | Heart of Darkness @219 | The horror! The horror
+Miguel de Cervantes | Don Quixote @996 | the pen is the tongue of the mind
+James Joyce | Dubliners @2814 | His soul swooned slowly as he heard the snow falling faintly through the universe and faintly falling
+Jack London | The Call of the Wild @215 | there is an ecstasy that marks the summit of life, and beyond which life cannot rise
+Arthur Conan Doyle | The Adventures of Sherlock Holmes @1661 | You see, but you do not observe
+Arthur Conan Doyle | The Adventures of Sherlock Holmes @1661 | life is infinitely stranger than anything which the mind of man could invent
+Charles Dickens | Oliver Twist @730 | Please, sir, I want some more
+
+## Poetry
+William Shakespeare | Hamlet @1524 | To be, or not to be, that is the question
+William Shakespeare | Hamlet @1524 | This above all: to thine own self be true
+William Shakespeare | Hamlet @1524 | There are more things in heaven and earth, Horatio, than are dreamt of in your philosophy
+William Shakespeare | Hamlet @1524 | there is nothing either good or bad, but thinking makes it so
+William Shakespeare | Hamlet @1524 | Brevity is the soul of wit
+William Shakespeare | As You Like It @1523 | All the world's a stage, And all the men and women merely players
+William Shakespeare | As You Like It @1523 | The fool doth think he is wise, but the wise man knows himself to be a fool
+William Shakespeare | Julius Caesar @1522 | Cowards die many times before their deaths; The valiant never taste of death but once
+William Shakespeare | Julius Caesar @1522 | The fault, dear Brutus, is not in our stars, But in ourselves, that we are underlings
+William Shakespeare | Julius Caesar @1522 | There is a tide in the affairs of men, Which, taken at the flood, leads on to fortune
+William Shakespeare | Macbeth @1533 | Life's but a walking shadow; a poor player, That struts and frets his hour upon the stage, And then is heard no more
+William Shakespeare | Macbeth @1533 | What's done cannot be undone
+William Shakespeare | The Tempest @1540 | We are such stuff As dreams are made on; and our little life Is rounded with a sleep
+William Shakespeare | The Tempest @1540 | What's past is prologue
+William Shakespeare | Romeo and Juliet @1513 | What's in a name? That which we call a rose By any other name would smell as sweet
+William Shakespeare | Romeo and Juliet @1513 | Parting is such sweet sorrow
+William Shakespeare | Romeo and Juliet @1513 | Wisely and slow; they stumble that run fast
+William Shakespeare | The Merchant of Venice @1515 | The quality of mercy is not strain'd, It droppeth as the gentle rain from heaven
+William Shakespeare | The Merchant of Venice @1515 | All that glisters is not gold
+William Shakespeare | Twelfth Night @1526 | Be not afraid of greatness: some are born great, some achieve greatness, and some have greatness thrust upon 'em
+William Shakespeare | Twelfth Night @1526 | If music be the food of love, play on
+William Shakespeare | A Midsummer Night's Dream @1514 | The course of true love never did run smooth
+William Shakespeare | A Midsummer Night's Dream @1514 | Love looks not with the eyes, but with the mind
+William Shakespeare | Much Ado about Nothing @1519 | Everyone can master a grief but he that has it
+William Shakespeare | King Lear @1532 | Nothing will come of nothing
+William Shakespeare | Sonnets @1041 | Shall I compare thee to a summer's day? Thou art more lovely and more temperate
+William Shakespeare | Sonnets @1041 | So long as men can breathe, or eyes can see, So long lives this, and this gives life to thee
+William Shakespeare | Sonnets @1041 | Let me not to the marriage of true minds Admit impediments
+Walt Whitman | Leaves of Grass @1322 | I celebrate myself, and sing myself
+Walt Whitman | Leaves of Grass @1322 | Do I contradict myself? Very well then I contradict myself, (I am large, I contain multitudes.)
+Walt Whitman | Leaves of Grass @1322 | I believe a leaf of grass is no less than the journey-work of the stars
+Walt Whitman | Leaves of Grass @1322 | Afoot and light-hearted I take to the open road, Healthy, free, the world before me
+Walt Whitman | Leaves of Grass @1322 | O Captain! my Captain! our fearful trip is done
+Emily Dickinson | Poems @12242 | Hope is the thing with feathers That perches in the soul
+Emily Dickinson | Poems @12242 | Because I could not stop for Death, He kindly stopped for me
+Emily Dickinson | Poems @12242 | I'm nobody! Who are you? Are you nobody, too
+Emily Dickinson | Poems @12242 | If I can stop one heart from breaking, I shall not live in vain
+Emily Dickinson | Poems @12242 | The soul selects her own society, Then shuts the door
+Emily Dickinson | Poems @12242 | There is no frigate like a book To take us lands away
+John Keats | Poems Published in 1820 @23684 | Beauty is truth, truth beauty, that is all Ye know on earth, and all ye need to know
+John Keats | Poems Published in 1820 @23684 | Season of mists and mellow fruitfulness
+William Blake | The Marriage of Heaven and Hell @45315 | The road of excess leads to the palace of wisdom
+William Blake | The Marriage of Heaven and Hell @45315 | Energy is Eternal Delight
+Robert Frost | Mountain Interval @29345 | Two roads diverged in a yellow wood
+Robert Frost | Mountain Interval @29345 | I took the one less traveled by, And that has made all the difference
+Robert Frost | North of Boston @3026 | Something there is that doesn't love a wall
+Robert Frost | North of Boston @3026 | Home is the place where, when you have to go there, They have to take you in
+Alexander Pope | An Essay on Man @2428 | Hope springs eternal in the human breast
+Alexander Pope | An Essay on Man @2428 | The proper study of mankind is man
+Omar Khayyam | The Rubaiyat @246 | The Moving Finger writes; and, having writ, Moves on
+Omar Khayyam | The Rubaiyat @246 | A Book of Verses underneath the Bough, A Jug of Wine, a Loaf of Bread, and Thou
+Kahlil Gibran | The Prophet @58585 | Your children are not your children. They are the sons and daughters of Life's longing for itself
+Kahlil Gibran | The Prophet @58585 | Work is love made visible
+Kahlil Gibran | The Prophet @58585 | Let there be spaces in your togetherness
+Kahlil Gibran | The Prophet @58585 | The deeper that sorrow carves into your being, the more joy you can contain
+Kahlil Gibran | The Prophet @58585 | Your pain is the breaking of the shell that encloses your understanding
+
+## Humour & Wit
+Mark Twain | Pudd'nhead Wilson @102 | Tell the truth or trump, but get the trick
+Mark Twain | Pudd'nhead Wilson @102 | One of the most striking differences between a cat and a lie is that a cat has only nine lives
+Mark Twain | Pudd'nhead Wilson @102 | Few things are harder to put up with than the annoyance of a good example
+Mark Twain | Pudd'nhead Wilson @102 | Training is everything. The peach was once a bitter almond; cauliflower is nothing but cabbage with a college education
+Mark Twain | Pudd'nhead Wilson @102 | Let us endeavor so to live that when we come to die even the undertaker will be sorry
+Mark Twain | Pudd'nhead Wilson @102 | Adam was but human, this explains it all. He did not want the apple for the apple's sake, he wanted it only because it was forbidden
+Mark Twain | Pudd'nhead Wilson @102 | Put all your eggs in the one basket and WATCH THAT BASKET
+Mark Twain | Pudd'nhead Wilson @102 | Why is it that we rejoice at a birth and grieve at a funeral? It is because we are not the person involved
+Mark Twain | Pudd'nhead Wilson @102 | April 1. This is the day upon which we are reminded of what we are on the other three hundred and sixty-four
+Mark Twain | Pudd'nhead Wilson @102 | Nothing so needs reforming as other people's habits
+Mark Twain | Pudd'nhead Wilson @102 | When angry, count four; when very angry, swear
+Mark Twain | Following the Equator @2895 | Truth is stranger than fiction, but it is because Fiction is obliged to stick to possibilities; Truth isn't
+Mark Twain | Following the Equator @2895 | Man is the Only Animal that Blushes. Or needs to
+Mark Twain | Following the Equator @2895 | There are several good protections against temptations, but the surest is cowardice
+Mark Twain | Following the Equator @2895 | Be careless in your dress if you must, but keep a tidy soul
+Mark Twain | Following the Equator @2895 | It is easier to stay out than get out
+Mark Twain | Following the Equator @2895 | The man with a new idea is a Crank until the idea succeeds
+Mark Twain | Following the Equator @2895 | Everything human is pathetic. The secret source of Humor itself is not joy but sorrow
+Mark Twain | Following the Equator @2895 | Let us be thankful for the fools. But for them the rest of us could not succeed
+Mark Twain | The Innocents Abroad @3176 | Travel is fatal to prejudice, bigotry, and narrow-mindedness
+Oscar Wilde | The Importance of Being Earnest @844 | The truth is rarely pure and never simple
+Oscar Wilde | The Importance of Being Earnest @844 | I never travel without my diary. One should always have something sensational to read in the train
+Oscar Wilde | The Importance of Being Earnest @844 | All women become like their mothers. That is their tragedy. No man does. That's his
+Oscar Wilde | The Importance of Being Earnest @844 | In matters of grave importance, style, not sincerity, is the vital thing
+Oscar Wilde | Lady Windermere's Fan @790 | We are all in the gutter, but some of us are looking at the stars
+Oscar Wilde | Lady Windermere's Fan @790 | I can resist everything except temptation
+Oscar Wilde | Lady Windermere's Fan @790 | Experience is the name every one gives to their mistakes
+Oscar Wilde | Lady Windermere's Fan @790 | A man who knows the price of everything and the value of nothing
+Oscar Wilde | An Ideal Husband @885 | To love oneself is the beginning of a lifelong romance
+Oscar Wilde | An Ideal Husband @885 | Morality is simply the attitude we adopt towards people whom we personally dislike
+Ambrose Bierce | The Devil's Dictionary @972 | Patience, n. A minor form of despair, disguised as a virtue
+Ambrose Bierce | The Devil's Dictionary @972 | Bore, n. A person who talks when you wish him to listen
+Ambrose Bierce | The Devil's Dictionary @972 | Future, n. That period of time in which our affairs prosper, our friends are true and our happiness is assured
+Ambrose Bierce | The Devil's Dictionary @972 | Egotist, n. A person of low taste, more interested in himself than in me
+Ambrose Bierce | The Devil's Dictionary @972 | Admiration, n. Our polite recognition of another's resemblance to ourselves
+Ambrose Bierce | The Devil's Dictionary @972 | Cynic, n. A blackguard whose faulty vision sees things as they are, not as they ought to be
+Ambrose Bierce | The Devil's Dictionary @972 | Distance, n. The only thing that the rich are willing for the poor to call theirs, and keep
+Ambrose Bierce | The Devil's Dictionary @972 | Achievement, n. The death of endeavor and the birth of disgust
+Ambrose Bierce | The Devil's Dictionary @972 | Diplomacy, n. The patriotic art of lying for one's country
+Ambrose Bierce | The Devil's Dictionary @972 | Optimism, n. The doctrine, or belief, that everything is beautiful, including what is ugly
+Ambrose Bierce | The Devil's Dictionary @972 | Politeness, n. The most acceptable hypocrisy
+Ambrose Bierce | The Devil's Dictionary @972 | Quotation, n. The act of repeating erroneously the words of another
+Ambrose Bierce | The Devil's Dictionary @972 | Advice, n. The smallest current coin
+Ambrose Bierce | The Devil's Dictionary @972 | Calamity, n. A more than commonly plain and unmistakable reminder that the affairs of this life are not of our own ordering
+Ambrose Bierce | The Devil's Dictionary @972 | Painting, n. The art of protecting flat surfaces from the weather and exposing them to the critic
+Ambrose Bierce | The Devil's Dictionary @972 | Year, n. A period of three hundred and sixty-five disappointments
+Bernard Shaw | Man and Superman @3328 | There are two tragedies in life. One is not to get your heart's desire. The other is to get it
+G. K. Chesterton | Orthodoxy @130 | Angels can fly because they can take themselves lightly
+G. K. Chesterton | Orthodoxy @130 | Poets do not go mad; but chess-players do
+G. K. Chesterton | What's Wrong with the World @1717 | if a thing is worth doing, it is worth doing badly
+G. K. Chesterton | What's Wrong with the World @1717 | The Christian ideal has not been tried and found wanting. It has been found difficult; and left untried
+
+## Literature
+Emily Bronte | Wuthering Heights @768 | I've dreamt in my life dreams that have stayed with me ever after, and changed my ideas: they've gone through and through me, like wine through water, and altered the colour of my mind
+Herman Melville | Moby Dick @2701 | Better sleep with a sober cannibal than a drunken Christian
+Alexandre Dumas | The Count of Monte Cristo @1184 | all human wisdom is summed up in these two words, Wait and hope
+Kenneth Grahame | The Wind in the Willows @289 | there is nothing, absolute nothing, half so much worth doing as simply messing about in boats
+F. Scott Fitzgerald | The Great Gatsby @64317 | just remember that all the people in this world haven't had the advantages that you've had
+Franz Kafka | Metamorphosis @5200 | One morning, when Gregor Samsa woke from troubled dreams, he found himself transformed in his bed into a horrible vermin
+Hermann Hesse | Siddhartha @2500 | Wisdom which a wise man tries to pass on to someone always sounds like foolishness
+Hermann Hesse | Siddhartha @2500 | Most people, Kamala, are like a falling leaf, which is blown and is turning around through the air, and wavers, and tumbles to the ground
+Harriet Beecher Stowe | Uncle Tom's Cabin @203 | Any mind that is capable of a real sorrow is capable of good
+Arthur Conan Doyle | The Adventures of Sherlock Holmes @1661 | It is a capital mistake to theorise before one has data
+Edgar Allan Poe | The Works of Edgar Allan Poe @2148 | They who dream by day are cognizant of many things which escape those who dream only by night
+
+## Poetry
+William Shakespeare | Hamlet @1524 | What a piece of work is man, how noble in reason, how infinite in faculties
+William Blake | Songs of Innocence and of Experience @1934 | Tiger, tiger, burning bright In the forests of the night
+William Blake | The Marriage of Heaven and Hell @45315 | If the doors of perception were cleansed everything would appear to man as it is, infinite
+Robert Frost | North of Boston @3026 | Good fences make good neighbours
+John Milton | Paradise Lost @20 | The mind is its own place, and in it self Can make a Heav'n of Hell, a Hell of Heav'n
+John Milton | Paradise Lost @20 | Better to reign in Hell, then serve in Heav'n
+
+## Philosophy
+Ralph Waldo Emerson | Essays First Series @2944 | Whoso would be a man must be a nonconformist
+Ralph Waldo Emerson | Essays First Series @2944 | Nothing is at last sacred but the integrity of your own mind
+Ralph Waldo Emerson | Essays First Series @2944 | A foolish consistency is the hobgoblin of little minds
+Ralph Waldo Emerson | Essays First Series @2944 | To be great is to be misunderstood
+Ralph Waldo Emerson | Essays First Series @2944 | Trust thyself: every heart vibrates to that iron string
+Ralph Waldo Emerson | Essays First Series @2944 | Nothing can bring you peace but yourself. Nothing can bring you peace but the triumph of principles
+Ralph Waldo Emerson | Essays First Series @2944 | Insist on yourself; never imitate
+Ralph Waldo Emerson | Essays First Series @2944 | The only way to have a friend is to be one
+Ralph Waldo Emerson | Essays First Series @2944 | Nothing great was ever achieved without enthusiasm
+Ralph Waldo Emerson | Essays First Series @2944 | What I must do is all that concerns me, not what the people think
+Ralph Waldo Emerson | Essays Second Series @2945 | The years teach much which the days never know
+Ralph Waldo Emerson | Society and Solitude @69258 | Write it on your heart that every day is the best day in the year
+Henry David Thoreau | Walden @205 | The mass of men lead lives of quiet desperation
+Henry David Thoreau | Walden @205 | I went to the woods because I wished to live deliberately, to front only the essential facts of life
+Henry David Thoreau | Walden @205 | If a man does not keep pace with his companions, perhaps it is because he hears a different drummer
+Henry David Thoreau | Walden @205 | Rather than love, than money, than fame, give me truth
+Henry David Thoreau | Walden @205 | Be it life or death, we crave only reality
+Henry David Thoreau | Walden @205 | a man is rich in proportion to the number of things which he can afford to let alone
+Henry David Thoreau | Walden @205 | Time is but the stream I go a-fishing in
+Henry David Thoreau | Walden @205 | If you have built castles in the air, your work need not be lost; that is where they should be. Now put the foundations under them
+Henry David Thoreau | Walden @205 | Beware of all enterprises that require new clothes
+Henry David Thoreau | Walden @205 | Things do not change; we change
+Henry David Thoreau | Walden @205 | I never found the companion that was so companionable as solitude
+Henry David Thoreau | Walden @205 | The cost of a thing is the amount of what I will call life which is required to be exchanged for it
+Henry David Thoreau | Walden @205 | Only that day dawns to which we are awake
+John Stuart Mill | On Liberty @34901 | the only purpose for which power can be rightfully exercised over any member of a civilised community, against his will, is to prevent harm to others
+John Stuart Mill | On Liberty @34901 | Over himself, over his own body and mind, the individual is sovereign
+John Stuart Mill | On Liberty @34901 | He who knows only his own side of the case, knows little of that
+Blaise Pascal | Pensees @18269 | The heart has its reasons, which reason does not know
+Blaise Pascal | Pensees @18269 | Man is but a reed, the most feeble thing in nature; but he is a thinking reed
+Blaise Pascal | Pensees @18269 | all the unhappiness of men arises from one single fact, that they cannot stay quietly in their own chamber
+Plato | Apology @1656 | the unexamined life is not worth living
+Friedrich Nietzsche | Thus Spake Zarathustra @1998 | one must still have chaos in one, to give birth to a dancing star
+Friedrich Nietzsche | Beyond Good and Evil @4363 | He who fights with monsters should be careful lest he thereby become a monster
+William James | Pragmatism @5116 | The true is the name of whatever proves itself to be good in the way of belief
+Thomas Carlyle | On Heroes, Hero-Worship @1091 | The history of the world is but the biography of great men
+Thomas Carlyle | Sartor Resartus @1051 | Do the Duty which lies nearest thee
+G. K. Chesterton | Orthodoxy @130 | The madman is not the man who has lost his reason. The madman is the man who has lost everything except his reason
+Francis Bacon | Essays @575 | Some books are to be tasted, others to be swallowed, and some few to be chewed and digested
+Francis Bacon | Essays @575 | Reading maketh a full man; conference a ready man; and writing an exact man
+Francis Bacon | Essays @575 | A wise man will make more opportunities than he finds
+Francis Bacon | Essays @575 | Revenge is a kind of wild justice
+Francis Bacon | Essays @575 | Men fear death, as children fear to go in the dark
+Francis Bacon | Essays @575 | He that hath wife and children hath given hostages to fortune
+Francis Bacon | Essays @575 | Histories make men wise; poets witty; the mathematics subtile; natural philosophy deep; moral grave; logic and rhetoric able to contend
+
+## Wisdom
+Benjamin Franklin | Way to Wealth @43855 | Early to bed, and early to rise, makes a man healthy, wealthy and wise
+Benjamin Franklin | Way to Wealth @43855 | Lost time is never found again
+Benjamin Franklin | Way to Wealth @43855 | God helps them that help themselves
+Benjamin Franklin | Way to Wealth @43855 | Diligence is the mother of good luck
+Benjamin Franklin | Way to Wealth @43855 | Dost thou love life, then do not squander time, for that is the stuff life is made of
+Benjamin Franklin | Way to Wealth @43855 | Sloth, like rust, consumes faster than labour wears, while the used key is always bright
+Benjamin Franklin | Way to Wealth @43855 | A small leak will sink a great ship
+Benjamin Franklin | Way to Wealth @43855 | Experience keeps a dear school, but fools will learn in no other
+Benjamin Franklin | Way to Wealth @43855 | For want of a nail the shoe was lost; for want of a shoe the horse was lost
+Benjamin Franklin | Way to Wealth @43855 | He that riseth late must trot all day, and shall scarce overtake his business at night
+Benjamin Franklin | Autobiography @20203 | Lose no time; be always employ'd in something useful; cut off all unnecessary actions
+Benjamin Franklin | Autobiography @20203 | Resolve to perform what you ought; perform without fail what you resolve
+Benjamin Franklin | Autobiography @20203 | Speak not but what may benefit others or yourself; avoid trifling conversation
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | Hypocrisy is the homage vice pays to virtue
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | Nothing is given so profusely as advice
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | We always like those who admire us, we do not always like those whom we admire
+Philip Stanhope, Earl of Chesterfield | Letters to His Son @3361 | Whatever is worth doing at all is worth doing well
+Philip Stanhope, Earl of Chesterfield | Letters to His Son @3361 | Know the true value of time; snatch, seize, and enjoy every moment of it
+Philip Stanhope, Earl of Chesterfield | Letters to His Son @3361 | There is time enough for everything in the course of the day, if you do but one thing at once
+Philip Stanhope, Earl of Chesterfield | Letters to His Son @3361 | Wear your learning, like your watch, in a private pocket
+Philip Stanhope, Earl of Chesterfield | Letters to His Son @3361 | Take care of the pence; for the pounds will take care of themselves
+Philip Stanhope, Earl of Chesterfield | Letters to His Son @3361 | Idleness is only the refuge of weak minds
+Samuel Johnson | Rasselas @652 | Human life is everywhere a state in which much is to be endured, and little to be enjoyed
+Samuel Johnson | Rasselas @652 | Example is always more efficacious than precept
+Samuel Johnson | Rasselas @652 | Marriage has many pains, but celibacy has no pleasures
+Samuel Johnson | Rasselas @652 | Nothing is more idle than to inquire after happiness which nature has kindly placed within our reach
+Aesop | Aesop's Fables @11339 | Slow and steady wins the race
+Aesop | Aesop's Fables @11339 | Do not count your chickens before they are hatched
+Aesop | Aesop's Fables @11339 | Self-help is the best help
+Aesop | Aesop's Fables @11339 | Necessity is the mother of invention
+
+## Nature
+Henry David Thoreau | Walden @205 | Heaven is under our feet as well as over our heads
+Henry David Thoreau | Walden @205 | A lake is the landscape's most beautiful and expressive feature. It is earth's eye
+Henry David Thoreau | Walden @205 | We need the tonic of wildness
+Henry David Thoreau | Walden @205 | I have a great deal of company in my house; especially in the morning, when nobody calls
+Henry David Thoreau | Excursions @9846 | In wildness is the preservation of the world
+Ralph Waldo Emerson | Nature @29433 | In the woods, we return to reason and faith
+Ralph Waldo Emerson | Nature @29433 | The lover of nature is he whose inward and outward senses are still truly adjusted to each other
+Ralph Waldo Emerson | Nature @29433 | To the attentive eye, each moment of the year has its own beauty
+Ralph Waldo Emerson | Nature @29433 | Nature always wears the colors of the spirit
+Ralph Waldo Emerson | Nature @29433 | Standing on the bare ground, my head bathed by the blithe air, and uplifted into infinite space, all mean egotism vanishes
+Ralph Waldo Emerson | Nature @29433 | If the stars should appear one night in a thousand years, how would men believe and adore
+Walt Whitman | Leaves of Grass @1322 | I think I could turn and live with animals, they are so placid and self-contain'd
+Walt Whitman | Leaves of Grass @1322 | Now I see the secret of the making of the best persons, It is to grow in the open air and to eat and sleep with the earth
+Charles Darwin | The Voyage of the Beagle @944 | Among the scenes which are deeply impressed on my mind, none exceed in sublimity the primeval forests undefaced by the hand of man
+Rabindranath Tagore | Stray Birds @6524 | The grass seeks her crowd in the earth. The tree seeks his solitude of the sky
+Kenneth Grahame | The Wind in the Willows @289 | The Mole had been working very hard all the morning, spring-cleaning his little home
+Emily Dickinson | Poems @12242 | To make a prairie it takes a clover and one bee
+
+## Courage & Freedom
+Frederick Douglass | Narrative of the Life of Frederick Douglass @23 | You have seen how a man was made a slave; you shall see how a slave was made a man
+Frederick Douglass | Narrative of the Life of Frederick Douglass @23 | From that moment, I understood the pathway from slavery to freedom
+Abraham Lincoln | Speeches & Letters @14721 | A house divided against itself cannot stand
+Abraham Lincoln | Speeches & Letters @14721 | With malice toward none, with charity for all, with firmness in the right as God gives us to see the right
+Abraham Lincoln | Speeches & Letters @14721 | Let us have faith that right makes might
+Thomas Jefferson | Declaration of Independence @1 | We hold these truths to be self-evident, that all men are created equal
+Thomas Jefferson | Declaration of Independence @1 | Life, Liberty and the pursuit of Happiness
+Thomas Paine | Common Sense @147 | Society in every state is a blessing, but government, even in its best state, is but a necessary evil
+Thomas Paine | Common Sense @147 | We have it in our power to begin the world over again
+Thomas Paine | Common Sense @147 | The cause of America is in a great measure the cause of all mankind
+Mary Wollstonecraft | A Vindication of the Rights of Woman @3420 | I do not wish them to have power over men; but over themselves
+Mary Wollstonecraft | A Vindication of the Rights of Woman @3420 | Strengthen the female mind by enlarging it, and there will be an end to blind obedience
+Mary Wollstonecraft | A Vindication of the Rights of Woman @3420 | Taught from their infancy that beauty is woman's sceptre, the mind shapes itself to the body
+Booker T. Washington | Up from Slavery @2376 | success is to be measured not so much by the position that one has reached in life as by the obstacles which he has overcome while trying to succeed
+Booker T. Washington | Up from Slavery @2376 | No race can prosper till it learns that there is as much dignity in tilling a field as in writing a poem
+Booker T. Washington | Up from Slavery @2376 | I would permit no man, no matter what his colour might be, to narrow and degrade my soul by making me hate him
+W. E. B. Du Bois | The Souls of Black Folk @408 | The problem of the twentieth century is the problem of the color-line
+W. E. B. Du Bois | The Souls of Black Folk @408 | One ever feels his twoness, an American, a Negro; two souls, two thoughts, two unreconciled strivings
+W. E. B. Du Bois | The Souls of Black Folk @408 | I sit with Shakespeare and he winces not
+Henry David Thoreau | On the Duty of Civil Disobedience @71 | That government is best which governs least
+Henry David Thoreau | On the Duty of Civil Disobedience @71 | Under a government which imprisons any unjustly, the true place for a just man is also a prison
+Henry David Thoreau | On the Duty of Civil Disobedience @71 | Any man more right than his neighbors constitutes a majority of one already
+John Stuart Mill | On Liberty @34901 | If all mankind minus one, were of one opinion, and only one person were of the contrary opinion, mankind would be no more justified in silencing that one person
+Inazo Nitobe | Bushido @12096 | Courage is doing what is right
+Alexander Hamilton | The Federalist Papers @1404 | A nation, despicable by its weakness, forfeits even the privilege of being neutral
+
+## Science & Discovery
+Charles Darwin | On the Origin of Species @1228 | There is grandeur in this view of life, with its several powers, having been originally breathed into a few forms or into one
+Charles Darwin | On the Origin of Species @1228 | from so simple a beginning endless forms most beautiful and most wonderful have been, and are being, evolved
+Charles Darwin | On the Origin of Species @1228 | I have called this principle, by which each slight variation, if useful, is preserved, by the term of Natural Selection
+Charles Darwin | Autobiography @2010 | I have steadily endeavoured to keep my mind free so as to give up any hypothesis, however much beloved
+Michael Faraday | The Chemical History of a Candle @14474 | There is not a law under which any part of this universe is governed which does not come into play, and is touched upon in these phenomena
+Leonardo da Vinci | Notebooks @5000 | Experience never errs; it is only your judgments that err
+Leonardo da Vinci | Notebooks @5000 | Wisdom is the daughter of experience
+Leonardo da Vinci | Notebooks @5000 | Obstacles cannot crush me; every obstacle yields to stern resolve
+Leonardo da Vinci | Notebooks @5000 | The sun does not move
+Robert Hooke | Micrographia @15491 | the science of Nature has been already too long made only a work of the Brain and the Fancy
+Alexander von Humboldt | Cosmos @14565 | Nature considered rationally, that is to say, submitted to the process of thought, is a unity in diversity of phenomena
+Mary Shelley | Frankenstein @84 | Life, although it may only be an accumulation of anguish, is dear to me
+Blaise Pascal | Pensees @18269 | The last proceeding of reason is to recognise that there is an infinity of things which are beyond it
+Ralph Waldo Emerson | Society and Solitude @69258 | Hitch your wagon to a star
+
+## Philosophy
+Ralph Waldo Emerson | The Conduct of Life @39827 | Strong men believe in cause and effect
+Henry David Thoreau | Walden @205 | Our life is frittered away by detail
+Michel de Montaigne | Essays @3600 | The greatest thing in the world is for a man to know that he is his own
+Michel de Montaigne | Essays @3600 | We should always, as near as we can, be booted and spurred, and ready to go
+Plato | The Republic @1497 | the beginning is the most important part of any work
+Aristotle | Nicomachean Ethics @8438 | it is not one swallow or one fine day that makes a spring, so it is not one day or a short time that makes a man blessed and happy
+Friedrich Nietzsche | Beyond Good and Evil @4363 | if thou gaze long into an abyss, the abyss will also gaze into thee
+William James | Talks to Teachers @16287 | the great thing in all education is to make our nervous system our ally instead of our enemy
+Ralph Waldo Emerson | Essays First Series @2944 | The reward of a thing well done, is to have done it
+Ralph Waldo Emerson | Essays First Series @2944 | Life only avails, not the having lived
+Ralph Waldo Emerson | Essays First Series @2944 | Our strength grows out of our weakness
+Ralph Waldo Emerson | Essays Second Series @2945 | Beauty is the moment of transition, as if the form were just ready to flow into other forms
+Henry David Thoreau | Walden @205 | Every generation laughs at the old fashions, but follows religiously the new
+Henry David Thoreau | Walden @205 | It is never too late to give up our prejudices
+Henry David Thoreau | Walden @205 | What a man thinks of himself, that it is which determines, or rather indicates, his fate
+Henry David Thoreau | Walden @205 | I had three chairs in my house; one for solitude, two for friendship, three for society
+
+## Wisdom
+Benjamin Franklin | Way to Wealth @43855 | industry pays debts, while despair increaseth them
+Benjamin Franklin | Way to Wealth @43855 | Beware of little expences
+Benjamin Franklin | Way to Wealth @43855 | plow deep, while sluggards sleep, and you shall have corn to sell and to keep
+Benjamin Franklin | Way to Wealth @43855 | Work while it is called to-day, for you know not how much you may be hindered to-morrow
+Benjamin Franklin | Way to Wealth @43855 | The sleeping fox catches no poultry
+Benjamin Franklin | Way to Wealth @43855 | Laziness travels so slowly, that Poverty soon overtakes him
+Benjamin Franklin | Way to Wealth @43855 | One to-day is worth two to-morrows
+Benjamin Franklin | Way to Wealth @43855 | Fools make feasts, and wise men eat them
+Benjamin Franklin | Way to Wealth @43855 | If you would know the value of money, go and try to borrow some
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | We have all sufficient strength to support the misfortunes of others
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | We are never so happy or so unhappy as we suppose
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | If we had no faults we should not take so much pleasure in noting those of others
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | It is more disgraceful to distrust than to be deceived by our friends
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | The true way to be deceived is to think oneself more knowing than others
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | We become so accustomed to disguise ourselves to others that at last we are disguised to ourselves
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | Nothing prevents our being natural so much as the desire to appear so
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | Everyone complains of his memory, no one of his judgment
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | We easily forget crimes that are known only to ourselves
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | Our virtues are most frequently but vices disguised
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | Philosophy triumphs easily over past evils and future evils; but present evils triumph over it
+Francois de La Rochefoucauld | Reflections; or Sentences and Moral Maxims @9105 | Those who apply themselves too much to little things often become incapable of great things
+
+## Nature
+Henry David Thoreau | Excursions @9846 | I think that I cannot preserve my health and spirits, unless I spend four hours a day at least
+Henry David Thoreau | Walden @205 | Nature puts no question and answers none which we mortals ask
+Henry David Thoreau | Walden @205 | We can never have enough of Nature
+Henry David Thoreau | Walden @205 | I frequently tramped eight or ten miles through the deepest snow to keep an appointment with a beech-tree
+Henry David Thoreau | Walden @205 | There is no odor so bad as that which arises from goodness tainted
+Henry David Thoreau | Walden @205 | The sun is but a morning star
+Henry David Thoreau | Walden @205 | Every morning was a cheerful invitation to make my life of equal simplicity, and I may say innocence, with Nature herself
+Ralph Waldo Emerson | Nature @29433 | The sky is the daily bread of the eyes
+Ralph Waldo Emerson | Nature @29433 | Nature is a language, and every new fact one learns is a new word
+Ralph Waldo Emerson | Nature @29433 | Every natural fact is a symbol of some spiritual fact
+Walt Whitman | Leaves of Grass @1322 | Every moment of light and dark is a miracle
+Walt Whitman | Leaves of Grass @1322 | A child said What is the grass? fetching it to me with full hands
+Charles Darwin | The Voyage of the Beagle @944 | Delight itself, however, is a weak term to express the feelings of a naturalist who, for the first time, has wandered by himself in a Brazilian forest
+Emily Dickinson | Poems @12242 | I never saw a moor, I never saw the sea
+Emily Dickinson | Poems @12242 | A bird came down the walk
+Emily Dickinson | Poems @12242 | The morns are meeker than they were, The nuts are getting brown
+John Keats | Poems Published in 1820 @23684 | Thou wast not born for death, immortal Bird
+Kenneth Grahame | The Wind in the Willows @289 | Never in his life had he seen a river before, this sleek, sinuous, full-bodied animal, chasing and chuckling
+Kenneth Grahame | The Wind in the Willows @289 | the river still chattered on to him, a babbling procession of the best stories in the world
+
+## Courage & Freedom
+Abraham Lincoln | Gettysburg Address @4 | Four score and seven years ago, our fathers brought forth upon this continent a new nation: conceived in liberty, and dedicated to the proposition that all men are created equal
+Charles Darwin | The Voyage of the Beagle @944 | if the misery of our poor be caused not by the laws of nature, but by our institutions, great is our sin
+Frederick Douglass | Narrative of the Life of Frederick Douglass @23 | I would at times feel that learning to read had been a curse rather than a blessing
+Thomas Paine | Common Sense @147 | Time makes more converts than reason
+Thomas Paine | Common Sense @147 | Of more worth is one honest man to society, and in the sight of God, than all the crowned ruffians that ever lived
+Booker T. Washington | Up from Slavery @2376 | the individual who can do something that the world wants done will, in the end, make his way regardless of his race
+Mary Wollstonecraft | A Vindication of the Rights of Woman @3420 | It is justice, not charity, that is wanting in the world
+Henry David Thoreau | On the Duty of Civil Disobedience @71 | Must the citizen ever for a moment, or in the least degree, resign his conscience to the legislator
+Henry David Thoreau | On the Duty of Civil Disobedience @71 | It is not desirable to cultivate a respect for the law, so much as for the right
+Charlotte Bronte | Jane Eyre @1260 | I care for myself. The more solitary, the more friendless, the more unsustained I am, the more I will respect myself
+Rabindranath Tagore | Gitanjali @7164 | Into that heaven of freedom, my Father, let my country awake
+
+## Science & Discovery
+Leonardo da Vinci | Notebooks @5000 | Just as eating against one's will is injurious to health, so study without a liking for it spoils the memory, and it retains nothing it takes in
+Arthur Conan Doyle | The Adventures of Sherlock Holmes @1661 | when you have excluded the impossible, whatever remains, however improbable, must be the truth
+Arthur Conan Doyle | The Adventures of Sherlock Holmes @1661 | It has long been an axiom of mine that the little things are infinitely the most important
+Charles Darwin | On the Origin of Species @1228 | Natural selection acts only by taking advantage of slight successive variations; she can never take a great and sudden leap
+Charles Darwin | On the Origin of Species @1228 | We see nothing of these slow changes in progress, until the hand of time has marked the long lapse of ages
+Charles Darwin | Autobiography @2010 | My mind seems to have become a kind of machine for grinding general laws out of large collections of facts
+Charles Darwin | Autobiography @2010 | I have tried to make it a golden rule, whenever a published fact, a new observation or thought came across me, which was opposed to my general results, to make a memorandum of it without fail and at once
+Albert Einstein | Relativity @5001 | there is no such thing as an independently existing trajectory
+Michael Faraday | The Chemical History of a Candle @14474 | There is no better, there is no more open door by which you can enter into the study of natural philosophy than by considering the physical phenomena of a candle
+Leonardo da Vinci | Notebooks @5000 | Science is the captain, and practice the soldiers
+Leonardo da Vinci | Notebooks @5000 | Every action needs to be prompted by a motive
+Leonardo da Vinci | Notebooks @5000 | Those who are in love with practice without knowledge are like the sailor who gets into a ship without rudder or compass
+Leonardo da Vinci | Notebooks @5000 | The painter who draws merely by practice and by eye, without any reason, is like a mirror which copies every thing placed in front of it
+Leonardo da Vinci | Notebooks @5000 | Nature never breaks her own laws
+Robert Hooke | Micrographia @15491 | By the means of Telescopes, there is nothing so far distant but may be represented to our view
+Alexander von Humboldt | Cosmos @14565 | The most dangerous worldview is the worldview of those who have not viewed the world
+Mary Shelley | Frankenstein @84 | the world was to me a secret which I desired to divine
+Mary Shelley | Frankenstein @84 | So much has been done, exclaimed the soul of Frankenstein, more, far more, will I achieve
+Francis Bacon | Essays @575 | Nature is often hidden; sometimes overcome; seldom extinguished
+Francis Bacon | Essays @575 | If a man will begin with certainties, he shall end in doubts
+Blaise Pascal | Pensees @18269 | We know the truth, not only by the reason, but also by the heart
+
+## Poetry
+Emily Dickinson | Poems @12242 | Success is counted sweetest By those who ne'er succeed
+Emily Dickinson | Poems @12242 | Tell all the truth but tell it slant
+Emily Dickinson | Poems @12242 | The brain is wider than the sky
+Emily Dickinson | Poems @12242 | Much madness is divinest sense To a discerning eye
+Walt Whitman | Leaves of Grass @1322 | I too am not a bit tamed, I too am untranslatable, I sound my barbaric yawp over the roofs of the world
+Walt Whitman | Leaves of Grass @1322 | Re-examine all you have been told at school or church or in any book, dismiss whatever insults your own soul
+Walt Whitman | Leaves of Grass @1322 | I exist as I am, that is enough
+Omar Khayyam | The Rubaiyat @246 | Ah, make the most of what we yet may spend, Before we too into the Dust descend
+Omar Khayyam | The Rubaiyat @246 | The Worldly Hope men set their Hearts upon Turns Ashes
+Omar Khayyam | The Rubaiyat @246 | Awake! for Morning in the Bowl of Night Has flung the Stone that puts the Stars to Flight
+Rabindranath Tagore | Gitanjali @7164 | I slept and dreamt that life was joy. I awoke and saw that life was service
+Rabindranath Tagore | Gitanjali @7164 | The song that I came to sing remains unsung to this day
+Rabindranath Tagore | Stray Birds @6524 | Love is life in its fulness like the cup with its wine
+Rabindranath Tagore | Stray Birds @6524 | Man is a born child, his power is the power of growth
+William Shakespeare | Hamlet @1524 | Neither a borrower nor a lender be
+William Shakespeare | Hamlet @1524 | Give every man thy ear, but few thy voice
+William Shakespeare | Hamlet @1524 | The lady doth protest too much, methinks
+William Shakespeare | Hamlet @1524 | Something is rotten in the state of Denmark
+William Shakespeare | As You Like It @1523 | Sweet are the uses of adversity
+William Shakespeare | Macbeth @1533 | Fair is foul, and foul is fair
+William Shakespeare | Macbeth @1533 | Double, double toil and trouble; Fire burn, and cauldron bubble
+William Shakespeare | The Tempest @1540 | O brave new world, That has such people in't
+William Shakespeare | The Tempest @1540 | Hell is empty, And all the devils are here
+William Shakespeare | Julius Caesar @1522 | Friends, Romans, countrymen, lend me your ears
+William Shakespeare | Much Ado about Nothing @1519 | Some Cupid kills with arrows, some with traps
+William Shakespeare | Twelfth Night @1526 | Better a witty fool than a foolish wit
+William Shakespeare | King Lear @1532 | How sharper than a serpent's tooth it is To have a thankless child
+William Shakespeare | Romeo and Juliet @1513 | These violent delights have violent ends
+William Shakespeare | Sonnets @1041 | When in disgrace with fortune and men's eyes
+William Shakespeare | Sonnets @1041 | Love is not love Which alters when it alteration finds

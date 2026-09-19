@@ -4,7 +4,7 @@
 // JSON file per story ({ paragraphs }). Every story is validated; failures are reported and skipped.
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { bookHtmlUrl, cachedFetch, cleanText, countWords, normalizeTitle, parseHtml } from './gutenberg.mjs';
+import { bookHtmlUrl, cachedFetch, cleanText, countWords, normalizeTitle, parseHtml, typeable } from './gutenberg.mjs';
 
 const OUT = path.resolve('public/catalog/stories');
 const MANIFEST = path.resolve('scripts/catalog/story-sources.json');
@@ -15,28 +15,7 @@ const QUICK_READ_WORDS = 2400; // about ten minutes at an average reading pace
 
 const slug = value => value.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[’'"]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-/** Straight quotes and plain dashes, so every character in a story can be typed on a normal keyboard. */
-export function typeable(text) {
-  return cleanText(text)
-    .replace(/[‘’‛′]/g, "'")
-    .replace(/[“”„″]/g, '"')
-    .replace(/\s*[—―]\s*/g, ' - ')
-    .replace(/–/g, '-')
-    .replace(/…/g, '...')
-    .replace(/×/g, 'x')
-    .replace(/½/g, '1/2')
-    .replace(/¼/g, '1/4')
-    .replace(/¾/g, '3/4')
-    .replace(/´/g, "'")
-    .replace(/æ/g, 'ae').replace(/Æ/g, 'Ae').replace(/œ/g, 'oe').replace(/Œ/g, 'Oe')
-    .replace(/\s*°/g, ' degrees')
-    .replace(/­/g, '')
-    .replace(/\s*[\[(]\*?\d*[\])]/g, (match) => (/\d|\*/.test(match) ? '' : match)) // footnote markers like [1], (*1) or (*)
-    .replace(/ {2,}/g, ' ')
-    .replace(/\s+([,.;:!?])/g, '$1')
-    .replace(/^- /, '')
-    .trim();
-}
+export { typeable };
 
 /** Heading text without page numbers, numbering or trailing punctuation, for matching against titles. */
 function headingKey(element) {

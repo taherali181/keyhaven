@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Atom, BookOpen, Landmark, Layers, Leaf, Maximize2, Minimize2, Shuffle, SlidersHorizontal, Sparkles, Volume2, VolumeX } from 'lucide-react';
+import { Atom, BookOpen, Brain, Feather, Flag, Landmark, Layers, Leaf, Lightbulb, Maximize2, Minimize2, Shuffle, SlidersHorizontal, Smile, Star, Trees, Volume2, VolumeX } from 'lucide-react';
 import { GlassSelect } from '@/components/ui/GlassSelect';
-import { QUOTES } from '@/data/quotes';
-import type { ReaderStatId, TestResultRecord, TypingStats, UserSettings } from '@/types';
+import type { Quote, ReaderStatId, TestResultRecord, TypingStats, UserSettings } from '@/types';
+import { db } from '@/lib/db';
+import { loadQuotes, quoteCategories, quoteKey } from '@/lib/quotes';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { TypingArea } from '@/components/typing/TypingArea';
@@ -21,28 +22,73 @@ import { readerSurfaceProps } from '@/lib/reader-style';
 type UpdateSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  All: <Layers aria-hidden="true" />,
   Stoicism: <Landmark aria-hidden="true" />,
   'Eastern Philosophy': <Leaf aria-hidden="true" />,
-  'Science & Tech': <Atom aria-hidden="true" />,
   Literature: <BookOpen aria-hidden="true" />,
-  Motivational: <Sparkles aria-hidden="true" />
+  Poetry: <Feather aria-hidden="true" />,
+  'Humour & Wit': <Smile aria-hidden="true" />,
+  Philosophy: <Brain aria-hidden="true" />,
+  Wisdom: <Lightbulb aria-hidden="true" />,
+  Nature: <Trees aria-hidden="true" />,
+  'Courage & Freedom': <Flag aria-hidden="true" />,
+  'Science & Discovery': <Atom aria-hidden="true" />
 };
-const categoryOptions = Object.entries(CATEGORY_ICONS).map(([value, icon]) => ({
-  value, label: value, icon, count: value === 'All' ? QUOTES.length : QUOTES.filter(quote => quote.category === value).length
-}));
+/** A random position in a list of `length` (used from events and effects, never while rendering). */
+const randomIndex = (length: number) => Math.floor(Math.random() * Math.max(1, length));
+/** What the category picker filters by: every quote, saved ones, or a category. Stored in settings.quoteFilter. */
+const ALL = 'all';
+const SAVED = 'saved';
+/** Shown until the quotes have loaded (and when nothing is saved yet), so the page keeps its shape. */
+const PLACEHOLDER: Quote = { id: 'placeholder', text: '', author: 'Quotes', category: '', length: 'short' };
 /** Bottom-bar items that mean something for a single quote. */
 const QUOTE_STATS = new Set<ReaderStatId>(['wpm', 'accuracy', 'rawWpm', 'elapsed']);
 
 /** Quotes in the reader layout: a glass title bar, one control box and the shared bottom bar. */
 export const QuotesView = ({ settings, onKeyPress, onUpdateSetting }: { settings: UserSettings; onKeyPress: (key: string) => void; onUpdateSetting: UpdateSetting }) => {
-  const [category, setCategory] = useState('All');
+  const [all, setAll] = useState<Quote[] | null>(null);
+  const [saved, setSaved] = useState<Set<string>>(() => new Set());
+  const [loadError, setLoadError] = useState(false);
+  const category = settings.quoteFilter || ALL;
   const [index, setIndex] = useState(0);
   const showResultRef = useRef<(result: ReaderResult) => void>(() => {});
   const fullscreen = useFullscreen();
-  const quotes = useMemo(() => (category === 'All' ? QUOTES : QUOTES.filter(quote => quote.category === category)), [category]);
-  const position = index % quotes.length;
-  const quote = quotes[position] ?? QUOTES[0];
+
+  // Quotes and your saved ones load after the first render; the first quote is picked at random then.
+  useEffect(() => {
+    let live = true;
+    void Promise.all([loadQuotes(), db.favorites.where('kind').equals('quote').primaryKeys()]).then(([items, keys]) => {
+      if (!live) return;
+      setAll(items);
+      setSaved(new Set(keys.map(String)));
+      setIndex(randomIndex(items.length));
+    }).catch(() => { if (live) setLoadError(true); });
+    return () => { live = false; };
+  }, []);
+
+  const quotes = useMemo(() => {
+    const items = all ?? [];
+    if (category === SAVED) return items.filter(item => saved.has(quoteKey(item.id)));
+    return category === ALL ? items : items.filter(item => item.category === category);
+  }, [all, category, saved]);
+  const position = quotes.length ? index % quotes.length : 0;
+  const quote = quotes[position] ?? PLACEHOLDER;
+  const isSaved = saved.has(quoteKey(quote.id));
+  const emptySaved = all !== null && category === SAVED && !quotes.length;
+  const categoryOptions = useMemo(() => [
+    { value: ALL, label: 'All quotes', icon: <Layers aria-hidden="true" />, count: all?.length ?? 0 },
+    { value: SAVED, label: 'Saved', icon: <Star aria-hidden="true" />, count: saved.size },
+    ...quoteCategories(all ?? []).map(value => ({ value, label: value, icon: CATEGORY_ICONS[value] ?? <Layers aria-hidden="true" />, count: (all ?? []).filter(item => item.category === value).length }))
+  ], [all, saved]);
+
+  const toggleSaved = async () => {
+    if (quote === PLACEHOLDER) return;
+    const key = quoteKey(quote.id);
+    const next = new Set(saved);
+    if (next.has(key)) { next.delete(key); await db.favorites.delete(key); }
+    else { next.add(key); const now = Date.now(); await db.favorites.put({ key, kind: 'quote', addedAt: now, updatedAt: now }); }
+    setSaved(next);
+  };
+  const choose = (value: string) => { onUpdateSetting('quoteFilter', value); setIndex(0); engine.reset(); };
 
   const complete = (stats: TypingStats) => {
     const title = `Quote by ${quote.author}`;
@@ -65,9 +111,9 @@ export const QuotesView = ({ settings, onKeyPress, onUpdateSetting }: { settings
   const popup = useResultPopup(engine.typed.length, engine.isFinished);
   useEffect(() => { showResultRef.current = popup.show; });
   const go = (next: number) => { setIndex(next); engine.reset(); };
-  const advance = () => go((position + 1) % quotes.length);
+  const advance = () => go((position + 1) % Math.max(1, quotes.length));
   const back = () => go(Math.max(0, position - 1));
-  const shuffle = () => go(Math.floor(Math.random() * quotes.length));
+  const shuffle = () => go(randomIndex(quotes.length));
   // A finished quote stays on screen: Enter, or starting to type, moves to the next one.
   const typingKeyDown = (event: React.KeyboardEvent) => {
     if (engine.isFinished && !event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'Enter' || event.key.length === 1)) {
@@ -84,7 +130,7 @@ export const QuotesView = ({ settings, onKeyPress, onUpdateSetting }: { settings
     readingWpm: 0, typingWpm: engine.wpm, accuracy: engine.accuracy, rawWpm: engine.rawWpm, elapsedSeconds: engine.timeElapsed,
     bookPage: null, bookPages: null, part: 0, partCount: 1, now: 0, sessionStartedAt: 0
   }, settings.readerBarStyle.labels);
-  const source = quote.source ?? 'Selected wisdom';
+  const source = quote.source ?? '';
 
   return <section className="reader-workspace" {...readerSurfaceProps(settings)}>
     {settings.readerBackground !== 'plain' && <StoryAtmosphere withScenery={settings.readerBackground !== 'none'} motion={settings.ambientMotion} />}
@@ -94,7 +140,7 @@ export const QuotesView = ({ settings, onKeyPress, onUpdateSetting }: { settings
           <span className="story-bar-surface glass" aria-hidden="true" />
           <div className="story-bar-title">
             <div key={quote.id} className="reader-meta-copy story-bar-copy">
-              <p className="eyebrow">Quote · {quote.category}</p>
+              <p className="eyebrow">{quote === PLACEHOLDER ? (emptySaved ? 'Saved quotes' : 'Quotes') : `Quote · ${quote.category}`}</p>
               <div className="story-bar-heading">
                 <h1>{quote.author}</h1>
                 <span className="story-bar-byline">{source}</span>
@@ -104,7 +150,8 @@ export const QuotesView = ({ settings, onKeyPress, onUpdateSetting }: { settings
           </div>
         </header>
         <div className="story-side glass">
-          <GlassSelect variant="toolbar" align="right" ariaLabel="Quote category" value={category} options={categoryOptions} onChange={value => { setCategory(value); go(0); }} />
+          <button type="button" className="story-bar-button is-icon quote-save" onClick={() => void toggleSaved()} disabled={quote === PLACEHOLDER} aria-pressed={isSaved} aria-label={isSaved ? 'Saved quote' : 'Save quote'} title={isSaved ? 'Remove from saved quotes' : 'Save this quote'}><Star aria-hidden="true" /></button>
+          <GlassSelect variant="toolbar" align="right" ariaLabel="Quote category" value={category} options={categoryOptions} onChange={choose} />
           <span className="story-side-divider" aria-hidden="true" />
           {fullscreen.supported && <button type="button" className="story-bar-button is-icon" onClick={fullscreen.toggle} aria-label={fullscreen.active ? 'Exit full screen' : 'Enter full screen'} title={fullscreen.active ? 'Exit full screen' : 'Full screen'}>{fullscreen.active ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}</button>}
           <button type="button" className="story-bar-button is-icon" onClick={() => onUpdateSetting('muted', !settings.muted)} aria-label="Mute sound" aria-pressed={settings.muted} title={settings.muted ? 'Unmute sound' : 'Mute sound'}>{settings.muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}</button>
@@ -113,7 +160,13 @@ export const QuotesView = ({ settings, onKeyPress, onUpdateSetting }: { settings
       </div>
 
       <div className="reader-stage">
-        <TypingArea targetText={quote.text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerWidth}`} lineHeight={settings.readerLineHeight} onKeyDown={typingKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} onEscape={() => (popup.view === 'toast' ? popup.collapse() : engine.reset())} />
+        {emptySaved || loadError || all === null
+          ? <div className="quotes-empty" role="status">
+            {emptySaved ? <><Star aria-hidden="true" /><p><strong>No saved quotes yet</strong></p><p>Star a quote you love and it will wait for you here.</p><button type="button" className="rs-btn" onClick={() => choose(ALL)}>Show all quotes</button></>
+              : loadError ? <p>Quotes could not be loaded. Check your connection and try again.</p>
+                : <span className="skeleton quotes-skeleton" aria-label="Loading quotes" />}
+          </div>
+          : <TypingArea targetText={quote.text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerWidth}`} lineHeight={settings.readerLineHeight} onKeyDown={typingKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} onEscape={() => (popup.view === 'toast' ? popup.collapse() : engine.reset())} />}
       </div>
 
       <ReaderBottomBar

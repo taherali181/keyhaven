@@ -10,7 +10,7 @@ describe('reader typography', () => {
 
   it('snaps numbers to the slider step and clamps them to its range', () => {
     expect(normalizeTypography({ fontSize: 100, readerFontWeight: 333, readerLineHeight: 1.83, readerWordSpacing: -1 }))
-      .toEqual({ fontSize: 44, readerFontWeight: 350, readerLineHeight: 1.85, readerWordSpacing: 0 });
+      .toEqual({ fontSize: 56, readerFontWeight: 350, readerLineHeight: 1.85, readerWordSpacing: 0 });
     expect(snap(0.0061, TYPE_RANGES.readerLetterSpacing)).toBe(0.005);
   });
 
