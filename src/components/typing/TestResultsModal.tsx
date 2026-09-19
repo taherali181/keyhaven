@@ -8,6 +8,8 @@ import { TypingStats } from '@/types';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { SpeedChart } from '@/components/typing/SpeedChart';
 import { ease, spring } from '@/lib/motion';
+import { missedKeys } from '@/components/reader/results/ResultBits';
+import { describeKey } from '@/components/typing/VirtualKeyboardHeatmap';
 
 interface TestResultsModalProps {
   stats: TypingStats | null;
@@ -29,6 +31,7 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({ stats, isOpe
     { label: 'Raw wpm', value: `${stats.rawWpm}` },
     { label: 'Consistency', value: `${stats.consistency}%` }
   ];
+  const misses = missedKeys(stats.errorHeatmap, 8);
   const characters = [
     { label: 'Characters', value: stats.totalChars, tone: '' },
     { label: 'Correct', value: stats.correctChars, tone: 'is-correct' },
@@ -65,6 +68,13 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({ stats, isOpe
         <dl className="results-chars">
           {characters.map(item => <div key={item.label} className={item.tone}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}
         </dl>
+
+        <div className="results-misses">
+          <small>Most missed keys</small>
+          {misses.length
+            ? <ul aria-label="Most missed keys">{misses.map(([key, count]) => <li key={key} title={`${describeKey(key)}: ${count} ${count === 1 ? 'miss' : 'misses'}`}><kbd>{key === ' ' ? '␣' : key}</kbd><span>{count}</span></li>)}</ul>
+            : <span className="results-clean">None. A clean run.</span>}
+        </div>
 
         <div className="results-actions">
           <button type="button" className="rs-btn" onClick={onRetry}><RotateCcw aria-hidden="true" />Try again<span className="results-keys" aria-hidden="true"><kbd>Tab</kbd><kbd>Enter</kbd></span></button>

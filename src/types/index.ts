@@ -442,7 +442,25 @@ export interface UserSettings {
   readerInput: ReaderInputSettings;
   /** Quotes shown in Quotes: every quote, only saved ones, or one category. */
   quoteFilter: string;
+  /** The last Speed test set up, so the next visit starts the same way. */
+  speedPrefs: SpeedPrefs;
   updatedAt: number;
+}
+
+export type SpeedMode = 'time' | 'words' | 'quote' | 'custom' | 'zen';
+export type QuoteLength = 'short' | 'medium' | 'long' | 'any';
+
+export interface SpeedPrefs {
+  mode: SpeedMode;
+  /** Seconds, for a timed test. */
+  time: number;
+  /** Words, for a word-count test. */
+  words: number;
+  quoteLength: QuoteLength;
+  punctuation: boolean;
+  numbers: boolean;
+  /** Your own practice text, for Custom. */
+  customText: string;
 }
 
 export interface TypingSessionEvidence {

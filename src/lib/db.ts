@@ -5,6 +5,7 @@ import { DEFAULT_TYPOGRAPHY, normalizeTypography } from '@/lib/typography';
 import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ReaderToneId, ImportedDocumentRecord, AcademyStateRecord, ShelfRecord, Work, ReadingSessionRecord, PendingDeleteRecord, HighlightRecord, FavoriteRecord, ManuscriptRecord, DocumentAssetRecord, DocumentFileRecord } from '@/types';
 import { installSyncTracking } from '@/lib/sync/tracking';
 import { DEFAULT_READER_INPUT, sanitizeReaderInput } from '@/lib/reader-input';
+import { DEFAULT_SPEED_PREFS, sanitizeSpeedPrefs } from '@/lib/speed';
 
 export class KeyHavenDatabase extends Dexie {
   testResults!: Table<TestResultRecord, number>;
@@ -153,6 +154,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   academyGuide: 'on',
   readerInput: DEFAULT_READER_INPUT,
   quoteFilter: 'all',
+  speedPrefs: DEFAULT_SPEED_PREFS,
   readerBackground: 'misty-mountains',
   readerOverlay: 65,
   readerBlur: 2,
@@ -199,7 +201,8 @@ export function normalizeSettings(value: unknown): UserSettings {
     ...normalizeTypography(parsed),
     sectionPrefs: sanitizeSectionPrefs(parsed.sectionPrefs),
     readerInput: sanitizeReaderInput(parsed.readerInput),
-    quoteFilter: typeof parsed.quoteFilter === 'string' && parsed.quoteFilter.length <= 60 ? parsed.quoteFilter : 'all'
+    quoteFilter: typeof parsed.quoteFilter === 'string' && parsed.quoteFilter.length <= 60 ? parsed.quoteFilter : 'all',
+    speedPrefs: sanitizeSpeedPrefs(parsed.speedPrefs)
   };
 }
 

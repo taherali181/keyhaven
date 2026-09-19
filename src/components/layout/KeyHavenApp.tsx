@@ -103,7 +103,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
               <div className="mode-view-root">
                 {currentMode === 'home' && <HomeView onNavigate={selectMode} />}
                 {currentMode === 'stories' && <ReaderHome settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
-                {currentMode === 'speed-test' && <SpeedTestView settings={sectionSettings} onKeyPress={playKeyPress} />}
+                {currentMode === 'speed-test' && <SpeedTestView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
                 {currentMode === 'quotes' && <QuotesView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
                 {currentMode === 'learn' && <LearnView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
                 {currentMode === 'arcade' && <ArcadeView settings={sectionSettings} onKeyPress={playKeyPress} />}
