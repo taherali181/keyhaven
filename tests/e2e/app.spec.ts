@@ -335,3 +335,12 @@ test('practice sections have their own small settings, and other pages none', as
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.locator('.reader-settings-trigger')).toHaveCount(0);
 });
+
+test('the sidebar offers sign in and brings you back afterwards', async ({ page }) => {
+  await page.goto('/speed');
+  await page.mouse.move(2, 450);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page).toHaveURL(/\/sign-in\?callbackUrl=%2Fspeed$/);
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Create an account' })).toHaveAttribute('href', '/sign-up?callbackUrl=%2Fspeed');
+});

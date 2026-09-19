@@ -9,14 +9,16 @@ import { syncDb } from '@/server/db';
 import { accounts, authenticators, credentials as credentialsTable, sessions, users, verificationTokens } from '@/server/schema';
 import { createUniqueProfile } from '@/server/accounts';
 import { allowAuthAttempt, requestAddress } from '@/server/rate-limit';
+import { googleConfigured } from '@/server/auth-config';
 
 const loginSchema = z.object({ email: z.string().email().transform(value => value.trim().toLowerCase()), password: z.string().min(1).max(128) });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: syncDb ? DrizzleAdapter(syncDb, { usersTable: users, accountsTable: accounts, sessionsTable: sessions, verificationTokensTable: verificationTokens, authenticatorsTable: authenticators }) : undefined,
   session: { strategy: 'jwt' },
+  // Google only when its client is configured, so the button never leads to an error page.
   providers: [
-    Google,
+    ...(googleConfigured() ? [Google] : []),
     Credentials({
       credentials: { email: { label: 'Email', type: 'email' }, password: { label: 'Password', type: 'password' } },
       async authorize(input, request) {
@@ -30,7 +32,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
     })
   ],
-  pages: { signIn: '/sign-in' },
+  pages: { signIn: '/sign-in', error: '/sign-in' },
   callbacks: {
     jwt({ token, user }) { if (user?.id) token.userId = user.id; return token; },
     session({ session, token }) { if (session.user) session.user.id = String(token.userId ?? token.sub ?? ''); return session; }

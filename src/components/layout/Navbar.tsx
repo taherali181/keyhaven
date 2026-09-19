@@ -11,6 +11,7 @@ import { useSidebarPinned } from '@/hooks/useSidebarPinned';
 import { fade, slideInLeft, slideInRight, spring } from '@/lib/motion';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { AppSettings } from '@/components/settings/AppSettings';
+import { AccountMenu } from '@/components/layout/AccountMenu';
 import { isLightTheme } from '@/lib/reader-style';
 
 interface NavbarProps {
@@ -166,6 +167,7 @@ export const Navbar: React.FC<NavbarProps> = props => {
         })}
       </nav>
       <div className="sidebar-footer">
+        <AccountMenu onOpenProfile={() => choose('profile')} />
         <button className="sidebar-link" onClick={() => setSettingsOpen(true)} title="Settings"><Settings2 /><span>Settings</span></button>
         <button className={`sidebar-link ${currentMode === 'profile' ? 'active' : ''}`} onClick={() => choose('profile')} aria-current={currentMode === 'profile' ? 'page' : undefined}>
           {currentMode === 'profile' && <motion.span layoutId={`${scope}-nav-pill`} className="sidebar-pill" transition={spring.snappy} />}

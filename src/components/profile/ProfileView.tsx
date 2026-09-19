@@ -2,14 +2,11 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
 import { BookMarked, BookOpen, Download, Flame, Gamepad2, GraduationCap, Keyboard, LogIn, Minus, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Trophy, Type, Upload } from 'lucide-react';
 import type { AcademyStateRecord, ArcadeScoreRecord, TypingMode, UserSettings } from '@/types';
 import { ALL_LESSONS, findLesson, lessonByLegacyId } from '@/data/academy/units';
 import { db } from '@/lib/db';
 import { syncEnabled } from '@/lib/sync-config';
-import { clearSessionCache } from '@/lib/session';
-import { clearLocalAccountData } from '@/lib/sync/engine';
 import { requestBackupNow, useBackupStatus, type BackupStatus } from '@/lib/sync/status';
 import { queueTombstone } from '@/lib/sync/tracking';
 import { downloadBlob, exportBackupBlob, importBackupFile } from '@/lib/backup-file';
@@ -18,6 +15,7 @@ import {
   plural, streaks, todayActivity, typingSummary, type DayActivity
 } from '@/lib/profile-stats';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { SignOutDialog } from '@/components/auth/SignOutDialog';
 import { ActivityCalendar } from './ActivityCalendar';
 import { Card, Meter, Ring, Stat } from './ProfileBits';
 import { ReadingSection } from './ProfileReading';
@@ -203,13 +201,6 @@ function BackupPanel({ status }: { status: BackupStatus }) {
     : status.state === 'error' ? `Backup paused: ${status.error ?? 'something went wrong'}.`
     : since ? `Last backed up ${since}.` : 'Backed up.';
 
-  const signOutAnd = async (removeFromDevice: boolean) => {
-    setSignOutOpen(false);
-    if (removeFromDevice) await clearLocalAccountData();
-    clearSessionCache();
-    await signOut({ callbackUrl: '/sign-in' });
-  };
-
   return <div className="profile-backup">
     <div className="profile-backup-head">
       <ShieldCheck aria-hidden="true" />
@@ -224,9 +215,7 @@ function BackupPanel({ status }: { status: BackupStatus }) {
       {enabled && !user && <><Link href="/sign-in" className="rs-btn is-primary"><LogIn aria-hidden="true" />Sign in</Link><Link href="/sign-up" className="rs-btn">Create account</Link></>}
       {user && <><button type="button" className="rs-btn is-primary" onClick={requestBackupNow} disabled={status.state === 'syncing'}><RefreshCw aria-hidden="true" />Back up now</button><button type="button" className="rs-btn" onClick={() => setSignOutOpen(true)}>Sign out</button></>}
     </div>
-    <ConfirmDialog open={signOutOpen} title="Sign out" confirmLabel="Remove and sign out" tone="danger" secondary={{ label: 'Keep and sign out', onClick: () => void signOutAnd(false) }} onConfirm={() => void signOutAnd(true)} onCancel={() => setSignOutOpen(false)}>
-      <p>Your progress is backed up to your account. Keep a copy on this device, or remove it so the next person here starts fresh.</p>
-    </ConfirmDialog>
+    <SignOutDialog open={signOutOpen} onCancel={() => setSignOutOpen(false)} />
   </div>;
 }
 
