@@ -2470,3 +2470,20 @@ mark.hl[data-note] { text-decoration: underline dotted color-mix(in oklab, var(-
   .ms-sheet { min-height: calc(100% - 60px); }
   .ms-hint { padding: 0 8px; }
 }
+
+/* ── Profile: achievements ── */
+.profile-card-note { color: var(--text-muted); font: 500 .75rem var(--font-mono); font-variant-numeric: tabular-nums; }
+.achievements { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.achievement { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--glass-border); border-radius: var(--r-md); background: color-mix(in oklab, var(--bg-card) 40%, transparent); }
+.achievement[data-earned] { border-color: color-mix(in oklab, var(--color-caret) 45%, var(--glass-border)); background: linear-gradient(135deg, color-mix(in oklab, var(--color-caret) 12%, transparent), transparent); }
+.achievement-icon { display: grid; width: 34px; height: 34px; flex: none; place-items: center; border-radius: 50%; background: color-mix(in oklab, var(--text-primary) 7%, transparent); color: var(--text-muted); }
+.achievement[data-earned] .achievement-icon { background: color-mix(in oklab, var(--color-caret) 24%, transparent); color: var(--color-caret); }
+.achievement-icon svg { width: 16px; height: 16px; stroke-width: 1.75; }
+.achievement-text { display: grid; min-width: 0; flex: 1; gap: 2px; }
+.achievement-text strong { color: var(--text-primary); font-size: .875rem; font-weight: 600; }
+.achievement:not([data-earned]) .achievement-text strong { color: var(--text-secondary); }
+.achievement-text small { color: var(--text-muted); font-size: .75rem; line-height: 1.4; }
+.achievement-progress { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.achievement-track { position: relative; height: 4px; flex: 1; overflow: hidden; border-radius: 99px; background: color-mix(in oklab, var(--text-primary) 9%, transparent); }
+.achievement-track i { position: absolute; inset: 0; border-radius: inherit; background: var(--color-accent); transform-origin: left; }
+.achievement-progress em { flex: none; color: var(--text-muted); font: normal 500 .625rem var(--font-mono); font-variant-numeric: tabular-nums; }

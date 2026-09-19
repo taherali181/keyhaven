@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { BookMarked, BookOpen, Download, Flame, Gamepad2, GraduationCap, Keyboard, LogIn, Minus, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Trophy, Type, Upload } from 'lucide-react';
+import { Award, BookMarked, BookOpen, Download, Flame, Gamepad2, GraduationCap, Keyboard, LogIn, Minus, Pencil, PenLine, Plus, RefreshCw, ShieldCheck, Trash2, Trophy, Type, Upload } from 'lucide-react';
 import type { AcademyStateRecord, ArcadeScoreRecord, TypingMode, UserSettings } from '@/types';
 import { ALL_LESSONS, findLesson, lessonByLegacyId } from '@/data/academy/units';
 import { db } from '@/lib/db';
@@ -14,6 +14,7 @@ import {
   academySummary, activityByDay, arcadeBests, calendarWeeks, compactNumber, formatMinutes, memberSince, readerLevel, readingSummary,
   plural, streaks, todayActivity, typingSummary, type DayActivity
 } from '@/lib/profile-stats';
+import { achievements, type Achievement, type AchievementGroup } from '@/lib/achievements';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SignOutDialog } from '@/components/auth/SignOutDialog';
 import { ActivityCalendar } from './ActivityCalendar';
@@ -100,11 +101,41 @@ export function ProfileView({ settings, onUpdateSetting, onNavigate, onOpenWork,
     <TypingSection results={data.results} onNavigate={onNavigate} />
     <ReadingSection summary={reading} sessions={data.sessions} onOpenWork={onOpenWork} onNavigate={onNavigate} />
 
+    <AchievementsCard list={achievements({ results: data.results, progress: data.progress, scores: data.scores, academy: data.academy, typingMinutes: typing.minutes, readingMinutes: reading.minutes, longestStreak: streak.longest, highlights: data.highlights, pieces: data.pieces, savedQuotes: data.savedQuotes })} />
+
     <div className="profile-pair">
       <PracticeCard academy={data.academy} scores={data.scores} onNavigate={onNavigate} />
       <DataCard settings={settings} hasResults={data.results.length > 0} onChanged={reload} onImportSettings={onImportSettings} />
     </div>
   </div>;
+}
+
+// ── Achievements ──
+
+const GROUP_ICONS: Record<AchievementGroup, React.ReactNode> = {
+  typing: <Keyboard aria-hidden="true" />, reading: <BookOpen aria-hidden="true" />, habit: <Flame aria-hidden="true" />,
+  practice: <GraduationCap aria-hidden="true" />, writing: <PenLine aria-hidden="true" />
+};
+
+function AchievementsCard({ list }: { list: Achievement[] }) {
+  const earned = list.filter(item => item.earned).length;
+  // Earned first, then the ones closest to done.
+  const ordered = [...list].sort((a, b) => Number(b.earned) - Number(a.earned) || b.current / b.target - a.current / a.target);
+  return <Card id="profile-achievements" eyebrow="Milestones" title="Achievements" actions={<span className="profile-card-note">{earned} of {list.length} earned</span>}>
+    <ul className="achievements">
+      {ordered.map(item => <li key={item.id} className="achievement" data-earned={item.earned || undefined}>
+        <span className="achievement-icon">{item.earned ? <Award aria-hidden="true" /> : GROUP_ICONS[item.group]}</span>
+        <span className="achievement-text">
+          <strong>{item.title}</strong>
+          <small>{item.detail}</small>
+          {!item.earned && item.target > 1 && <span className="achievement-progress" role="progressbar" aria-label={`${item.title} progress`} aria-valuemin={0} aria-valuemax={item.target} aria-valuenow={item.current}>
+            <span className="achievement-track"><i style={{ transform: `scaleX(${item.current / item.target})` }} /></span><em>{item.current} / {item.target}</em>
+          </span>}
+        </span>
+        <span className="sr-only">{item.earned ? 'Earned' : 'Not yet earned'}</span>
+      </li>)}
+    </ul>
+  </Card>;
 }
 
 // ── Identity ──

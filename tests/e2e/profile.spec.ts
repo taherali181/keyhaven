@@ -54,3 +54,12 @@ test('clearing typing history asks first', async ({ page }) => {
   await expect(dialog).toHaveCount(0);
   await expect(page.getByText('No typing yet')).toBeVisible();
 });
+
+test('achievements show what has been earned and how close the rest are', async ({ page }) => {
+  await openSeededProfile(page);
+  const card = page.getByRole('region', { name: 'Achievements' });
+  await expect(card).toContainText(/\d+ of 21 earned/);
+  const quick = card.getByRole('listitem').filter({ hasText: 'Quick fingers' });
+  await expect(quick).toContainText('Earned');
+  await expect(card.getByRole('progressbar', { name: 'Rapid progress' })).toHaveAttribute('aria-valuenow', '72');
+});

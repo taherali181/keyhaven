@@ -12,10 +12,14 @@ export interface ProfileData {
   shelf: ShelfRecord[];
   scores: ArcadeScoreRecord[];
   academy: AcademyStateRecord | null;
+  /** Counts for achievements. */
+  highlights: number;
+  pieces: number;
+  savedQuotes: number;
   loaded: boolean;
 }
 
-const EMPTY: ProfileData = { results: [], sessions: [], progress: [], shelf: [], scores: [], academy: null, loaded: false };
+const EMPTY: ProfileData = { results: [], sessions: [], progress: [], shelf: [], scores: [], academy: null, highlights: 0, pieces: 0, savedQuotes: 0, loaded: false };
 
 /** Everything the profile summarises, reloaded after local changes (debounced) or on request. */
 export function useProfileData() {
@@ -26,9 +30,10 @@ export function useProfileData() {
   useEffect(() => {
     let cancelled = false;
     void Promise.all([
-      db.testResults.toArray(), db.readingSessions.toArray(), db.bookProgress.toArray(), db.shelf.toArray(), db.arcadeScores.toArray(), db.academyState.get('academy')
-    ]).then(([results, sessions, progress, shelf, scores, academy]) => {
-      if (!cancelled) setData({ results, sessions, progress, shelf, scores, academy: academy ?? null, loaded: true });
+      db.testResults.toArray(), db.readingSessions.toArray(), db.bookProgress.toArray(), db.shelf.toArray(), db.arcadeScores.toArray(), db.academyState.get('academy'),
+      db.highlights.count(), db.manuscripts.count(), db.favorites.where('kind').equals('quote').count()
+    ]).then(([results, sessions, progress, shelf, scores, academy, highlights, pieces, savedQuotes]) => {
+      if (!cancelled) setData({ results, sessions, progress, shelf, scores, academy: academy ?? null, highlights, pieces, savedQuotes, loaded: true });
     }).catch(() => {
       if (!cancelled) setData(current => ({ ...current, loaded: true }));
     });
