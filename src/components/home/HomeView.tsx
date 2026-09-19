@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, Compass, Gamepad2, GraduationCap, Keyboard, Library, Quote, Search, Sparkles, Timer } from 'lucide-react';
+import { ArrowRight, BookOpen, Compass, FileText, Gamepad2, GraduationCap, Keyboard, Library, PenLine, Quote, Search, Sparkles, Timer } from 'lucide-react';
 import type { BookProgressRecord, CatalogBook, ShelfRecord, StoryMeta, TypingMode } from '@/types';
 import { authorLine, BOOK_CATEGORIES, bookKey, loadBookCatalog, loadStoryIndex, parseKey, rememberedWork, STORY_LISTS, storyKey } from '@/lib/catalog';
 import { db } from '@/lib/db';
@@ -12,7 +12,7 @@ import { DEFAULT_READING_WPM, formatReadTime, loadReadingSpeed } from '@/lib/rea
 import { BookCover, ProgressRing, shortTitle } from '@/components/library/LibraryBits';
 
 interface Work { key: string; title: string; author: string; record?: BookProgressRecord }
-interface Practice { bestSpeed: number | null; lessonsPassed: number; arcadeGames: number; quotesTyped: number }
+interface Practice { bestSpeed: number | null; lessonsPassed: number; arcadeGames: number; quotesTyped: number; pieces: number; pdfs: number }
 
 const ROW_LIMIT = 16;
 
@@ -36,11 +36,12 @@ function useHomeData() {
   const [wpm, setWpm] = useState(DEFAULT_READING_WPM);
 
   const load = useCallback(async () => {
-    const [records, saved, speed, academy, arcade, quotes] = await Promise.all([
+    const [records, saved, speed, academy, arcade, quotes, pieces, pdfs] = await Promise.all([
       db.bookProgress.toArray(), db.shelf.toArray(),
       db.testResults.where('mode').equals('speed-test').toArray(),
       db.academyState.get('academy'), db.arcadeScores.count(),
-      db.testResults.where('mode').equals('quotes').count()
+      db.testResults.where('mode').equals('quotes').count(),
+      db.manuscripts.count(), db.importedDocuments.where('format').equals('pdf').count()
     ]);
     const state = migrateAcademy(academy);
     setProgress(records);
@@ -49,7 +50,8 @@ function useHomeData() {
       bestSpeed: speed.length ? Math.max(...speed.map(result => result.wpm)) : null,
       lessonsPassed: ALL_LESSONS.filter(lesson => isPassed(state, lesson.id)).length,
       arcadeGames: arcade,
-      quotesTyped: quotes
+      quotesTyped: quotes,
+      pieces, pdfs
     });
   }, []);
 
@@ -115,7 +117,9 @@ export function HomeView({ onNavigate }: { onNavigate: (mode: TypingMode) => voi
     { mode: 'speed-test', label: 'Speed', icon: <Timer aria-hidden="true" />, stat: practice?.bestSpeed ? `Best ${practice.bestSpeed} wpm` : 'Take a test' },
     { mode: 'learn', label: 'Academy', icon: <GraduationCap aria-hidden="true" />, stat: practice ? `${practice.lessonsPassed} of ${ALL_LESSONS.length} lessons` : '' },
     { mode: 'arcade', label: 'Arcade', icon: <Gamepad2 aria-hidden="true" />, stat: practice?.arcadeGames ? `${practice.arcadeGames} ${practice.arcadeGames === 1 ? 'game' : 'games'} played` : 'Three games' },
-    { mode: 'quotes', label: 'Quotes', icon: <Quote aria-hidden="true" />, stat: practice?.quotesTyped ? `${practice.quotesTyped} typed` : 'Type a line' }
+    { mode: 'quotes', label: 'Quotes', icon: <Quote aria-hidden="true" />, stat: practice?.quotesTyped ? `${practice.quotesTyped} typed` : 'Type a line' },
+    { mode: 'manuscript', label: 'Write', icon: <PenLine aria-hidden="true" />, stat: practice?.pieces ? `${practice.pieces} ${practice.pieces === 1 ? 'piece' : 'pieces'}` : 'Write your own' },
+    { mode: 'pdf', label: 'PDFs', icon: <FileText aria-hidden="true" />, stat: practice?.pdfs ? `${practice.pdfs} ${practice.pdfs === 1 ? 'PDF' : 'PDFs'}` : 'Original pages' }
   ];
 
   const loading = progress === null;

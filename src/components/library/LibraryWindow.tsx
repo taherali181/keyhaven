@@ -2,14 +2,15 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowLeft, BookMarked, BookOpen, BookOpenText, Check, Compass, ExternalLink, FileUp, Keyboard, Library, Search, Sparkles, Trash2, X } from 'lucide-react';
-import type { BookProgressRecord, CatalogAuthor, CatalogBook, ImportedDocumentRecord, ShelfRecord, StoryMeta, WorkKind } from '@/types';
+import { ArrowLeft, BookMarked, BookOpen, BookOpenText, Check, Compass, ExternalLink, FileUp, Keyboard, Library, PenLine, Search, Sparkles, Trash2, X } from 'lucide-react';
+import type { BookProgressRecord, CatalogAuthor, CatalogBook, ImportedDocumentRecord, ManuscriptRecord, ShelfRecord, StoryMeta, WorkKind } from '@/types';
 import {
   authorLine, BOOK_CATEGORIES, bookKey, booksInCategory, importKey, lifeYears, loadAuthors, loadBookCatalog, loadFullIndex,
   loadStoryIndex, loadSummary, parseKey, rememberedWork, searchBooks, searchFullIndex, searchStories, STORY_LISTS, storyKey
 } from '@/lib/catalog';
-import { OPEN_LIBRARY_EVENT, openWork, type LibraryTab, type OpenLibraryDetail } from '@/lib/reader-events';
+import { OPEN_LIBRARY_EVENT, openSection, openWork, type LibraryTab, type OpenLibraryDetail } from '@/lib/reader-events';
 import { db } from '@/lib/db';
+import { manuscriptKey, manuscriptSections, manuscriptTitle, manuscriptWords } from '@/lib/manuscript';
 import { importDocument, type ImportProgress } from '@/lib/document-import';
 import { DEFAULT_READING_WPM, formatReadTime, loadReadingSpeed } from '@/lib/reading';
 import { fade, spring } from '@/lib/motion';
@@ -47,6 +48,7 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
   const [progress, setProgress] = useState<BookProgressRecord[]>([]);
   const [shelf, setShelf] = useState<ShelfRecord[]>([]);
   const [imports, setImports] = useState<ImportedDocumentRecord[]>([]);
+  const [writing, setWriting] = useState<ManuscriptRecord[]>([]);
   const [bestWpm, setBestWpm] = useState<Map<string, number>>(() => new Map());
   const [wpm, setWpm] = useState(DEFAULT_READING_WPM);
   const [currentKey, setCurrentKey] = useState<string | null>(null);
@@ -71,13 +73,13 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
   const pendingBookRef = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
-    const [records, saved, documents, results] = await Promise.all([
+    const [records, saved, documents, results, pieces] = await Promise.all([
       db.bookProgress.toArray(), db.shelf.toArray(), db.importedDocuments.orderBy('updatedAt').reverse().toArray(),
-      db.testResults.where('mode').equals('stories').toArray()
+      db.testResults.where('mode').equals('stories').toArray(), db.manuscripts.orderBy('updatedAt').reverse().toArray()
     ]);
     const best = new Map<string, number>();
     for (const result of results) best.set(result.subMode, Math.max(best.get(result.subMode) ?? 0, result.wpm));
-    setProgress(records); setShelf(saved); setImports(documents); setBestWpm(best);
+    setProgress(records); setShelf(saved); setImports(documents); setBestWpm(best); setWriting(pieces.filter(piece => manuscriptSections(piece).length));
   }, []);
 
   const show = useCallback((nextTab?: LibraryTab, focusSearch = false) => {
@@ -183,6 +185,10 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
       const document = imports.find(item => item.id === parsed.id);
       return document ? { key, kind: 'import', title: document.title, author: document.author } : null;
     }
+    if (parsed.kind === 'manuscript') {
+      const piece = writing.find(item => item.id === parsed.id);
+      return piece ? { key, kind: 'manuscript', title: manuscriptTitle(piece), author: 'You' } : null;
+    }
     const entry = bookById.get(Number(parsed.id))?.book;
     return { key, kind: 'book', title: entry?.title ?? record?.title ?? `Book ${parsed.id}`, author: entry ? authorLine(entry) : record?.author ?? '' };
   };
@@ -278,7 +284,7 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
     const finished = bookRecords.filter(record => record.finishedAt).sort((a, b) => (b.finishedAt ?? 0) - (a.finishedAt ?? 0));
     const wanted = shelf.filter(entry => entry.want && !records.get(entry.key)?.finishedAt).sort((a, b) => b.addedAt - a.addedAt);
     const storiesRead = progress.filter(record => record.kind === 'story' && record.finishedAt).length;
-    const nothing = !currentWork && !reading.length && !finished.length && !wanted.length && !imports.length;
+    const nothing = !currentWork && !reading.length && !finished.length && !wanted.length && !imports.length && !writing.length;
 
     return <>
       {currentWork && current && <section className="library-continue">
@@ -331,6 +337,22 @@ export function LibraryWindow({ initialOpen = false }: { initialOpen?: boolean }
           })}</div>
           : !importState && <p className="library-hint">Import your own EPUB or PDF files. They stay on this device and sync to your account.</p>}
       </Shelf>
+
+      {writing.length > 0 && <Shelf title="Your writing" count={writing.length} action={<button type="button" className="library-secondary" onClick={() => { openSection('manuscript'); close(); }}><PenLine aria-hidden="true" />Open Write</button>}>
+        <div className="library-list">{writing.map(piece => {
+          const key = manuscriptKey(piece.id);
+          const record = records.get(key);
+          const title = manuscriptTitle(piece);
+          const words = manuscriptWords(piece.body);
+          return <div key={piece.id} className="library-list-row">
+            <button type="button" className="library-list-open" onClick={() => start(key)}>
+              <BookCover title={title} author="You" />
+              <span><strong>{title}</strong><small>{words.toLocaleString()} {words === 1 ? 'word' : 'words'} · edited {new Date(piece.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</small></span>
+              {record && <ProgressRing percent={record.percent} finished={Boolean(record.finishedAt)} />}
+            </button>
+          </div>;
+        })}</div>
+      </Shelf>}
 
       {storiesRead > 0 && <p className="library-hint">You&apos;ve finished {storiesRead} {storiesRead === 1 ? 'story' : 'stories'}. <button type="button" className="library-link" onClick={() => setTab('stories')}>See your stories</button></p>}
     </>;

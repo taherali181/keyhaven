@@ -2,6 +2,7 @@
 import type { CatalogAuthor, CatalogBook, StoryMeta, Work, WorkSection } from '@/types';
 import { db } from '@/lib/db';
 import { parseGutenbergHtml, parseGutenbergText } from '@/lib/gutenberg-parse';
+import { manuscriptSections, manuscriptTitle } from '@/lib/manuscript';
 
 const SUMMARY_SHARDS = 64;
 const requests = new Map<string, Promise<unknown>>();
@@ -55,6 +56,7 @@ export function parseKey(key: string) {
   if (kind === 'story') return { kind: 'story' as const, id };
   if (kind === 'pg') return { kind: 'book' as const, id };
   if (kind === 'import') return { kind: 'import' as const, id };
+  if (kind === 'ms') return { kind: 'manuscript' as const, id };
   return null;
 }
 
@@ -201,6 +203,14 @@ export async function loadWork(key: string): Promise<Work> {
     if (!document) throw new WorkLoadError('This imported book was deleted');
     const sections: WorkSection[] = document.sections.map(section => ({ id: section.id, title: section.title, paragraphs: importedParagraphs(section.text) })).filter(section => section.paragraphs.length);
     return { key, kind: 'import', title: document.title, author: document.author, sections, updatedAt: document.updatedAt, format: document.format };
+  }
+
+  if (parsed.kind === 'manuscript') {
+    const record = await db.manuscripts.get(parsed.id);
+    if (!record) throw new WorkLoadError('This piece was deleted');
+    const sections = manuscriptSections(record);
+    if (!sections.length) throw new WorkLoadError('This piece has no text yet');
+    return { key, kind: 'manuscript', title: manuscriptTitle(record), author: 'You', sections, updatedAt: record.updatedAt };
   }
 
   const cached = await db.works.get(key).catch(() => undefined);

@@ -172,7 +172,7 @@ export interface WorkSection {
 }
 
 export interface Work {
-  /** Namespaced key: `story:<id>`, `pg:<gutenberg id>` or `import:<id>`. Also the bookProgress id. */
+  /** Namespaced key: `story:<id>`, `pg:<gutenberg id>`, `import:<id>` or `ms:<id>`. Also the bookProgress id. */
   key: string;
   kind: WorkKind;
   title: string;

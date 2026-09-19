@@ -217,7 +217,7 @@ export function readingSummary(sessions: ReadingSessionRecord[], progress: BookP
   const authors = new Map<string, Set<string>>();
   for (const record of progress) {
     const author = record.author?.trim();
-    if (!author) continue;
+    if (!author || workKind(record) === 'manuscript') continue;
     authors.set(author, (authors.get(author) ?? new Set()).add(record.bookId));
   }
   return {

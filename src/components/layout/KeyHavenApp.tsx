@@ -18,10 +18,10 @@ import { LearnView } from '@/components/learn/LearnView';
 import { ArcadeView } from '@/components/arcade/ArcadeView';
 import { LeaderboardView } from '@/components/analytics/LeaderboardView';
 import { ProfileView } from '@/components/profile/ProfileView';
-import { SectionHeader } from '@/components/ui/SectionHeader';
 import { SectionSettings, isSettingsSection } from '@/components/settings/SectionSettings';
 import { rememberWork } from '@/lib/catalog';
 import { OPEN_SECTION_EVENT, OPEN_WORK_EVENT } from '@/lib/reader-events';
+import { ManuscriptView } from '@/components/manuscript/ManuscriptView';
 import { PdfView } from '@/components/pdf/PdfView';
 import { useBackupSync } from '@/hooks/useBackupSync';
 import { BACKUP_LABELS, useBackupStatus } from '@/lib/sync/status';
@@ -110,7 +110,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
                 {currentMode === 'leaderboard' && <LeaderboardView />}
                 {/* PDFs and Write are being built; they stay reachable by address only until then. */}
                 {currentMode === 'pdf' && <PdfView settings={sectionSettings} />}
-                {currentMode === 'manuscript' && <section className="speed-shell"><SectionHeader eyebrow="Your writing" title="Write" description="Write your own pieces, then read or type them back. Coming soon." /></section>}
+                {currentMode === 'manuscript' && <ManuscriptView settings={settings} />}
                 {currentMode === 'profile' && <ProfileView
                   settings={settings}
                   onUpdateSetting={settingsApi.updateSetting}

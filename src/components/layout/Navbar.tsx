@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  BookOpen, FileText, Focus, House, Gamepad2, GraduationCap, Menu, Moon, PanelLeftClose,
+  BookOpen, FileText, Focus, House, Gamepad2, GraduationCap, Menu, Moon, PanelLeftClose, PenLine,
   Quote, Settings2, Sun, Timer, User, X
 } from 'lucide-react';
 import { CaretStyle, SwitchSound, ThemeId, TypingMode, UserSettings } from '@/types';
@@ -30,6 +30,7 @@ const sections: Array<{ label: string; mode: TypingMode; icon: React.ReactNode }
   { label: 'Home', mode: 'home', icon: <House /> },
   { label: 'Read', mode: 'stories', icon: <BookOpen /> },
   { label: 'PDFs', mode: 'pdf', icon: <FileText /> },
+  { label: 'Write', mode: 'manuscript', icon: <PenLine /> },
   { label: 'Quotes', mode: 'quotes', icon: <Quote /> },
   { label: 'Academy', mode: 'learn', icon: <GraduationCap /> },
   { label: 'Speed', mode: 'speed-test', icon: <Timer /> },

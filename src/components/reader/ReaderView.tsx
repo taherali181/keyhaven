@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronUp, FileText, Highlighter, Library, Maximize2, Minimize2, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
+import { ChevronUp, FileText, Highlighter, Library, Maximize2, Minimize2, PenLine, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
 import { HighlightPopover } from '@/components/reader/HighlightPopover';
 import { NotesPanel } from '@/components/reader/NotesPanel';
 import { reanchor, segmentParagraph, type Anchor } from '@/lib/highlights';
@@ -20,6 +20,7 @@ import { useFullscreen } from '@/hooks/useFullscreen';
 import { useReadingSession } from '@/hooks/useReadingSession';
 import { openReaderSettings, openSection as openAppSection } from '@/lib/reader-events';
 import { PDF_CURRENT_KEY } from '@/components/pdf/PdfView';
+import { MANUSCRIPT_CURRENT_KEY } from '@/components/manuscript/ManuscriptView';
 import { loadTypedParts } from '@/lib/reading-progress';
 import { resolveReaderStats, type ReaderStatContext } from '@/lib/reader-stats';
 import { chunkParagraphs, countWords, DEFAULT_READING_WPM, loadReadingSpeed, sectionName, updateReadingSpeed } from '@/lib/reading';
@@ -57,8 +58,9 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
 }) {
   const isStory = work.kind === 'story';
   const sectionCount = work.sections.length;
-  const unit = isStory ? 'part' : work.kind === 'import' ? 'section' : 'chapter';
-  const sectionLabel = work.kind === 'import' ? 'Section' : 'Chapter';
+  const ownText = work.kind === 'import' || work.kind === 'manuscript';
+  const unit = isStory ? 'part' : ownText ? 'section' : 'chapter';
+  const sectionLabel = ownText ? 'Section' : 'Chapter';
 
   const [sectionIndex, setSectionIndex] = useState(() => Math.min(Math.max(0, initial.section), sectionCount - 1));
   const section = work.sections[sectionIndex] ?? work.sections[0];
@@ -273,7 +275,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
     const record: TestResultRecord = { clientId: createClientId(), mode: resultMode, subMode: work.title, title: `${prefix} · Part ${part}`, wpm: stats.wpm, rawWpm: stats.rawWpm, accuracy: stats.accuracy, consistency: stats.consistency, duration: stats.timeElapsed, timestamp: Date.now(), errors: stats.incorrectChars, errorKeys: stats.errorHeatmap, totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars };
     const finalPart = sectionIndex === sectionCount - 1 && chunkIndex === chunkCount - 1;
     const chapter = sectionName(section.title) || `${sectionLabel} ${sectionIndex + 1}`;
-    const thisWork: HistoryScope = { id: 'work', label: isStory ? 'This story' : work.kind === 'import' ? 'This document' : 'This book', match: item => item.mode === resultMode && item.subMode === work.title };
+    const thisWork: HistoryScope = { id: 'work', label: isStory ? 'This story' : work.kind === 'import' ? 'This document' : work.kind === 'manuscript' ? 'This piece' : 'This book', match: item => item.mode === resultMode && item.subMode === work.title };
     const thisChapter: HistoryScope = { id: 'chapter', label: `This ${sectionLabel.toLowerCase()}`, match: item => thisWork.match(item) && Boolean(item.title?.startsWith(`${prefix} · Part `)) };
     const allReading: HistoryScope = { id: 'all', label: 'All reading', match: () => true };
     void saveResult({
@@ -563,6 +565,7 @@ export function ReaderView({ work, initial, settings, onKeyPress, onUpdateSettin
           </button>
           <span className="story-side-divider" aria-hidden="true" />
           {work.format === 'pdf' && <button type="button" className="story-bar-button is-icon" onClick={() => { try { localStorage.setItem(PDF_CURRENT_KEY, work.key.slice('import:'.length)); } catch { /* memory only */ } openAppSection('pdf'); }} aria-label="Original pages" title="See the original pages"><FileText aria-hidden="true" /></button>}
+          {work.kind === 'manuscript' && <button type="button" className="story-bar-button is-icon" onClick={() => { try { localStorage.setItem(MANUSCRIPT_CURRENT_KEY, work.key.slice('ms:'.length)); } catch { /* memory only */ } openAppSection('manuscript'); }} aria-label="Edit in Write" title="Edit in Write"><PenLine aria-hidden="true" /></button>}
           {reading && <button type="button" className="story-bar-button is-icon story-notes-button" onClick={() => setNotesOpen(true)} aria-label="Highlights and notes" title="Highlights and notes">
             <Highlighter aria-hidden="true" />{highlights.length > 0 && <span className="story-notes-count" aria-hidden="true">{highlights.length}</span>}
           </button>}
