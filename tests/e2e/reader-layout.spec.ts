@@ -54,8 +54,12 @@ test('hidden title has a quiet label and screen-aligned hints clear the bottom b
   await expect(page.locator('.story-bar-peek')).toHaveCSS('opacity', '1');
   const hint = page.locator('.reading-hint');
   await expect(hint).toHaveCSS('position', 'fixed');
-  const targetLeft = await page.locator('.app-content').evaluate(node => node.getBoundingClientRect().left + 24);
-  await expect.poll(async () => (await hint.boundingBox())!.x).toBe(targetLeft);
+  // The hint sits as far in from the left edge of the page as the bottom bar sits up from the bottom of the screen.
+  await expect.poll(async () => {
+    const left = await page.locator('.app-content').evaluate(node => node.getBoundingClientRect().left);
+    const hintBox = (await hint.boundingBox())!, barBox = (await page.locator('.reader-bar').boundingBox())!;
+    return Math.abs((hintBox.x - left) - (720 - barBox.y - barBox.height));
+  }).toBeLessThanOrEqual(2);
   // Hidden mode: the hint shares the bottom bar's row (level with it, beside it) below the text.
   await expect.poll(async () => {
     const hintBox = (await hint.boundingBox())!, barBox = (await page.locator('.reader-bar').boundingBox())!;
@@ -178,8 +182,10 @@ test('reading pages carry a quiet page number at the bottom right of each page',
   expect(folio!.y).toBeGreaterThanOrEqual(column!.y + column!.height - 2);
   expect(folio!.y + folio!.height).toBeLessThanOrEqual(bar!.y);
   expect(Number(await folios.first().evaluate(node => getComputedStyle(node.parentElement!).opacity))).toBeLessThan(1);
-  await page.keyboard.press('ArrowRight');
-  await expect(folios).toHaveText(['2']);
+  await expect(async () => {
+    if ((await folios.first().textContent()) === '1') await page.keyboard.press('ArrowRight');
+    await expect(folios).toHaveText(['2'], { timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
   await page.getByRole('radio', { name: 'Typing mode' }).click();
   await expect(folios).toHaveCount(0);
 });
@@ -189,6 +195,9 @@ test('a two-page spread numbers both pages', async ({ page }) => {
   await seedSettings(page, { storyMode: 'read', readerPageLayout: 'spread' });
   await page.goto(STORY);
   await expect(page.locator('.story-folio')).toHaveText(['1', '2']);
-  await page.keyboard.press('ArrowRight');
-  await expect(page.locator('.story-folio')).toHaveText(['3', '4']);
+  // The first key can arrive before the page listens for it.
+  await expect(async () => {
+    if ((await page.locator('.story-folio').first().textContent()) === '1') await page.keyboard.press('ArrowRight');
+    await expect(page.locator('.story-folio')).toHaveText(['3', '4'], { timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
 });

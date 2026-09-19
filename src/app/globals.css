@@ -1893,7 +1893,11 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 
   /* Screen-aligned hints sit above the bar, including when the sidebar is pinned. */
   /* The corner hint shares the bottom bar's row in every mode: bottom-left, level with the bar. */
-  .stories-shell .reader-stage .typing-hint { position: fixed; top: auto; left: calc(var(--sidebar-space, 0px) + 24px); bottom: calc(var(--gap) + var(--bar-slot) / 2); margin: 0; translate: 0 50%; }
+  /* A quiet pill in the bottom-left corner, as far from the left edge as the bottom bar is from the bottom, and
+     centred on the bar's row. */
+  .stories-shell .reader-stage .typing-hint { position: fixed; top: auto; left: calc(var(--sidebar-space, 0px) + var(--gap)); bottom: calc(var(--gap) + var(--bar-slot) / 2); display: inline-flex; height: 30px; align-items: center; gap: 6px; margin: 0; padding: 0 12px; border: 1px solid var(--glass-border); border-radius: 999px; background: color-mix(in oklab, var(--bg-primary) 30%, transparent); backdrop-filter: blur(3px) saturate(125%); translate: 0 50%; }
+  .stories-shell .reader-stage .typing-hint { font-size: .75rem; letter-spacing: .01em; text-transform: none; }
+  .stories-shell .reader-stage .typing-hint kbd { margin: 0; }
   /* Hidden: the page controls join that row too. */
   .stories-shell[data-titlebar="auto"] .typing-page-controls { bottom: calc(var(--gap) + var(--bar-slot) / 2); translate: 0 50%; }
 }
