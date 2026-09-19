@@ -196,7 +196,7 @@ export function weekStart(now: number) {
   return addDays(today, -((new Date(today).getDay() + 6) % 7));
 }
 
-export const workKind = (record: BookProgressRecord) => record.kind ?? (record.bookId.startsWith('story:') ? 'story' : record.bookId.startsWith('import:') ? 'import' : 'book');
+export const workKind = (record: BookProgressRecord) => record.kind ?? (record.bookId.startsWith('story:') ? 'story' : record.bookId.startsWith('import:') ? 'import' : record.bookId.startsWith('ms:') ? 'manuscript' : 'book');
 
 export interface ReadingSummary {
   minutes: number; words: number; averageWpm: number | null; thisWeekMinutes: number; lastWeekMinutes: number;

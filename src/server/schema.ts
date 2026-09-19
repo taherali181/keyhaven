@@ -116,3 +116,10 @@ export const syncTombstones = pgTable('sync_tombstones', {
   entity: text('entity').notNull(), key: text('key').notNull(), deletedAt: timestamp('deleted_at', { withTimezone: true }).notNull(),
   syncedAt: syncedAtColumn()
 }, table => [uniqueIndex('sync_tombstones_target_unique').on(table.userId, table.entity, table.key), index('sync_tombstones_sync_idx').on(table.userId, table.syncedAt)]);
+
+/** Keyed records that sync as the device's whole record (highlights, favourites, manuscripts), one table for all. */
+export const userItems = pgTable('user_items', {
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  entity: text('entity').notNull(), key: text('key').notNull(), state: jsonb('state').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(), syncedAt: syncedAtColumn()
+}, table => [primaryKey({ columns: [table.userId, table.entity, table.key] }), index('user_items_sync_idx').on(table.userId, table.entity, table.syncedAt)]);

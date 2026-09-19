@@ -12,6 +12,7 @@ export interface BackupStatus {
   error?: string;
   /** Imported books too large to back up on the last pass. */
   skippedDocuments?: number;
+  skippedManuscripts?: number;
 }
 
 export const BACKUP_NOW_EVENT = 'keyhaven:backup-now';

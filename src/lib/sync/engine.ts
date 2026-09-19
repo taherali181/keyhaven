@@ -2,11 +2,11 @@
 // the last cursor and merges them last-writer-wins. See src/lib/sync/protocol.ts for the wire format.
 import type { Table, UpdateSpec } from 'dexie';
 import { db } from '@/lib/db';
-import type { AcademyStateRecord, BookProgressRecord, ImportedDocumentRecord, ShelfRecord, TestResultRecord, TypingMode, UserSettings } from '@/types';
+import type { AcademyStateRecord, BookProgressRecord, ImportedDocumentRecord, KeyedSyncEntity, ShelfRecord, TestResultRecord, TypingMode, UserSettings } from '@/types';
 import { applyingRemote } from '@/lib/sync/tracking';
-import { chunk, finite, isUuid, jsonBytes, latestByKey, remoteWins, tombstoneCovers } from '@/lib/sync/merge';
+import { chunk, finite, isUuid, jsonBytes, keyedPuts, latestByKey, remoteWins, tombstoneCovers } from '@/lib/sync/merge';
 import {
-  MAX_DOCUMENT_BYTES, PUSH_BATCH, SYNC_ENTITIES,
+  KEYED_ENTITIES, MANUSCRIPT_BATCH, MAX_DOCUMENT_BYTES, MAX_MANUSCRIPT_BYTES, PUSH_BATCH, SYNC_ENTITIES,
   type Cursor, type DocumentRow, type KeyedStateRow, type PullPage, type PushInput, type PushResult,
   type ResultRow, type ScoreRow, type SessionRow, type StateRow, type SyncEntity, type TombstoneRow
 } from '@/lib/sync/protocol';
@@ -45,7 +45,7 @@ export const httpTransport: SyncTransport = {
 };
 
 export interface SettingsIO { get(): UserSettings; apply(settings: UserSettings): void }
-export interface SyncSummary { pushed: number; pulled: number; skippedDocuments: number }
+export interface SyncSummary { pushed: number; pulled: number; skippedDocuments: number; skippedManuscripts: number }
 
 /** Settings that describe this device rather than the reader, so they never travel. */
 const DEVICE_ONLY_SETTINGS = ['zenMode'] as const;
@@ -169,6 +169,50 @@ async function pushDocuments(transport: SyncTransport) {
   return { pushed, skipped };
 }
 
+// ── Keyed records (highlights, favourites, manuscripts) ──
+
+type KeyedRecord = Record<string, unknown> & { updatedAt: number; dirty?: 0 | 1; syncedAt?: number };
+interface KeyedSpec { table: Table<KeyedRecord, string>; keyField: string; batch: number; maxBytes?: number }
+
+const KEYED: Record<KeyedSyncEntity, KeyedSpec> = {
+  highlights: { table: db.highlights as unknown as Table<KeyedRecord, string>, keyField: 'id', batch: PUSH_BATCH },
+  favorites: { table: db.favorites as unknown as Table<KeyedRecord, string>, keyField: 'key', batch: PUSH_BATCH },
+  manuscripts: { table: db.manuscripts as unknown as Table<KeyedRecord, string>, keyField: 'id', batch: MANUSCRIPT_BATCH, maxBytes: MAX_MANUSCRIPT_BYTES }
+};
+
+const isKeyed = (entity: string): entity is KeyedSyncEntity => (KEYED_ENTITIES as readonly string[]).includes(entity);
+
+async function pushKeyed(transport: SyncTransport, entity: KeyedSyncEntity) {
+  const { table, keyField, batch, maxBytes } = KEYED[entity];
+  let pushed = 0;
+  let skipped = 0;
+  for (;;) {
+    const rows = await table.where('dirty').equals(1).limit(batch).toArray();
+    if (!rows.length) break;
+    const out: KeyedStateRow[] = rows.map(row => ({ key: String(row[keyField]), updatedAt: finite(row.updatedAt), state: withoutSyncFields(row) }));
+    // Too large to send: stays on this device (marked clean below, so it is not retried until it changes).
+    const sendable = out.filter(row => !maxBytes || jsonBytes(row) <= maxBytes);
+    skipped += out.length - sendable.length;
+    const results = sendable.length ? await sendBatch(sendable, part => transport.push({ [entity]: part } as PushInput)) : [];
+    const sent = new Map(out.map(row => [row.key, row.updatedAt]));
+    const now = Date.now();
+    await table.where(keyField).anyOf([...sent.keys()]).modify(record => { if (record.updatedAt === sent.get(String(record[keyField]))) { record.dirty = 0; record.syncedAt = now; } });
+    await applyKeyed(entity, results.flatMap(result => result[entity] ?? []));
+    pushed += sendable.length;
+    if (rows.length < batch) break;
+  }
+  return { pushed, skipped };
+}
+
+async function applyKeyed(entity: KeyedSyncEntity, rows: KeyedStateRow[]) {
+  const { table, keyField } = KEYED[entity];
+  const unique = latestByKey(rows, row => row.key, row => row.updatedAt);
+  if (!unique.length) return;
+  const locals = await table.bulkGet(unique.map(row => row.key));
+  const puts = keyedPuts<KeyedRecord>(unique, locals, keyField, Date.now());
+  if (puts.length) await applyingRemote(() => table.bulkPut(puts));
+}
+
 type ImmutableRecord = { id?: number; clientId: string; dirty?: 0 | 1; syncedAt?: number };
 
 /** Results, scores and reading sessions never change once saved, so they are simply sent once. */
@@ -282,6 +326,11 @@ async function applyTombstones(rows: TombstoneRow[]) {
   await applyingRemote(async () => {
     for (const tombstone of rows) {
       const all = tombstone.key === '*';
+      if (isKeyed(tombstone.entity)) {
+        const { table, keyField } = KEYED[tombstone.entity];
+        await table.filter(record => tombstoneCovers(tombstone, { key: String(record[keyField]), updatedAt: record.updatedAt })).delete();
+        continue;
+      }
       switch (tombstone.entity) {
         case 'results':
           if (all) await db.testResults.where('timestamp').belowOrEqual(tombstone.deletedAt).delete();
@@ -310,6 +359,7 @@ async function applyTombstones(rows: TombstoneRow[]) {
 }
 
 async function applyPulled(entity: SyncEntity, rows: unknown[], userId: string, io: SettingsIO) {
+  if (isKeyed(entity)) return applyKeyed(entity, rows as KeyedStateRow[]);
   switch (entity) {
     case 'tombstones': return applyTombstones(rows as TombstoneRow[]);
     case 'settings': { const row = (rows as StateRow[])[rows.length - 1]; if (row) applySettings(row, userId, io); return; }
@@ -348,6 +398,7 @@ async function markAllDirty() {
   await db.shelf.toCollection().modify({ dirty: 1 });
   await db.importedDocuments.toCollection().modify({ dirty: 1 });
   await db.academyState.toCollection().modify({ dirty: 1 });
+  for (const entity of KEYED_ENTITIES) await KEYED[entity].table.toCollection().modify({ dirty: 1 });
 }
 
 /** One full pass: send local changes, then fetch and merge everything newer from the account. */
@@ -361,6 +412,12 @@ export async function runSync(transport: SyncTransport, userId: string, io: Sett
   pushed += await pushAcademy(transport);
   pushed += await pushProgress(transport);
   pushed += await pushShelf(transport);
+  let skippedManuscripts = 0;
+  for (const entity of KEYED_ENTITIES) {
+    const keyed = await pushKeyed(transport, entity);
+    pushed += keyed.pushed;
+    if (entity === 'manuscripts') skippedManuscripts = keyed.skipped;
+  }
   const documents = await pushDocuments(transport);
   pushed += documents.pushed;
   pushed += await pushImmutable(db.testResults, rows => transport.push({ results: rows.map(toResultRow) }));
@@ -368,7 +425,7 @@ export async function runSync(transport: SyncTransport, userId: string, io: Sett
   pushed += await pushImmutable(db.readingSessions, rows => transport.push({ sessions: rows.map(row => ({ clientId: row.clientId, workKey: row.workKey, kind: row.kind, title: row.title.slice(0, 400), author: row.author.slice(0, 300), mode: row.mode, startedAt: Math.max(0, finite(row.startedAt)), durationMs: Math.round(Math.min(86_400_000, Math.max(0, finite(row.durationMs)))), words: Math.round(Math.max(0, finite(row.words))), pages: Math.round(Math.max(0, finite(row.pages))) })) }));
 
   const pulled = await pullAll(transport, userId, io);
-  return { pushed, pulled, skippedDocuments: documents.skipped };
+  return { pushed, pulled, skippedDocuments: documents.skipped, skippedManuscripts };
 }
 
 /** Removes the account's data from this device (sign out → "Remove from this device"). Settings stay. */
@@ -376,7 +433,8 @@ export async function clearLocalAccountData() {
   await applyingRemote(async () => {
     await Promise.all([
       db.testResults.clear(), db.arcadeScores.clear(), db.readingSessions.clear(), db.bookProgress.clear(),
-      db.shelf.clear(), db.importedDocuments.clear(), db.academyState.clear(), db.pendingDeletes.clear()
+      db.shelf.clear(), db.importedDocuments.clear(), db.academyState.clear(), db.pendingDeletes.clear(),
+      db.highlights.clear(), db.favorites.clear(), db.manuscripts.clear(), db.documentAssets.clear(), db.documentFiles.clear()
     ]);
   });
   try {

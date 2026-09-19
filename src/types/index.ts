@@ -65,8 +65,8 @@ export type CaretStyle =
   | 'bar'
   | 'glow';
 
-/** Anything the reader can open: a catalog short story, a Project Gutenberg book, or an imported EPUB/PDF. */
-export type WorkKind = 'story' | 'book' | 'import';
+/** Anything the reader can open: a catalog short story, a Project Gutenberg book, an imported EPUB/PDF, or the reader's own writing. */
+export type WorkKind = 'story' | 'book' | 'import' | 'manuscript';
 
 /** A stretch of time spent in the reader, for reading stats. */
 export interface ReadingSessionRecord {
@@ -87,7 +87,72 @@ export interface ReadingSessionRecord {
 }
 
 /** Record kinds whose deletions travel between devices. */
-export type SyncTombstoneEntity = 'results' | 'scores' | 'sessions' | 'progress' | 'shelf' | 'documents';
+export type SyncTombstoneEntity = 'results' | 'scores' | 'sessions' | 'progress' | 'shelf' | 'documents' | KeyedSyncEntity;
+
+/** Records that sync as a key plus the device's whole record, merged last-writer-wins on `updatedAt`. */
+export type KeyedSyncEntity = 'highlights' | 'favorites' | 'manuscripts';
+
+export type HighlightColor = 'yellow' | 'green' | 'blue' | 'pink' | 'purple';
+
+/** A highlighted stretch of one paragraph in the reader, with an optional note. */
+export interface HighlightRecord {
+  id: string;
+  workKey: string;
+  /** Section (chapter or story part) and paragraph index within it; `start`/`end` are character offsets in the paragraph. */
+  sectionIndex: number;
+  paragraph: number;
+  start: number;
+  end: number;
+  /** The highlighted text, used to find the spot again if the paragraph's offsets ever shift. */
+  quote: string;
+  color: HighlightColor;
+  note?: string;
+  createdAt: number;
+  updatedAt: number;
+  syncedAt?: number;
+  dirty?: 0 | 1;
+}
+
+/** Something the reader saved: for now, quotes (`quote:<id>`). */
+export interface FavoriteRecord {
+  key: string;
+  kind: 'quote';
+  addedAt: number;
+  updatedAt: number;
+  syncedAt?: number;
+  dirty?: 0 | 1;
+}
+
+/** A document the reader wrote in Write. `# Heading` lines start new sections. */
+export interface ManuscriptRecord {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: number;
+  updatedAt: number;
+  syncedAt?: number;
+  dirty?: 0 | 1;
+}
+
+/** An image from an imported EPUB. Kept on this device only. */
+export interface DocumentAssetRecord {
+  id: string;
+  documentId: string;
+  blob: Blob;
+  mime: string;
+  width: number;
+  height: number;
+  alt: string;
+}
+
+/** The original file of an imported PDF, so its pages can be shown as they look. Kept on this device only. */
+export interface DocumentFileRecord {
+  id: string;
+  blob: Blob;
+  name: string;
+  size: number;
+  addedAt: number;
+}
 
 /** A local deletion waiting to be backed up. Key '*' covers every record of that kind up to `deletedAt`. */
 export interface PendingDeleteRecord {

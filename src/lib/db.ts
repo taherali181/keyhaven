@@ -2,7 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import { DEFAULT_READER_BAR_STYLE, DEFAULT_READER_STATS, sanitizeReaderStats } from '@/lib/reader-stats';
 import { sanitizeSectionPrefs } from '@/lib/section-settings';
 import { DEFAULT_TYPOGRAPHY, normalizeTypography } from '@/lib/typography';
-import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ReaderToneId, ImportedDocumentRecord, AcademyStateRecord, ShelfRecord, Work, ReadingSessionRecord, PendingDeleteRecord } from '@/types';
+import { TestResultRecord, BookProgressRecord, ArcadeScoreRecord, UserSettings, ThemeId, ReaderToneId, ImportedDocumentRecord, AcademyStateRecord, ShelfRecord, Work, ReadingSessionRecord, PendingDeleteRecord, HighlightRecord, FavoriteRecord, ManuscriptRecord, DocumentAssetRecord, DocumentFileRecord } from '@/types';
 import { installSyncTracking } from '@/lib/sync/tracking';
 
 export class KeyHavenDatabase extends Dexie {
@@ -15,6 +15,11 @@ export class KeyHavenDatabase extends Dexie {
   shelf!: Table<ShelfRecord, string>;
   readingSessions!: Table<ReadingSessionRecord, number>;
   pendingDeletes!: Table<PendingDeleteRecord, string>;
+  highlights!: Table<HighlightRecord, string>;
+  favorites!: Table<FavoriteRecord, string>;
+  manuscripts!: Table<ManuscriptRecord, string>;
+  documentAssets!: Table<DocumentAssetRecord, string>;
+  documentFiles!: Table<DocumentFileRecord, string>;
 
   constructor() {
     super('KeyHavenDB');
@@ -87,6 +92,24 @@ export class KeyHavenDatabase extends Dexie {
       for (const name of ['testResults', 'arcadeScores', 'bookProgress', 'shelf', 'importedDocuments', 'academyState']) {
         await transaction.table(name).toCollection().modify(record => { record.dirty = 1; });
       }
+    });
+    // v6: highlights and notes, saved quotes and the reader's own writing (all backed up), plus EPUB images and
+    // original PDF files, which stay on this device.
+    this.version(6).stores({
+      testResults: '++id, &clientId, mode, subMode, timestamp, wpm, accuracy, syncedAt, dirty',
+      bookProgress: 'bookId, kind, chapterIndex, lastRead, syncedAt, dirty',
+      arcadeScores: '++id, &clientId, game, score, wpm, timestamp, syncedAt, dirty',
+      importedDocuments: 'id, title, format, updatedAt, syncedAt, dirty',
+      academyState: 'id, updatedAt, syncedAt, dirty',
+      works: 'key, kind, updatedAt',
+      shelf: 'key, kind, want, finishedAt, updatedAt, dirty',
+      readingSessions: '++id, &clientId, workKey, kind, startedAt, dirty',
+      pendingDeletes: 'id, entity',
+      highlights: 'id, workKey, updatedAt, dirty',
+      favorites: 'key, kind, updatedAt, dirty',
+      manuscripts: 'id, updatedAt, dirty',
+      documentAssets: 'id, documentId',
+      documentFiles: 'id'
     });
     installSyncTracking(this);
   }

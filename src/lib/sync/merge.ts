@@ -40,3 +40,18 @@ export const jsonBytes = (value: unknown) => new TextEncoder().encode(JSON.strin
 
 /** Numbers from old records can be NaN or missing; the server only accepts finite values. */
 export const finite = (value: unknown, fallback = 0) => (typeof value === 'number' && Number.isFinite(value) ? value : fallback);
+
+/**
+ * The local records to write for pulled keyed rows (`locals` lines up with `rows`): each row whose server copy wins
+ * becomes the device's record again, clean, under its key field.
+ */
+export function keyedPuts<R>(
+  rows: Array<{ key: string; updatedAt: number; state: Record<string, unknown> }>,
+  locals: Array<{ updatedAt: number; dirty?: 0 | 1 } | undefined>,
+  keyField: string,
+  now: number
+): R[] {
+  return rows
+    .filter((row, index) => remoteWins(locals[index] && { updatedAt: locals[index]!.updatedAt, dirty: locals[index]!.dirty }, row.updatedAt))
+    .map(row => ({ ...row.state, [keyField]: row.key, updatedAt: row.updatedAt, dirty: 0, syncedAt: now }) as R);
+}

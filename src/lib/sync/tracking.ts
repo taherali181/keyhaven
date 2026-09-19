@@ -27,6 +27,9 @@ const TRACKED: Array<{ table: string; entity: SyncTombstoneEntity | null; keyOf:
   { table: 'bookProgress', entity: 'progress', keyOf: primaryKey },
   { table: 'shelf', entity: 'shelf', keyOf: primaryKey },
   { table: 'importedDocuments', entity: 'documents', keyOf: primaryKey },
+  { table: 'highlights', entity: 'highlights', keyOf: primaryKey },
+  { table: 'favorites', entity: 'favorites', keyOf: primaryKey },
+  { table: 'manuscripts', entity: 'manuscripts', keyOf: primaryKey },
   { table: 'academyState', entity: null, keyOf: () => null }
 ];
 

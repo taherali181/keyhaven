@@ -219,6 +219,7 @@ function BackupPanel({ status }: { status: BackupStatus }) {
     {user?.email && <p className="profile-backup-email">{user.email}</p>}
     <p role="status">{detail}</p>
     {status.skippedDocuments ? <p className="profile-note">{status.skippedDocuments} imported {status.skippedDocuments === 1 ? 'book is' : 'books are'} too large to back up and stay on this device.</p> : null}
+    {status.skippedManuscripts ? <p className="profile-note">{status.skippedManuscripts} of your {status.skippedManuscripts === 1 ? 'pieces is' : 'pieces are'} too long to back up and stay on this device.</p> : null}
     <div className="profile-actions">
       {enabled && !user && <><Link href="/sign-in" className="rs-btn is-primary"><LogIn aria-hidden="true" />Sign in</Link><Link href="/sign-up" className="rs-btn">Create account</Link></>}
       {user && <><button type="button" className="rs-btn is-primary" onClick={requestBackupNow} disabled={status.state === 'syncing'}><RefreshCw aria-hidden="true" />Back up now</button><button type="button" className="rs-btn" onClick={() => setSignOutOpen(true)}>Sign out</button></>}

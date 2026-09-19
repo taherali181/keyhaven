@@ -3,11 +3,12 @@ import { and, asc, eq, inArray, lte, sql, type SQL } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import type { syncDb } from '@/server/db';
 import {
-  academyStates, arcadeScores, importedDocuments, msNow, readingProgress, readingSessions, shelfItems, syncTombstones, typingResults, userSettings
+  academyStates, arcadeScores, importedDocuments, msNow, readingProgress, readingSessions, shelfItems, syncTombstones, typingResults, userItems, userSettings
 } from '@/server/schema';
+import type { KeyedSyncEntity } from '@/types';
 import { isUuid, latestByKey } from '@/lib/sync/merge';
 import {
-  DOCUMENT_PULL_LIMIT, PULL_LIMIT,
+  DOCUMENT_PULL_LIMIT, KEYED_ENTITIES, KEYED_PULL_LIMIT, PULL_LIMIT,
   type Cursor, type DocumentRow, type KeyedStateRow, type PullPage, type PushInputParsed, type PushResult, type ResultRow,
   type ScoreRow, type SessionRow, type StateRow, type SyncEntity, type TombstoneRow
 } from '@/lib/sync/protocol';
@@ -26,7 +27,28 @@ function toPage<Row, Out>(rows: Row[], limit: number, cursorOf: (row: Row) => Cu
 
 const asState = (value: unknown) => (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
 
+const isKeyed = (entity: string): entity is KeyedSyncEntity => (KEYED_ENTITIES as readonly string[]).includes(entity);
+
+async function pullKeyed(db: SyncDatabase, userId: string, entity: KeyedSyncEntity, t: number, k: string): Promise<PullPage> {
+  const limit = KEYED_PULL_LIMIT[entity];
+  const rows = await db.select().from(userItems)
+    .where(and(eq(userItems.userId, userId), eq(userItems.entity, entity), after(userItems.syncedAt, userItems.key, t, k)))
+    .orderBy(...cursorOrder(userItems.syncedAt, userItems.key)).limit(limit);
+  return toPage(rows, limit, row => ({ t: row.syncedAt.getTime(), k: row.key }), (row): KeyedStateRow => ({ key: row.key, updatedAt: row.updatedAt.getTime(), state: asState(row.state) }));
+}
+
+/** Upserts newer rows only, then returns the server's copy of each, so the device learns when a newer edit won. */
+async function pushKeyed(db: SyncDatabase, userId: string, entity: KeyedSyncEntity, input: KeyedStateRow[]): Promise<KeyedStateRow[]> {
+  const rows = latestByKey(input, row => row.key, row => row.updatedAt);
+  if (!rows.length) return [];
+  await db.insert(userItems).values(rows.map(row => ({ userId, entity, key: row.key, state: row.state, updatedAt: new Date(row.updatedAt) })))
+    .onConflictDoUpdate({ target: [userItems.userId, userItems.entity, userItems.key], set: { state: sql`excluded.state`, updatedAt: sql`excluded.updated_at`, syncedAt: msNow }, setWhere: sql`${userItems.updatedAt} < excluded.updated_at` });
+  const current = await db.select().from(userItems).where(and(eq(userItems.userId, userId), eq(userItems.entity, entity), inArray(userItems.key, rows.map(row => row.key))));
+  return current.map(row => ({ key: row.key, updatedAt: row.updatedAt.getTime(), state: asState(row.state) }));
+}
+
 export async function pullPage(db: SyncDatabase, userId: string, entity: SyncEntity, t: number, k: string): Promise<PullPage> {
+  if (isKeyed(entity)) return pullKeyed(db, userId, entity, t, k);
   switch (entity) {
     case 'results': {
       const rows = await db.select().from(typingResults).where(and(eq(typingResults.userId, userId), after(typingResults.syncedAt, typingResults.id, t, k))).orderBy(...cursorOrder(typingResults.syncedAt, typingResults.id)).limit(PULL_LIMIT);
@@ -85,6 +107,10 @@ export async function pullPage(db: SyncDatabase, userId: string, entity: SyncEnt
 async function deleteCovered(db: SyncDatabase, userId: string, tombstone: TombstoneRow) {
   const at = new Date(tombstone.deletedAt);
   const all = tombstone.key === '*';
+  if (isKeyed(tombstone.entity)) {
+    await db.delete(userItems).where(and(eq(userItems.userId, userId), eq(userItems.entity, tombstone.entity), all ? undefined : eq(userItems.key, tombstone.key), lte(userItems.updatedAt, at)));
+    return;
+  }
   switch (tombstone.entity) {
     case 'results':
       if (all) await db.delete(typingResults).where(and(eq(typingResults.userId, userId), lte(typingResults.occurredAt, at)));
@@ -114,7 +140,7 @@ const round = (value: number) => Math.round(value);
 
 /** Stores one pushed batch. Returns the server's copy of every keyed record in it (see PushResult). */
 export async function pushBatch(db: SyncDatabase, userId: string, input: PushInputParsed): Promise<PushResult> {
-  const result: PushResult = { progress: [], shelf: [], academy: null, settings: null };
+  const result: PushResult = { progress: [], shelf: [], highlights: [], favorites: [], manuscripts: [], academy: null, settings: null };
 
   const tombstones = latestByKey(input.tombstones, row => `${row.entity}:${row.key}`, row => row.deletedAt);
   if (tombstones.length) {
@@ -163,6 +189,8 @@ export async function pushBatch(db: SyncDatabase, userId: string, input: PushInp
     const current = await db.select().from(shelfItems).where(and(eq(shelfItems.userId, userId), inArray(shelfItems.key, shelf.map(row => row.key))));
     result.shelf = current.map(row => ({ key: row.key, updatedAt: row.updatedAt.getTime(), state: asState(row.state) }));
   }
+
+  for (const entity of KEYED_ENTITIES) result[entity] = await pushKeyed(db, userId, entity, input[entity]);
 
   for (const row of input.documents) {
     await db.insert(importedDocuments).values({ id: row.id, userId, title: row.title, author: row.author, format: row.format, sections: row.sections, createdAt: new Date(row.createdAt), updatedAt: new Date(row.updatedAt) })

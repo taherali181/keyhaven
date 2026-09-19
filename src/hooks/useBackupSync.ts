@@ -56,7 +56,7 @@ export function useBackupSync(settings: UserSettings, applyRemoteSettings: (sett
         const summary = await runSync(httpTransport, user.id, { get: () => settingsRef.current, apply: remote => applyRef.current(remote) });
         const at = Date.now();
         writeLastSynced(at);
-        if (!cancelled) setBackupStatus({ state: 'up-to-date', lastSyncedAt: at, user, skippedDocuments: summary.skippedDocuments });
+        if (!cancelled) setBackupStatus({ state: 'up-to-date', lastSyncedAt: at, user, skippedDocuments: summary.skippedDocuments, skippedManuscripts: summary.skippedManuscripts });
       } catch (error) {
         if (cancelled) return;
         if (error instanceof SyncError && error.status === 401) {

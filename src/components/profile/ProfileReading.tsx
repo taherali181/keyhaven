@@ -6,7 +6,7 @@ import type { BookProgressRecord, ReadingSessionRecord, TypingMode } from '@/typ
 import { compactNumber, formatMinutes, plural, workKind, type ReadingSummary } from '@/lib/profile-stats';
 import { Card, Empty, Meter, Stat } from './ProfileBits';
 
-const KIND_LABELS = { story: 'Short story', book: 'Book', import: 'Imported' } as const;
+const KIND_LABELS = { story: 'Short story', book: 'Book', import: 'Imported', manuscript: 'Your writing' } as const;
 const byline = (record: BookProgressRecord) => record.author?.trim() || KIND_LABELS[workKind(record)];
 
 export function ReadingSection({ summary, sessions, onOpenWork, onNavigate }: { summary: ReadingSummary; sessions: ReadingSessionRecord[]; onOpenWork: (key: string) => void; onNavigate: (mode: TypingMode) => void }) {
