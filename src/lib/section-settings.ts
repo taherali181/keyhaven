@@ -3,7 +3,7 @@
 import type { SectionPrefs, TypingMode, UserSettings } from '@/types';
 import { DEFAULT_SETTINGS } from '@/lib/db';
 import { sanitizeReaderStats } from '@/lib/reader-stats';
-import { DEFAULT_TYPOGRAPHY, normalizeTypography, TYPOGRAPHY_KEYS, type Typography } from '@/lib/typography';
+import { DEFAULT_TYPOGRAPHY, normalizeTypography, typeRangesFor, TYPOGRAPHY_KEYS, type Typography } from '@/lib/typography';
 
 export const SECTION_KEYS = [...TYPOGRAPHY_KEYS, 'readerStats', 'readerBarStyle'] as const;
 
@@ -47,11 +47,11 @@ export function sectionUpdate<K extends keyof UserSettings>(settings: UserSettin
   return { sectionPrefs: { ...settings.sectionPrefs, [mode]: { ...own, [key]: value } } };
 }
 
-/** Drops malformed stored section preferences. */
+/** Drops malformed stored section preferences and keeps each section's typography within its own ranges. */
 export function sanitizeSectionPrefs(value: unknown): UserSettings['sectionPrefs'] {
   if (!value || typeof value !== 'object') return {};
   return Object.fromEntries(Object.entries(value as Record<string, Partial<SectionPrefs>>).filter(([, prefs]) => prefs && typeof prefs === 'object').map(([mode, prefs]) => [
     mode,
-    { ...prefs, ...normalizeTypography(prefs), ...(prefs.readerStats ? { readerStats: sanitizeReaderStats(prefs.readerStats) } : {}) }
+    { ...prefs, ...normalizeTypography(prefs, typeRangesFor(mode as TypingMode)), ...(prefs.readerStats ? { readerStats: sanitizeReaderStats(prefs.readerStats) } : {}) }
   ]));
 }

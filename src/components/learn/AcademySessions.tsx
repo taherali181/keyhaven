@@ -7,6 +7,7 @@ import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
 import { LiveStatsBar } from '@/components/typing/LiveStatsBar';
 import { TestResultsModal } from '@/components/typing/TestResultsModal';
+import { SettingsTab } from '@/components/ui/SectionHeader';
 import { describeKey, VirtualKeyboardHeatmap } from '@/components/typing/VirtualKeyboardHeatmap';
 import { UNITS, nextLessonAfter, unitOf } from '@/data/academy/units';
 import type { AcademyLesson } from '@/lib/academy/types';
@@ -62,7 +63,10 @@ function PracticeSession({ settings, onKeyPress, onUpdateSetting, eyebrow, title
         {subtitle && <p>{subtitle}</p>}
         {steps && <ol className="ac-steps" aria-label={`Step ${current + 1} of ${steps.length}`}>{steps.map((state, index) => <li key={index} data-state={state} />)}</ol>}
       </div>
-      <button type="button" className="ac-guide-toggle" aria-pressed={guideOn} onClick={() => onUpdateSetting('academyGuide', guideOn ? 'off' : 'on')}><Keyboard aria-hidden="true" />Guide</button>
+      <div className="kh-tabs ac-practice-tools">
+        <button type="button" className="kh-tab ac-guide-toggle" aria-pressed={guideOn} onClick={() => onUpdateSetting('academyGuide', guideOn ? 'off' : 'on')}><Keyboard aria-hidden="true" />Guide</button>
+        {!settings.zenMode && <SettingsTab label="Academy" />}
+      </div>
     </header>
     <TypingArea targetText={text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" viewportLines={3} lineHeight={1.8} onKeyDown={engine.handleKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} />
     {summary}

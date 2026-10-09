@@ -684,6 +684,11 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .kh-tabs { display: inline-flex; gap: 2px; padding: 4px; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--glass-fill); box-shadow: inset 0 1px 0 var(--glass-highlight); }
 .kh-tab { position: relative; isolation: isolate; height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--text-muted); font-size: .8125rem; font-weight: 500; transition: color var(--dur-fast); }
 .kh-tab:hover, .kh-tab[aria-current="page"] { color: var(--text-primary); }
+/* The settings gear closes a tab capsule: an icon segment after a hairline divider. */
+.kh-tabs-divider { width: 1px; height: 18px; align-self: center; margin: 0 4px; background: var(--glass-border); }
+.kh-tab-icon { display: grid; width: 34px; padding: 0; place-items: center; }
+.kh-tab-icon svg { width: 16px; height: 16px; stroke-width: 1.75; transition: transform var(--dur-slow) var(--ease-spring); }
+.kh-tab-icon:hover svg { transform: rotate(-12deg) scale(1.1); }
 .kh-tab-pill { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: color-mix(in oklab, var(--text-primary) 10%, transparent); box-shadow: inset 0 1px 0 var(--glass-highlight); }
 
 /* ── Keyboard (guide, heatmap, confidence) ── */
@@ -800,8 +805,10 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .ac-practice-title .eyebrow { margin: 0; }
 .ac-practice-title h1 { margin: 0; font: 500 clamp(1.75rem, 4vw, 2.5rem)/1.1 var(--font-wordmark); }
 .ac-practice-title > p:not(.eyebrow) { margin: 0; color: var(--text-muted); font-size: .8125rem; }
-.ac-guide-toggle { display: inline-flex; height: 32px; align-items: center; justify-self: end; gap: 6px; padding: 0 12px; border: 1px solid var(--glass-border); border-radius: 999px; background: transparent; color: var(--text-muted); font-size: .8125rem; transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast); }
-.ac-guide-toggle[aria-pressed="true"] { border-color: color-mix(in oklab, var(--color-accent) 45%, transparent); background: color-mix(in oklab, var(--color-accent) 14%, transparent); color: var(--text-primary); }
+/* The lesson header's Guide toggle and settings gear share one glass capsule, like the section tabs. */
+.ac-practice-tools { justify-self: end; align-items: center; }
+.ac-guide-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; transition: background var(--dur-fast), color var(--dur-fast); }
+.ac-guide-toggle[aria-pressed="true"] { background: color-mix(in oklab, var(--color-accent) 16%, transparent); color: var(--text-primary); }
 .ac-guide-toggle svg { width: 15px; }
 .ac-steps { display: flex; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
 .ac-steps li { width: 26px; height: 4px; border-radius: 99px; background: color-mix(in oklab, var(--text-primary) 14%, transparent); }
@@ -1016,7 +1023,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 
 /* ── Fullscreen: only the title bar, the text and the bottom bar remain ── */
 :root[data-fullscreen="true"] { --sidebar-space: 0px; }
-:root[data-fullscreen="true"] :is(.app-sidebar, .sidebar-dock, .sidebar-hotzone, .micro-stats, .sync-indicator, .mobile-bar, .reader-settings-trigger, .typing-hint, .focus-exit) { display: none !important; }
+:root[data-fullscreen="true"] :is(.app-sidebar, .sidebar-dock, .sidebar-hotzone, .micro-stats, .sync-indicator, .mobile-bar, .typing-hint, .focus-exit) { display: none !important; }
 
 /* Story switcher popover. Solid, not glass: it lives inside the bar's backdrop blur, so a nested
    blur can't see the page and any translucency would let the passage show through the list. */
@@ -1123,10 +1130,6 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .typing-copy { font-weight: var(--reader-weight, 400); letter-spacing: var(--reader-tracking, .005em); word-spacing: var(--reader-word-spacing, 0); }
 .settings-note { margin: 16px 4px 0; color: var(--text-muted); font-size: .75rem; line-height: 1.5; }
 .settings-note strong { color: var(--text-secondary); font-weight: 600; }
-.reader-settings-trigger { position: fixed; top: 16px; right: 20px; z-index: 40; display: flex; height: 40px; align-items: center; gap: 8px; padding: 0 16px 0 13px; color: var(--text-secondary); font-size: .8125rem; font-weight: 500; transition: color var(--dur-fast), border-color var(--dur-fast); animation: fade-in 200ms var(--ease-out-expo) 60ms both; }
-.reader-settings-trigger:hover { border-color: color-mix(in oklab, var(--color-accent) 38%, transparent); color: var(--text-primary); }
-.reader-settings-trigger svg { width: 16px; height: 16px; stroke-width: 1.75; transition: transform var(--dur-slow) var(--ease-spring); }
-.reader-settings-trigger:hover svg { transform: rotate(-12deg) scale(1.1); }
 .rs-scrim { position: fixed; inset: 0; z-index: 70; background: color-mix(in oklab, var(--bg-primary) 16%, transparent); }
 .rs-panel { position: fixed; top: 12px; right: 12px; bottom: 12px; z-index: 71; display: flex; width: min(480px, calc(100vw - 24px)); flex-direction: column; overflow: hidden; box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-3); }
 .rs-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px 8px; }
@@ -1266,8 +1269,6 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 @keyframes rs-eq { to { height: 14px; } }
 .rs-sliders { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--glass-border); border-radius: var(--r-md); background: color-mix(in oklab, var(--text-primary) 3%, transparent); }
 @media (max-width: 767px) {
-  .reader-settings-trigger { top: auto; right: auto; bottom: 12px; left: 12px; width: 44px; height: 44px; justify-content: center; padding: 0; }
-  .reader-settings-trigger span { display: none; }
   .rs-panel { top: auto; right: 8px; bottom: 8px; left: 8px; width: auto; max-height: 86vh; }
   .rs-tiles[data-columns="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rs-tabs button span { display: none; }
@@ -1301,9 +1302,14 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 .typing-surface:hover .typing-page-controls, .typing-page-controls:focus-within { opacity: 1; }
 .typing-page-controls button { border: 0; background: transparent; color: var(--text-secondary); padding: 5px 0; font-size: .6875rem; }
 .typing-page-controls button:disabled { opacity: .2; }
-.typing-surface.speed-window { min-height: 0; padding: 0; border: 0; }
-.typing-surface.speed-window .typing-viewport { height: calc(3 * var(--typing-line-height, 2em)); mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent); }
-.typing-surface.speed-window .typing-copy { padding-top: var(--typing-line-height, 2em); }
+.typing-surface.line-window { min-height: 0; padding: 0; border: 0; }
+/* A light feather at the very edges only, so the typed line above stays at full colour. */
+.typing-surface.line-window .typing-viewport { height: calc(3 * var(--typing-line-height, 2em)); mask-image: linear-gradient(to bottom, transparent, black 4%, black 96%, transparent); }
+/* Centred window: the typed and active lines are full colour, the lines still to come are grey. */
+.typing-copy.line-focus { transition-duration: .2s; }
+.typing-copy.line-focus .typing-character { color: var(--text-primary); transition: color 180ms ease; }
+.typing-copy.line-focus .typing-character.is-upcoming { color: color-mix(in srgb, var(--text-muted) 74%, transparent); }
+@media (prefers-reduced-motion: reduce) { .typing-copy.line-focus, .typing-copy.line-focus .typing-character { transition: none; } }
 
 .micro-stats { position: fixed; right: 18px; bottom: 30px; z-index: 22; display: flex; align-items: center; gap: 14px; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--glass-fill); padding: 6px 6px 6px 16px; color: var(--text-muted); font: 500 .6875rem/1 var(--font-mono); font-variant-numeric: tabular-nums; box-shadow: inset 0 1px 0 var(--glass-highlight), var(--elev-1); backdrop-filter: blur(var(--blur-md)) saturate(140%); animation: rise-in 260ms var(--ease-out-expo) 80ms both; }
 .micro-stats strong { margin-right: 2px; color: var(--text-primary); font-size: .875rem; font-weight: 600; }
@@ -2077,6 +2083,7 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 /* Quotes: one short passage, centred on the page. */
 .quotes-shell .reader-stage .typing-surface { display: flex; flex-direction: column; justify-content: center; }
 .quotes-shell .typing-copy { text-align: center; text-wrap: balance; }
+.quotes-shell .reader-stage .typing-surface.line-window { min-height: 290px; padding: clamp(24px, 4vh, 44px) 0 44px; }
 .quotes-shell .reader-bar { min-width: 0; }
 .rs-motion { margin-top: 16px; padding: 0; }
 .rs-hint { margin: -6px 0 0; color: var(--text-muted); font-size: .6875rem; line-height: 1.45; }

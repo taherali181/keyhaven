@@ -1,6 +1,6 @@
 // Reader typography: the ranges the settings sliders allow, the defaults, presets, and migration from the old
 // fixed choices (fontSize 'sm'…'xl', letter spacing 'tight'…'wide', margins 'narrow'…'full').
-import type { FontFamily, UserSettings } from '@/types';
+import type { FontFamily, TypingMode, UserSettings } from '@/types';
 import { FONTS } from '@/lib/themes';
 
 export const TYPOGRAPHY_KEYS = ['font', 'fontSize', 'readerFontWeight', 'readerLineHeight', 'readerLetterSpacing', 'readerWordSpacing', 'readerParagraphSpacing', 'readerWidth', 'readerAlign', 'readerHyphens'] as const;
@@ -19,6 +19,20 @@ export const TYPE_RANGES = {
 } satisfies Record<string, Range>;
 
 type NumericKey = keyof typeof TYPE_RANGES;
+export type TypeRanges = Record<NumericKey, Range>;
+
+/** Quotes are short, so they allow much larger, heavier and more widely spaced text than reading pages. */
+export const QUOTE_TYPE_RANGES: TypeRanges = {
+  fontSize: { min: 14, max: 120, step: 1 },
+  readerFontWeight: { min: 200, max: 900, step: 50 },
+  readerLineHeight: { min: 1, max: 3.5, step: 0.05 },
+  readerLetterSpacing: { min: -0.05, max: 0.25, step: 0.005 },
+  readerWordSpacing: { min: 0, max: 1, step: 0.02 },
+  readerWidth: TYPE_RANGES.readerWidth
+};
+
+/** The slider ranges a section allows. */
+export const typeRangesFor = (mode: TypingMode): TypeRanges => (mode === 'quotes' ? QUOTE_TYPE_RANGES : TYPE_RANGES);
 
 export const DEFAULT_TYPOGRAPHY: Typography = {
   font: 'serif', fontSize: 23, readerFontWeight: 400, readerLineHeight: 1.8, readerLetterSpacing: 0.005,
@@ -41,10 +55,10 @@ export function snap(value: number, { min, max, step }: Range) {
 
 /**
  * Validates the typography keys present in `input` (a stored settings object or a section's partial prefs).
- * Legacy tokens are converted, numbers are snapped and clamped, and anything unusable falls back to the default.
+ * Legacy tokens are converted, numbers are snapped and clamped to `ranges`, and anything unusable falls back to the default.
  * Keys that are absent stay absent, so partial section preferences keep inheriting.
  */
-export function normalizeTypography(input: Partial<Record<TypographyKey, unknown>>): Partial<Typography> {
+export function normalizeTypography(input: Partial<Record<TypographyKey, unknown>>, ranges: TypeRanges = TYPE_RANGES): Partial<Typography> {
   const out: Partial<Record<TypographyKey, unknown>> = {};
   const has = (key: TypographyKey) => input[key] !== undefined;
   if (has('font')) out.font = typeof input.font === 'string' && input.font in FONTS ? input.font as FontFamily : DEFAULT_TYPOGRAPHY.font;
@@ -52,7 +66,7 @@ export function normalizeTypography(input: Partial<Record<TypographyKey, unknown
     if (!has(key)) continue;
     const raw = input[key];
     const value = typeof raw === 'number' && Number.isFinite(raw) ? raw : typeof raw === 'string' ? LEGACY[key]?.[raw] : undefined;
-    out[key] = value === undefined ? DEFAULT_TYPOGRAPHY[key] : snap(value, TYPE_RANGES[key]);
+    out[key] = value === undefined ? DEFAULT_TYPOGRAPHY[key] : snap(value, ranges[key]);
   }
   if (has('readerParagraphSpacing')) out.readerParagraphSpacing = input.readerParagraphSpacing === 0 || input.readerParagraphSpacing === 2 ? input.readerParagraphSpacing : 1;
   if (has('readerAlign')) out.readerAlign = input.readerAlign === 'justify' ? 'justify' : 'left';
@@ -80,5 +94,5 @@ export function typographyKey(settings: Typography) {
   return TYPOGRAPHY_KEYS.map(key => settings[key]).join('|');
 }
 
-const WEIGHT_NAMES: Record<number, string> = { 300: 'Light', 350: 'Book', 400: 'Regular', 450: 'Regular', 500: 'Medium', 550: 'Medium', 600: 'Semibold', 650: 'Semibold', 700: 'Bold' };
+const WEIGHT_NAMES: Record<number, string> = { 200: 'Extra light', 250: 'Extra light', 300: 'Light', 350: 'Book', 400: 'Regular', 450: 'Regular', 500: 'Medium', 550: 'Medium', 600: 'Semibold', 650: 'Semibold', 700: 'Bold', 750: 'Bold', 800: 'Extra bold', 850: 'Extra bold', 900: 'Black' };
 export const weightName = (weight: number) => WEIGHT_NAMES[weight] ?? '';

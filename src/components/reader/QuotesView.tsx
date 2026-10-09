@@ -166,7 +166,7 @@ export const QuotesView = ({ settings, onKeyPress, onUpdateSetting }: { settings
               : loadError ? <p>Quotes could not be loaded. Check your connection and try again.</p>
                 : <span className="skeleton quotes-skeleton" aria-label="Loading quotes" />}
           </div>
-          : <TypingArea targetText={quote.text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerWidth}`} lineHeight={settings.readerLineHeight} onKeyDown={typingKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} onEscape={() => (popup.view === 'toast' ? popup.collapse() : engine.reset())} />}
+          : <TypingArea targetText={quote.text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" viewportLines={3} viewportMode="centered" layoutKey={`${settings.readerFontWeight}-${settings.readerLetterSpacing}-${settings.readerWordSpacing}-${settings.readerWidth}`} lineHeight={settings.readerLineHeight} onKeyDown={typingKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} onEscape={() => (popup.view === 'toast' ? popup.collapse() : engine.reset())} />}
       </div>
 
       <ReaderBottomBar

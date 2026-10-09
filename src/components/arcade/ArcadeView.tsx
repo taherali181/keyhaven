@@ -47,7 +47,7 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({ settings, onKeyPress }) 
 
   return (
     <section className="speed-shell arcade-shell">
-      <SectionHeader eyebrow="Play with purpose" title="Arcade" tabs={[{ id: 'play', label: 'Play' }, { id: 'daily', label: 'Daily' }, { id: 'leaderboard', label: 'Records' }]} active={view} onChange={changeView} layoutId="arcade-tab" />
+      <SectionHeader eyebrow="Play with purpose" title="Arcade" tabs={[{ id: 'play', label: 'Play' }, { id: 'daily', label: 'Daily' }, { id: 'leaderboard', label: 'Records' }]} active={view} onChange={changeView} layoutId="arcade-tab" settingsLabel={settings.zenMode ? undefined : 'Arcade'} />
       {view === 'leaderboard' ? <LeaderboardView embedded /> : <>
         {view === 'daily'
           ? <div className="arc-daily">

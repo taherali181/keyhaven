@@ -46,4 +46,10 @@ describe('per-section settings', () => {
     const prefs = sanitizeSectionPrefs({ quotes: { fontSize: 'sm', readerLetterSpacing: 'wide', readerWidth: 'full' } });
     expect(prefs.quotes).toEqual({ fontSize: 19, readerLetterSpacing: 0.045, readerWidth: 1400 });
   });
+
+  it('keeps each section within its own ranges when loading stored preferences', () => {
+    const prefs = sanitizeSectionPrefs({ quotes: { fontSize: 100, readerFontWeight: 900 }, 'speed-test': { fontSize: 100 } });
+    expect(prefs.quotes).toEqual({ fontSize: 100, readerFontWeight: 900 });
+    expect(prefs['speed-test']).toEqual({ fontSize: 56 });
+  });
 });

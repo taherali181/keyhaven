@@ -7,7 +7,7 @@ import { AudioWaveform, Check, ChevronDown, ChevronUp, CloudRain, Coffee, Flame,
 import { AmbientSound, CustomReaderTone, FontFamily, ReaderBackground, ReaderToneId, ThemeId, UserSettings } from '@/types';
 import { FONTS } from '@/lib/themes';
 import { CUSTOM_TONE_PREFIX, EXTRA_TONES, MAIN_TONES, RECIPE_TONES, contrastRatio, hasSceneryImage, readerSurfaceProps, toneName, toneVariables } from '@/lib/reader-style';
-import { DEFAULT_TYPOGRAPHY, TYPE_PRESETS, TYPE_RANGES, matchesTypography, weightName, type Typography } from '@/lib/typography';
+import { DEFAULT_TYPOGRAPHY, TYPE_PRESETS, TYPE_RANGES, matchesTypography, weightName, type TypeRanges, type Typography } from '@/lib/typography';
 import { SliderField } from '@/components/ui/SliderField';
 import { prepareCustomScenery } from '@/lib/custom-scenery';
 import { ease, fade, slideInRight, spring } from '@/lib/motion';
@@ -269,7 +269,7 @@ function TypefacePicker({ value, onChange }: { value: FontFamily; onChange: (fon
 }
 
 /** Reading-only settings: a floating trigger plus a tile-based sheet. Rendered for Stories, Quotes and Library. */
-export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, sectionLabel = 'Read', typographyDefaults = DEFAULT_TYPOGRAPHY }: { settings: UserSettings; onUpdateSetting: UpdateSetting; onUpdateSettings: (patch: Partial<UserSettings>) => void; sectionLabel?: string; typographyDefaults?: Typography }) {
+export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, sectionLabel = 'Read', typographyDefaults = DEFAULT_TYPOGRAPHY, typeRanges = TYPE_RANGES }: { settings: UserSettings; onUpdateSetting: UpdateSetting; onUpdateSettings: (patch: Partial<UserSettings>) => void; sectionLabel?: string; typographyDefaults?: Typography; typeRanges?: TypeRanges }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabId>('look');
   const sceneryInput = useRef<HTMLInputElement>(null);
@@ -374,9 +374,9 @@ export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, se
     </div>}
   </>;
 
-  type SliderKey = keyof typeof TYPE_RANGES;
+  type SliderKey = keyof TypeRanges;
   const typeSlider = (key: SliderKey, label: string, format: (value: number) => string, hint?: string) => (
-    <SliderField label={label} value={settings[key]} {...TYPE_RANGES[key]} defaultValue={typographyDefaults[key]} format={format} hint={hint} visual={key === 'fontSize' ? 'size' : key === 'readerFontWeight' ? 'weight' : undefined} onChange={value => onUpdateSetting(key, value)} />
+    <SliderField label={label} value={settings[key]} {...typeRanges[key]} defaultValue={typographyDefaults[key]} format={format} hint={hint} visual={key === 'fontSize' ? 'size' : key === 'readerFontWeight' ? 'weight' : undefined} onChange={value => onUpdateSetting(key, value)} />
   );
   const applyTypography = (values: Typography) => onUpdateSettings(values);
   const signed = (value: number, digits: number) => `${value > 0 ? '+' : ''}${value.toFixed(digits)} em`;
@@ -408,7 +408,7 @@ export function ReaderSettings({ settings, onUpdateSetting, onUpdateSettings, se
       <header><h3>Size and weight</h3><span>Double-click a slider to reset it</span></header>
       <div className="rs-fields">
         {typeSlider('fontSize', 'Text size', value => `${value} px`)}
-        {typeSlider('readerFontWeight', 'Weight', value => `${value} · ${weightName(value)}`)}
+        {typeSlider('readerFontWeight', 'Weight', value => `${value} · ${weightName(value)}`, typeRanges.readerFontWeight.max > TYPE_RANGES.readerFontWeight.max ? 'Some typefaces stop short of the lightest or heaviest weights and show their nearest one.' : undefined)}
       </div>
     </section>
 

@@ -158,7 +158,7 @@ export const SpeedTestView = ({ settings, onKeyPress, onUpdateSetting }: { setti
       : null;
 
   return <section className="speed-shell">
-    <SectionHeader eyebrow="Practice against the clock" title="Speed" tabs={[{ id: 'test', label: 'Test' }, { id: 'leaderboard', label: 'Leaderboard' }]} active={view} onChange={setView} layoutId="speed-tab" />
+    <SectionHeader eyebrow="Practice against the clock" title="Speed" tabs={[{ id: 'test', label: 'Test' }, { id: 'leaderboard', label: 'Leaderboard' }]} active={view} onChange={setView} layoutId="speed-tab" settingsLabel={settings.zenMode ? undefined : 'Speed'} />
     {view === 'leaderboard' ? <LeaderboardView speedOnly embedded /> : <div className="speed-stage">
       <div className="speed-toolbar">
         <div className="speed-modes glass glass-pill">

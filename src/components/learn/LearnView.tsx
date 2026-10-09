@@ -95,6 +95,7 @@ export const LearnView = ({ settings, onKeyPress, onUpdateSetting }: { settings:
       active={tab}
       onChange={id => setScreen(id === 'course' ? { name: 'course' } : { name: 'home' })}
       layoutId="academy-tab"
+      settingsLabel={settings.zenMode ? undefined : 'Academy'}
     />
     {tab === 'home'
       ? <AcademyHome

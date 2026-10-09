@@ -28,6 +28,7 @@ import { BACKUP_LABELS, useBackupStatus } from '@/lib/sync/status';
 import { modeFromPath, pathForMode } from '@/lib/navigation';
 import { hasSceneryImage, readerSurfaceProps } from '@/lib/reader-style';
 import { SECTION_LABELS, sectionTypographyDefaults, sectionUpdate, settingsForSection } from '@/lib/section-settings';
+import { typeRangesFor } from '@/lib/typography';
 import type { UserSettings } from '@/types';
 
 /** Views that draw their own scenery and have a reading-settings button in their title bar. */
@@ -138,7 +139,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
         {/* The library is part of Read: a window over the reader, opened from its title bar or with Ctrl K. */}
         {(currentMode === 'stories' || currentMode === 'home') && <LibraryWindow initialOpen={initialLibraryOpen} />}
         {/* Read and Quotes open the full reading settings from their title bar; practice sections have their own small sheet. */}
-        {!settings.zenMode && <ReaderSettings settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} sectionLabel={SECTION_LABELS[currentMode] ?? 'Read'} typographyDefaults={sectionTypographyDefaults(currentMode)} />}
+        {!settings.zenMode && <ReaderSettings settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} sectionLabel={SECTION_LABELS[currentMode] ?? 'Read'} typographyDefaults={sectionTypographyDefaults(currentMode)} typeRanges={typeRangesFor(currentMode)} />}
         {!settings.zenMode && isSettingsSection(currentMode) && <SectionSettings key={currentMode} mode={currentMode} settings={sectionSettings} onUpdateSetting={updateSectionSetting} onUpdateSettings={updateSectionSettings} />}
       </div>
     </MotionConfig>

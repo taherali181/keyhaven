@@ -5,6 +5,13 @@ export function openReaderSettings() {
   window.dispatchEvent(new Event(OPEN_READER_SETTINGS_EVENT));
 }
 
+/** Opens the small settings sheet of Speed, Academy or Arcade from the gear in their tab bar. */
+export const OPEN_SECTION_SETTINGS_EVENT = 'keyhaven:open-section-settings';
+
+export function openSectionSettings() {
+  window.dispatchEvent(new Event(OPEN_SECTION_SETTINGS_EVENT));
+}
+
 export const OPEN_LIBRARY_EVENT = 'keyhaven:open-library';
 export type LibraryTab = 'mine' | 'stories' | 'discover';
 export interface OpenLibraryDetail { tab?: LibraryTab; focusSearch?: boolean; bookId?: number; category?: string }

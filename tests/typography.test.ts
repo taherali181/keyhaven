@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TYPOGRAPHY, TYPE_PRESETS, TYPE_RANGES, matchesTypography, normalizeTypography, snap } from '@/lib/typography';
+import { DEFAULT_TYPOGRAPHY, QUOTE_TYPE_RANGES, TYPE_PRESETS, TYPE_RANGES, matchesTypography, normalizeTypography, snap, typeRangesFor } from '@/lib/typography';
 import { loadSettings } from '@/lib/db';
 
 describe('reader typography', () => {
@@ -33,5 +33,14 @@ describe('reader typography', () => {
     const settings = loadSettings();
     expect(settings).toMatchObject({ fontSize: 27, readerLetterSpacing: 0.045, readerWidth: 940, readerFontWeight: 600, readerAlign: 'left', readerParagraphSpacing: 1 });
     localStorage.removeItem('keyhaven_settings_v1');
+  });
+
+  it('lets quotes go much larger, heavier and wider than reading pages', () => {
+    expect(typeRangesFor('quotes')).toBe(QUOTE_TYPE_RANGES);
+    expect(typeRangesFor('stories')).toBe(TYPE_RANGES);
+    expect(typeRangesFor('speed-test')).toBe(TYPE_RANGES);
+    const big = { fontSize: 100, readerFontWeight: 850, readerLetterSpacing: 0.2, readerWordSpacing: 0.8, readerLineHeight: 3 };
+    expect(normalizeTypography(big, QUOTE_TYPE_RANGES)).toEqual(big);
+    expect(normalizeTypography(big)).toEqual({ fontSize: 56, readerFontWeight: 700, readerLetterSpacing: 0.12, readerWordSpacing: 0.4, readerLineHeight: 2.6 });
   });
 });
