@@ -30,6 +30,21 @@ export function openSection(mode: import('@/types').TypingMode) {
   window.dispatchEvent(new CustomEvent(OPEN_SECTION_EVENT, { detail: { mode } }));
 }
 
+/** Where the Academy should open next: an adaptive review of some keys, or a lesson's introduction. */
+export interface AcademyIntent { review?: string[]; lessonId?: string }
+let pendingAcademy: AcademyIntent | null = null;
+/** Switches to the Academy straight into a review or lesson (e.g. from a Speed result). */
+export function openAcademy(intent: AcademyIntent) {
+  pendingAcademy = intent;
+  openSection('learn');
+}
+/** The Academy takes the pending intent once, when it opens. */
+export function consumeAcademyIntent() {
+  const intent = pendingAcademy;
+  pendingAcademy = null;
+  return intent;
+}
+
 export const OPEN_WORK_EVENT = 'keyhaven:open-work';
 /** Opens a story, book or import in the reader, optionally switching between reading and typing. From outside the reader, the app switches to Read first. */
 export function openWork(key: string, mode?: 'read' | 'type') {

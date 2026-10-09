@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Keyboard, RotateCcw } from 'lucide-react';
-import type { TypingStats, UserSettings } from '@/types';
+import type { TestResultRecord, TypingMode, TypingStats, UserSettings } from '@/types';
+import { analyseRun, type RunAnalysis } from '@/lib/academy/feedback';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
 import { LiveStatsBar } from '@/components/typing/LiveStatsBar';
@@ -25,9 +26,14 @@ interface SessionProps {
   settings: UserSettings;
   onKeyPress: (key: string) => void;
   onUpdateSetting: UpdateSetting;
-  onSave: (next: AcademyState, result?: SavedResult) => void;
+  /** Saves the Academy state and, with a result, records it; returns the saved result record. */
+  onSave: (next: AcademyState, result?: SavedResult) => TestResultRecord | undefined;
   onExit: () => void;
+  /** Starts an adaptive review of these keys. */
+  onReview: (keys: string[]) => void;
 }
+
+const LEARN_MODES: TypingMode[] = ['learn'];
 
 function useLatest<T>(value: T) {
   const ref = useRef(value);
@@ -55,15 +61,19 @@ function PracticeSession({ settings, onKeyPress, onUpdateSetting, eyebrow, title
   const current = steps ? steps.indexOf('current') : -1;
 
   return <section className="ac-shell ac-practice">
-    <header className="ac-practice-header">
-      <button type="button" className="ac-back" onClick={onBack}><ArrowLeft aria-hidden="true" />Academy</button>
-      <div className="ac-practice-title">
-        <p className="eyebrow">{eyebrow}</p>
-        <h1>{title}</h1>
-        {subtitle && <p>{subtitle}</p>}
-        {steps && <ol className="ac-steps" aria-label={`Step ${current + 1} of ${steps.length}`}>{steps.map((state, index) => <li key={index} data-state={state} />)}</ol>}
+    <header className="kh-bar-row ac-practice-bar">
+      <div className="kh-bar glass">
+        <button type="button" className="ac-back" onClick={onBack} aria-label="Back to the Academy"><ArrowLeft aria-hidden="true" /></button>
+        <div className="kh-bar-title">
+          <p className="eyebrow">{eyebrow}</p>
+          <h1>{title}</h1>
+        </div>
+        <div className="ac-practice-meta">
+          {subtitle && <p>{subtitle}</p>}
+          {steps && <ol className="ac-steps" aria-label={`Step ${current + 1} of ${steps.length}`}>{steps.map((state, index) => <li key={index} data-state={state} />)}</ol>}
+        </div>
       </div>
-      <div className="kh-tabs ac-practice-tools">
+      <div className="kh-side glass">
         <button type="button" className="kh-tab ac-guide-toggle" aria-pressed={guideOn} onClick={() => onUpdateSetting('academyGuide', guideOn ? 'off' : 'on')}><Keyboard aria-hidden="true" />Guide</button>
         {!settings.zenMode && <SettingsTab label="Academy" />}
       </div>
@@ -86,28 +96,32 @@ function Summary({ eyebrow, stats, children, actions }: { eyebrow: string; stats
   </div>;
 }
 
-export function LessonRun({ lesson, academy, settings, onKeyPress, onUpdateSetting, onSave, onExit, onOpenLesson }: SessionProps & { lesson: AcademyLesson; onOpenLesson: (id: string) => void }) {
+export function LessonRun({ lesson, academy, settings, onKeyPress, onUpdateSetting, onSave, onExit, onReview, onOpenLesson }: SessionProps & { lesson: AcademyLesson; onOpenLesson: (id: string) => void }) {
   const last = lesson.steps.length - 1;
   const [stepIndex, setStepIndex] = useState(() => {
     const progress = academy.lessons[lesson.id];
     return progress && !progress.passedAt ? Math.min(progress.stepIndex, last) : 0;
   });
   const [attempt, setAttempt] = useState(0);
-  const [outcome, setOutcome] = useState<(StepOutcome & { stats: TypingStats }) | null>(null);
+  const [outcome, setOutcome] = useState<(StepOutcome & { stats: TypingStats; record?: TestResultRecord; analysis: RunAnalysis }) | null>(null);
   const academyRef = useLatest(academy);
   const step = lesson.steps[stepIndex];
   const text = useMemo(() => stepText(lesson, stepIndex, attempt), [lesson, stepIndex, attempt]);
   const unit = unitOf(lesson.id);
+  const stepTitle = `${lesson.title} · ${step.title}`;
   const next = nextLessonAfter(lesson.id);
 
   const complete = (stats: TypingStats) => {
-    const result = recordStep(academyRef.current, lesson, stepIndex, stats, text, settings.strictMode, Date.now());
-    onSave(result.state, { title: `${lesson.title} · ${step.title}`, subMode: lesson.title, stats });
-    setOutcome({ ...result, stats });
+    const before = academyRef.current;
+    const result = recordStep(before, lesson, stepIndex, stats, text, settings.strictMode, Date.now());
+    const record = onSave(result.state, { title: stepTitle, subMode: lesson.title, stats });
+    const analysis = analyseRun({ stats, text, strict: settings.strictMode, before: before.keyStats, state: result.state, focusKeys: lesson.newKeys, currentLessonId: lesson.id });
+    setOutcome({ ...result, stats, record, analysis });
   };
   const retry = () => { setOutcome(null); setAttempt(value => value + 1); };
   const advance = () => { setOutcome(null); setAttempt(0); setStepIndex(value => Math.min(last, value + 1)); };
   const checkpoint = outcome?.kind === 'checkpoint' ? outcome : null;
+  const matchLesson = useCallback((item: TestResultRecord) => item.title === stepTitle, [stepTitle]);
   const stepSummary = outcome?.kind === 'step'
     ? <Summary eyebrow="Step complete" stats={outcome.stats} actions={<>
       <button type="button" className={`rs-btn ${outcome.accuracyOk ? '' : 'is-primary'}`} onClick={retry}><RotateCcw aria-hidden="true" />Retry</button>
@@ -132,9 +146,18 @@ export function LessonRun({ lesson, academy, settings, onKeyPress, onUpdateSetti
     <TestResultsModal
       stats={checkpoint?.stats ?? null}
       isOpen={Boolean(checkpoint)}
-      title={checkpoint?.passed ? `Checkpoint passed · ${checkpoint.stars} of 3 stars` : `Not yet · aim for ${lesson.checkpoint.wpm} wpm at ${lesson.checkpoint.accuracy}%`}
+      eyebrow={`Checkpoint · ${lesson.title}`}
+      title={checkpoint?.passed ? `Passed · ${checkpoint.stars} of 3 stars` : `Not yet · aim for ${lesson.checkpoint.wpm} wpm at ${lesson.checkpoint.accuracy}%`}
+      record={checkpoint?.record}
+      modes={LEARN_MODES}
+      match={matchLesson}
+      analysis={checkpoint?.analysis}
       onRetry={retry}
+      onClose={retry}
       onNext={checkpoint?.passed ? () => (next ? onOpenLesson(next.id) : onExit()) : undefined}
+      nextLabel={next ? `Next: ${next.title}` : 'Back to the Academy'}
+      onPractise={onReview}
+      onOpenLesson={onOpenLesson}
     />
   </>;
 }

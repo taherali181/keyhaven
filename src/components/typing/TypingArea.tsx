@@ -29,6 +29,11 @@ interface TypingAreaProps {
   customClassName?: string;
   /** Change when CSS-driven typography (weight, letter spacing) changes, so line positions are re-measured. */
   layoutKey?: string;
+  /**
+   * In a centred window: 'typed' keeps untyped letters grey until they are typed; 'full' shows the whole active
+   * line (and the typed line above) in full colour, with only the lines still to come in grey.
+   */
+  lineFocus?: 'typed' | 'full';
 }
 
 type CharacterState = 'pending' | 'correct' | 'error';
@@ -82,7 +87,7 @@ TypingCharacter.displayName = 'TypingCharacter';
 export const TypingArea: React.FC<TypingAreaProps> = ({
   targetText, typed, isFinished, caretStyle = 'smooth', font = 'serif', fontSize = 23,
   wrapMode = 'whole-word', feedbackMode = 'standard', viewportLines, viewportMode = 'centered',
-  lineHeight, onKeyDown, onCompositionStart, onCompositionEnd, onReset, onEscape, onClickFocus, customClassName = '', layoutKey
+  lineHeight, onKeyDown, onCompositionStart, onCompositionEnd, onReset, onEscape, onClickFocus, customClassName = '', layoutKey, lineFocus = 'typed'
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -158,6 +163,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   // A centred window keeps the active line in the middle, the typed line above in full colour and the next line
   // below in grey; each finished line slides up.
   const lineWindow = Boolean(viewportLines) && viewportMode === 'centered';
+  const fullLine = lineWindow && lineFocus === 'full';
   const lead = lineWindow ? Math.floor(viewportLines! / 2) : 0;
   const shift = viewportLines ? windowShift(lineMetrics.active, viewportLines, viewportMode, visiblePage) : 0;
   const transform = viewportLines ? `translateY(${-shift * lineMetrics.height}px)` : undefined;
@@ -178,7 +184,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       character={character}
       state={state}
       isCurrent={index === currentIndex && !isFinished}
-      tone={!lineWindow ? undefined : index < activeStart ? 'past' : index < activeEnd ? 'active' : 'upcoming'}
+      tone={!fullLine ? undefined : index < activeStart ? 'past' : index < activeEnd ? 'active' : 'upcoming'}
       caretStyle={caretStyle}
       registerRef={registerRef}
     />;
@@ -193,7 +199,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       restartArmedRef.current = false; setBrowsedPage(null); onKeyDown(event);
     }} autoFocus aria-label="Typing input" autoComplete="off" autoCapitalize="off" spellCheck={false} />
     <div className="typing-viewport" style={viewportLines ? { height: viewportLines * lineMetrics.height } : undefined}>
-      <div className={`typing-copy ${wrapMode} ${feedbackMode === 'reader' ? 'reader-feedback' : ''} ${lineWindow ? 'line-focus' : ''}`} style={{ transform, paddingTop: lead ? lead * lineMetrics.height : undefined }} aria-hidden="true">
+      <div className={`typing-copy ${wrapMode} ${feedbackMode === 'reader' ? 'reader-feedback' : ''} ${fullLine ? 'line-focus' : ''}`} style={{ transform, paddingTop: lead ? lead * lineMetrics.height : undefined }} aria-hidden="true">
         {wrapMode === 'whole-word' ? tokens.map((token, tokenIndex) => { const start = tokenOffset; tokenOffset += token.length; return <span className="typing-word" key={`${tokenIndex}-${start}`}>{token.split('').map((character, localIndex) => renderCharacter(character, start + localIndex))}</span>; }) : characters.map(renderCharacter)}
         {currentIndex >= characters.length && !isFinished && <span className="typing-character typing-end-marker"><Caret style={caretStyle} /></span>}
       </div>

@@ -84,24 +84,29 @@ export const academyStreak = (state: AcademyState, now: number) => streaks(Objec
  * Per-key hits, misses and a moving average of keystroke time, from one session. Keystrokes are matched to the
  * text they were aimed at: a correct key advances, and so does a wrong one unless strict mode kept it back.
  */
-export function updateKeyStats(keyStats: Record<string, AcademyKeyStat>, stats: TypingStats, text: string, strict: boolean) {
-  const next = { ...keyStats };
+/**
+ * Walks a finished run keystroke by keystroke, calling `visit` with the (lower-case) key that was expected, whether
+ * it was typed correctly, and how long it took when that time is usable as typing speed. Spaces are skipped.
+ */
+export function eachKeystroke(stats: TypingStats, text: string, strict: boolean, visit: (key: string, correct: boolean, ms: number | null) => void) {
   let position = 0;
   for (const timing of stats.charTimings) {
     const expected = text[position];
     if (expected === undefined) break;
     const key = expected.toLowerCase();
-    if (key.trim()) {
-      const current = next[key] ?? { hits: 0, misses: 0, avgMs: 0 };
-      if (timing.isCorrect) {
-        const usable = timing.durationMs > 0 && timing.durationMs < MAX_KEY_MS;
-        next[key] = { ...current, hits: current.hits + 1, avgMs: usable ? Math.round(current.avgMs ? current.avgMs * 0.8 + timing.durationMs * 0.2 : timing.durationMs) : current.avgMs };
-      } else {
-        next[key] = { ...current, misses: current.misses + 1 };
-      }
-    }
+    if (key.trim()) visit(key, timing.isCorrect, timing.isCorrect && timing.durationMs > 0 && timing.durationMs < MAX_KEY_MS ? timing.durationMs : null);
     if (timing.isCorrect || !strict) position += 1;
   }
+}
+
+export function updateKeyStats(keyStats: Record<string, AcademyKeyStat>, stats: TypingStats, text: string, strict: boolean) {
+  const next = { ...keyStats };
+  eachKeystroke(stats, text, strict, (key, correct, ms) => {
+    const current = next[key] ?? { hits: 0, misses: 0, avgMs: 0 };
+    next[key] = correct
+      ? { ...current, hits: current.hits + 1, avgMs: ms === null ? current.avgMs : Math.round(current.avgMs ? current.avgMs * 0.8 + ms * 0.2 : ms) }
+      : { ...current, misses: current.misses + 1 };
+  });
   return next;
 }
 

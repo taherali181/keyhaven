@@ -1,30 +1,35 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Flag, PenLine, SlidersHorizontal, Trophy } from 'lucide-react';
 import { createRandom } from '@/lib/academy/generate';
 import { generateRandomWords } from '@/data/word-lists';
-import type { Quote, SpeedPrefs, TestResultRecord, TypingStats, UserSettings } from '@/types';
+import type { Quote, SpeedPrefs, TestResultRecord, TypingMode, TypingStats, UserSettings } from '@/types';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { TypingArea } from '@/components/typing/TypingArea';
 import { LiveStatsBar } from '@/components/typing/LiveStatsBar';
 import { TestResultsModal } from '@/components/typing/TestResultsModal';
 import { LeaderboardView } from '@/components/analytics/LeaderboardView';
-import { SectionHeader } from '@/components/ui/SectionHeader';
+import { SectionHeader, type SectionFact } from '@/components/ui/SectionHeader';
+import { beats, newestFirst } from '@/lib/result-history';
+import { localDay } from '@/lib/profile-stats';
 import { Segmented } from '@/components/ui/Segmented';
 import { createClientId, db } from '@/lib/db';
 import { spring } from '@/lib/motion';
 import { syncEnabled } from '@/lib/sync-config';
 import { getSessionUser } from '@/lib/session';
 import { loadQuotes } from '@/lib/quotes';
+import { analyseRun, applySpeedRun, type RunAnalysis } from '@/lib/academy/feedback';
+import { openAcademy } from '@/lib/reader-events';
 import { MAX_CUSTOM_CHARS, QUOTE_LENGTHS, SPEED_MODES, TIME_OPTIONS, WORD_OPTIONS, ZEN_WORDS, pickQuote, practiceText, speedLabel, speedSubMode } from '@/lib/speed';
 
 interface Challenge { challengeId: string; targetText: string }
+const SPEED_MODES_ONLY: TypingMode[] = ['speed-test'];
 type UpdateSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
 
-/** Your best and latest runs for the chosen test, so progress is visible between attempts. */
-function SpeedRecords({ subMode, version }: { subMode: string; version: number }) {
+/** Your saved runs of one test setup; `version` changes after a run is saved, to reload them. */
+function useSpeedHistory(subMode: string, version: number) {
   const [rows, setRows] = useState<TestResultRecord[] | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +38,29 @@ function SpeedRecords({ subMode, version }: { subMode: string; version: number }
       .catch(() => { if (!cancelled) setRows([]); });
     return () => { cancelled = true; };
   }, [subMode, version]);
+  return rows;
+}
 
+/** The title bar's figures: best, the last ten runs against the ten before them, and runs today. */
+function speedFacts(rows: TestResultRecord[] | null, now: number): SectionFact[] | undefined {
+  if (!rows) return undefined;
+  if (!rows.length) return [{ label: 'Best', value: '—' }, { label: 'Today', value: 'No runs yet' }];
+  const recent = newestFirst(rows);
+  const mean = (items: TestResultRecord[]) => Math.round(items.reduce((total, item) => total + item.wpm, 0) / items.length);
+  const best = recent.reduce((top, row) => (beats(row, top) ? row : top));
+  const lastTen = mean(recent.slice(0, 10));
+  const before = recent.slice(10, 20);
+  const change = before.length ? lastTen - mean(before) : 0;
+  const today = now ? recent.filter(row => localDay(row.timestamp) === localDay(now)).length : 0;
+  return [
+    { label: 'Best', value: `${best.wpm} wpm` },
+    { label: 'Last 10', value: `${lastTen} wpm${change ? ` ${change > 0 ? '↑' : '↓'}${Math.abs(change)}` : ''}`, tone: change > 0 ? 'up' : change < 0 ? 'down' : undefined },
+    { label: 'Today', value: `${today} ${today === 1 ? 'run' : 'runs'}` }
+  ];
+}
+
+/** Your best and latest runs for the chosen test, so progress is visible between attempts. */
+function SpeedRecords({ subMode, rows }: { subMode: string; rows: TestResultRecord[] | null }) {
   if (!rows) return null;
   if (!rows.length) return <p className="speed-records is-empty">No {subMode} results yet. Your best and most recent runs will appear here.</p>;
   const best = rows.reduce((top, row) => (row.wpm > top.wpm || (row.wpm === top.wpm && row.accuracy > top.accuracy) ? row : top));
@@ -59,6 +86,8 @@ export const SpeedTestView = ({ settings, onKeyPress, onUpdateSetting }: { setti
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [completed, setCompleted] = useState<TypingStats | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
+  const [resultRecord, setResultRecord] = useState<TestResultRecord | null>(null);
+  const [analysis, setAnalysis] = useState<RunAnalysis | null>(null);
   const [recordsVersion, setRecordsVersion] = useState(0);
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [editing, setEditing] = useState(false);
@@ -112,17 +141,31 @@ export const SpeedTestView = ({ settings, onKeyPress, onUpdateSetting }: { setti
   }, [ranked, mode, timeConfig, wordConfig, punctuation, numbers, nonce]);
 
   const subMode = speedSubMode(prefs);
+  const history = useSpeedHistory(subMode, recordsVersion);
+  // The day is read after mounting (never while rendering on the server), and again after each run.
+  const [now, setNow] = useState(0);
+  useEffect(() => { queueMicrotask(() => setNow(Date.now())); }, [recordsVersion]);
+  const matchSubMode = useCallback((record: TestResultRecord) => record.subMode === subMode, [subMode]);
   const targetText = (ranked ? challenge?.targetText : null) ?? localText;
   const complete = (stats: TypingStats) => {
     const clientId = createClientId();
-    setCompleted(stats); setResultOpen(true);
-    void db.testResults.add({ clientId, mode: 'speed-test', subMode, title: `Speed Test · ${subMode}`, wpm: stats.wpm, rawWpm: stats.rawWpm, accuracy: stats.accuracy, consistency: stats.consistency, duration: stats.timeElapsed, timestamp: Date.now(), errors: stats.incorrectChars, errorKeys: stats.errorHeatmap, totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars, challengeId: challenge?.challengeId, visibility: 'private' })
-      .then(() => setRecordsVersion(value => value + 1)).catch(() => {});
+    const record: TestResultRecord = { clientId, mode: 'speed-test', subMode, title: `Speed Test · ${subMode}`, wpm: stats.wpm, rawWpm: stats.rawWpm, accuracy: stats.accuracy, consistency: stats.consistency, duration: stats.timeElapsed, timestamp: Date.now(), errors: stats.incorrectChars, errorKeys: stats.errorHeatmap, totalChars: stats.totalChars, correctChars: stats.correctChars, incorrectChars: stats.incorrectChars, challengeId: challenge?.challengeId, visibility: 'private' };
+    setCompleted(stats); setResultRecord(record); setAnalysis(null); setResultOpen(true);
+    void db.testResults.add(record).then(() => setRecordsVersion(value => value + 1)).catch(() => {});
+    // Every run also teaches the Academy which keys are slow or missed; the popup compares with the history before it.
+    const text = targetText;
+    void applySpeedRun(stats, text, settings.strictMode)
+      .then(({ before, state }) => setAnalysis(analyseRun({ stats, text, strict: settings.strictMode, before, state })))
+      .catch(() => {});
     if (challenge) void fetch('/api/scores', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ clientResultId: clientId, challengeId: challenge.challengeId, elapsedMs: Math.round(stats.timeElapsed * 1000), events: stats.evidence }) }).then(async response => {
       if (!response.ok) return; const payload = await response.json(); await db.testResults.where('clientId').equals(clientId).modify({ visibility: payload.result.visibility, syncedAt: Date.now() });
     }).catch(() => {});
   };
   const engine = useTypingEngine({ targetText, isTimed: mode === 'time', timeLimit: timeConfig, sessionKey: `${subMode}-${punctuation}-${numbers}-${nonce}-${challenge?.challengeId ?? 'guest'}-${quote?.id ?? ''}`, strictMode: settings.strictMode, onComplete: complete, onKeyPress: key => { startedRef.current = true; onKeyPress(key); } });
+  const closeResult = () => {
+    setResultOpen(false);
+    requestAnimationFrame(() => document.querySelector<HTMLInputElement>('.typing-input')?.focus());
+  };
   const restart = () => { startedRef.current = false; setResultOpen(false); setChallenge(null); setNonce(value => value + 1); engine.reset(timeConfig); };
   /** A new setup is remembered for next time and starts a fresh test. */
   const reconfigure = (patch: Partial<SpeedPrefs>) => {
@@ -158,7 +201,7 @@ export const SpeedTestView = ({ settings, onKeyPress, onUpdateSetting }: { setti
       : null;
 
   return <section className="speed-shell">
-    <SectionHeader eyebrow="Practice against the clock" title="Speed" tabs={[{ id: 'test', label: 'Test' }, { id: 'leaderboard', label: 'Leaderboard' }]} active={view} onChange={setView} layoutId="speed-tab" settingsLabel={settings.zenMode ? undefined : 'Speed'} />
+    <SectionHeader eyebrow="Practice against the clock" title="Speed" tabs={[{ id: 'test', label: 'Test' }, { id: 'leaderboard', label: 'Leaderboard' }]} active={view} onChange={setView} layoutId="speed-tab" facts={view === 'test' ? speedFacts(history, now) : undefined} settingsLabel={settings.zenMode ? undefined : 'Speed'} />
     {view === 'leaderboard' ? <LeaderboardView speedOnly embedded /> : <div className="speed-stage">
       <div className="speed-toolbar">
         <div className="speed-modes glass glass-pill">
@@ -221,9 +264,22 @@ export const SpeedTestView = ({ settings, onKeyPress, onUpdateSetting }: { setti
           ? <TypingArea targetText={targetText} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" viewportLines={3} viewportMode="centered" lineHeight={1.8} onKeyDown={onKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={restart} />
           : <div className="speed-loading"><span className="skeleton" aria-label="Choosing a quote" /></div>}
       {mode === 'quote' && quote && !showEditor && <p className="speed-attribution">— {quote.author}{quote.source ? <>, <cite>{quote.source}</cite></> : null}</p>}
-      <SpeedRecords subMode={subMode} version={recordsVersion} />
+      <SpeedRecords subMode={subMode} rows={history} />
       <LiveStatsBar wpm={engine.wpm} accuracy={engine.accuracy} timeRemaining={engine.timeRemaining} timeElapsed={engine.timeElapsed} isTimed={mode === 'time'} onReset={restart} showLiveWpm={settings.showLiveWpm} showLiveAccuracy={settings.showLiveAccuracy} />
-      <TestResultsModal stats={completed} isOpen={resultOpen} title={`Speed Test · ${subMode}`} onRetry={restart} />
+      <TestResultsModal
+        stats={completed}
+        isOpen={resultOpen}
+        eyebrow="Speed test"
+        title={speedLabel(prefs)}
+        record={resultRecord}
+        modes={SPEED_MODES_ONLY}
+        match={matchSubMode}
+        analysis={analysis}
+        onRetry={restart}
+        onClose={closeResult}
+        onPractise={keys => openAcademy({ review: keys })}
+        onOpenLesson={lessonId => openAcademy({ lessonId })}
+      />
     </div>}
   </section>;
 };

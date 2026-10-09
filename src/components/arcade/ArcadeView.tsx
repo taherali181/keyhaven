@@ -24,7 +24,12 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({ settings, onKeyPress }) 
   // Free play gets fresh content each visit; the fixed first value keeps server and client renders the same.
   const [playSeed, setPlaySeed] = useState('play');
   const [daySeed, setDaySeed] = useState('daily');
-  useEffect(() => { queueMicrotask(() => setPlaySeed(`play:${Math.random().toString(36).slice(2)}`)); }, []);
+  // Today's game is worked out after mounting, from the visitor's own clock.
+  const [todayGame, setTodayGame] = useState<string | null>(null);
+  useEffect(() => { queueMicrotask(() => {
+    setPlaySeed(`play:${Math.random().toString(36).slice(2)}`);
+    setTodayGame(GAMES[dayNumber(new Date()) % GAMES.length].label);
+  }); }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,11 +48,16 @@ export const ArcadeView: React.FC<ArcadeViewProps> = ({ settings, onKeyPress }) 
     setView(next);
   };
   const game = GAMES.find(item => item.id === activeGame) ?? GAMES[0];
+  const gameBest = bests.find(entry => entry.id === game.id);
   const Game = game.Game;
 
   return (
     <section className="speed-shell arcade-shell">
-      <SectionHeader eyebrow="Play with purpose" title="Arcade" tabs={[{ id: 'play', label: 'Play' }, { id: 'daily', label: 'Daily' }, { id: 'leaderboard', label: 'Records' }]} active={view} onChange={changeView} layoutId="arcade-tab" settingsLabel={settings.zenMode ? undefined : 'Arcade'} />
+      <SectionHeader eyebrow="Play with purpose" title="Arcade" tabs={[{ id: 'play', label: 'Play' }, { id: 'daily', label: 'Daily' }, { id: 'leaderboard', label: 'Records' }]} active={view} onChange={changeView} layoutId="arcade-tab" facts={view === 'leaderboard' ? undefined : [
+        { label: game.label, value: gameBest?.best ? `Best ${gameBest.best}` : 'Not played yet' },
+        { label: 'Rounds', value: String(gameBest?.rounds ?? 0) },
+        ...(todayGame ? [{ label: 'Daily game', value: todayGame }] : [])
+      ]} settingsLabel={settings.zenMode ? undefined : 'Arcade'} />
       {view === 'leaderboard' ? <LeaderboardView embedded /> : <>
         {view === 'daily'
           ? <div className="arc-daily">
