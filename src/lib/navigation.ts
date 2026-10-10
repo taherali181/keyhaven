@@ -9,6 +9,8 @@ export function modeFromPath(pathname: string): TypingMode | null {
   if (path === '') return 'home';
   // The library is a window over Read; /read/quotes is the old address of Quotes.
   if (path.startsWith('read/')) return ({ stories: 'stories', quotes: 'quotes', library: 'stories' } as Record<string, TypingMode>)[path.split('/')[1]] ?? null;
+  // Each Arcade game has its own page under /arcade.
+  if (path.startsWith('arcade/')) return 'arcade';
   if (ROUTE_ALIASES[path]) return ROUTE_ALIASES[path];
   return MODES.includes(path as TypingMode) ? path as TypingMode : null;
 }

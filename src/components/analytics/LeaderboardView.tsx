@@ -9,18 +9,24 @@ import { ARCADE_GAMES } from '@/lib/profile-stats';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Segmented } from '@/components/ui/Segmented';
 
-type Board = 'speed-test' | 'alphabet-sprint' | 'word-rain' | 'ghost-racer';
+/** The speed test, or any Arcade game. */
+export type LeaderboardBoard = 'speed-test' | ArcadeScoreRecord['game'];
+type Board = LeaderboardBoard;
 type Period = 'day' | 'week' | 'all';
 interface PublicEntry { handle: string; score: number; accuracy: number; occurredAt: string; }
 interface Entry { key: string; rank: number; name: string; score: string; detail: string }
 
+/** The boards with public standings (and the picker's choices). */
 const BOARDS: Array<{ value: Board; label: string }> = [
   { value: 'speed-test', label: 'Speed' }, { value: 'alphabet-sprint', label: 'Alphabet' }, { value: 'word-rain', label: 'Word Rain' }, { value: 'ghost-racer', label: 'Ghost Racer' }
 ];
 const PERIODS: Array<{ value: Period; label: string }> = [{ value: 'day', label: 'Today' }, { value: 'week', label: 'This week' }, { value: 'all', label: 'All time' }];
 
-export const LeaderboardView = ({ speedOnly = false, embedded = false }: { speedOnly?: boolean; embedded?: boolean }) => {
-  const [board, setBoard] = useState<Board>('speed-test');
+/** `board` fixes the board (a game's own page) and hides the board picker. */
+export const LeaderboardView = ({ speedOnly = false, embedded = false, board: fixedBoard }: { speedOnly?: boolean; embedded?: boolean; board?: Board }) => {
+  const [pickedBoard, setBoard] = useState<Board>('speed-test');
+  const board = fixedBoard ?? pickedBoard;
+  const hasPublic = BOARDS.some(option => option.value === board);
   const [period, setPeriod] = useState<Period>('all');
   const [personal, setPersonal] = useState<Array<TestResultRecord | ArcadeScoreRecord>>([]);
   const [publicEntries, setPublicEntries] = useState<PublicEntry[]>([]);
@@ -36,7 +42,8 @@ export const LeaderboardView = ({ speedOnly = false, embedded = false }: { speed
         ranked = (await db.arcadeScores.where('game').equals(board).toArray()).sort((left, right) => board === 'alphabet-sprint' ? left.timeMs - right.timeMs : right.score - left.score);
       }
       if (!cancelled) setPersonal(ranked.slice(0, 15));
-      if (syncEnabled()) {
+      if (!hasPublic) { if (!cancelled) setPublicEntries([]); }
+      else if (syncEnabled()) {
         const response = await fetch(`/api/leaderboards?mode=${board}&period=${period}`);
         if (response.ok) {
           const payload = await response.json() as { entries: PublicEntry[]; syncConfigured: boolean };
@@ -46,12 +53,12 @@ export const LeaderboardView = ({ speedOnly = false, embedded = false }: { speed
     };
     void load().catch(() => {});
     return () => { cancelled = true; };
-  }, [board, period]);
+  }, [board, period, hasPublic]);
 
   const publicRows: Entry[] = publicEntries.map((entry, index) => ({ key: `${entry.handle}-${index}`, rank: index + 1, name: entry.handle, score: `${entry.score}${board === 'speed-test' ? ' wpm' : ' pts'}`, detail: `${entry.accuracy}% accuracy` }));
   const personalRows: Entry[] = personal.map((entry, index) => {
     const arcade = 'game' in entry;
-    const score = board === 'alphabet-sprint' && arcade ? `${(entry.timeMs / 1000).toFixed(2)}s` : arcade ? `${entry.score} pts` : `${entry.wpm} wpm`;
+    const score = board === 'alphabet-sprint' && arcade ? `${(entry.timeMs / 1000).toFixed(2)}s` : board === 'accuracy-streak' && arcade ? `${entry.score} ${entry.score === 1 ? 'word' : 'words'}` : arcade ? `${entry.score} pts` : `${entry.wpm} wpm`;
     const name = arcade ? ARCADE_GAMES.find(game => game.id === entry.game)?.label ?? entry.game : entry.title ?? entry.subMode;
     const date = new Date(entry.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     return { key: entry.clientId, rank: index + 1, name, score, detail: `${entry.accuracy}% · ${date}` };
@@ -59,11 +66,11 @@ export const LeaderboardView = ({ speedOnly = false, embedded = false }: { speed
 
   const content = <div className="lb">
     <div className="lb-controls">
-      {!speedOnly && <Segmented label="Board" value={board} options={BOARDS} onChange={setBoard} layoutId="leaderboard-board" />}
+      {!speedOnly && !fixedBoard && <Segmented label="Board" value={board} options={BOARDS} onChange={setBoard} layoutId="leaderboard-board" />}
       <Segmented label="Period" value={period} options={PERIODS} onChange={setPeriod} layoutId={speedOnly ? 'leaderboard-period-speed' : 'leaderboard-period'} />
     </div>
     <div className="lb-grid">
-      <BoardPanel title="Public standings" icon={<Crown aria-hidden="true" />} entries={publicRows} empty={syncConfigured ? 'No verified scores for this board yet.' : 'Verified public standings appear once Backup & sync is set up and you are signed in.'} />
+      <BoardPanel title="Public standings" icon={<Crown aria-hidden="true" />} entries={publicRows} empty={!hasPublic ? 'Public standings aren’t kept for this game yet; your records are below.' : syncConfigured ? 'No verified scores for this board yet.' : 'Verified public standings appear once Backup & sync is set up and you are signed in.'} />
       <BoardPanel title="Your records" icon={<Medal aria-hidden="true" />} entries={personalRows} empty="Complete this activity to set your first record." />
     </div>
   </div>;

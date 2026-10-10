@@ -386,6 +386,8 @@ export interface ReaderInputSettings {
   keys: Record<PageAction, string[]>;
 }
 
+export type LiveStatsPosition = 'top' | 'corner';
+
 export interface UserSettings {
   theme: ThemeId;
   font: FontFamily;
@@ -398,6 +400,11 @@ export interface UserSettings {
   ambientVolume: number;
   showLiveWpm: boolean;
   showLiveAccuracy: boolean;
+  /** Live stats in Speed and Academy: a glass bar under the section header, or the small bottom-right pill. */
+  liveStatsPosition: LiveStatsPosition;
+  showLiveTime: boolean;
+  /** Accent progress line along the bottom of the top live stats bar. */
+  showLiveProgress: boolean;
   showKeyboard: boolean;
   zenMode: boolean;
   smoothCaret: boolean;

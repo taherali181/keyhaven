@@ -35,7 +35,7 @@ import type { UserSettings } from '@/types';
 const READER_VIEWS: TypingMode[] = ['stories', 'quotes'];
 
 
-export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = false }: { initialMode?: TypingMode; initialLibraryOpen?: boolean }) {
+export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = false, initialArcadeGame }: { initialMode?: TypingMode; initialLibraryOpen?: boolean; initialArcadeGame?: string }) {
   const [currentMode, setCurrentMode] = useState<TypingMode>(initialMode);
   const settingsApi = useSettings();
   const { settings } = settingsApi;
@@ -88,6 +88,11 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
   // Mode changes run inside a transition so <ViewTransition> animates between views.
   const selectMode = (mode: TypingMode) => {
     if (mode !== currentMode) window.history.pushState({}, '', pathForMode(mode));
+    // Same section, deeper page (an Arcade game): go back to the section's home and let it re-read the address.
+    else if (window.location.pathname !== pathForMode(mode)) {
+      window.history.pushState({}, '', pathForMode(mode));
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
     startTransition(() => setCurrentMode(mode));
   };
   useEffect(() => { selectModeRef.current = selectMode; });
@@ -107,7 +112,7 @@ export function KeyHavenApp({ initialMode = 'stories', initialLibraryOpen = fals
                 {currentMode === 'speed-test' && <SpeedTestView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
                 {currentMode === 'quotes' && <QuotesView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
                 {currentMode === 'learn' && <LearnView settings={sectionSettings} onKeyPress={playKeyPress} onUpdateSetting={updateSectionSetting} />}
-                {currentMode === 'arcade' && <ArcadeView settings={sectionSettings} onKeyPress={playKeyPress} />}
+                {currentMode === 'arcade' && <ArcadeView settings={sectionSettings} onKeyPress={playKeyPress} initialGame={initialArcadeGame} />}
                 {currentMode === 'leaderboard' && <LeaderboardView />}
                 {/* PDFs and Write are being built; they stay reachable by address only until then. */}
                 {currentMode === 'pdf' && <PdfView settings={sectionSettings} />}

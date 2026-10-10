@@ -14,6 +14,11 @@ describe('section addresses', () => {
     expect(modeFromPath('/')).toBe('home');
   });
 
+  it('keeps an open Arcade game inside the Arcade', () => {
+    expect(modeFromPath('/arcade/word-rain')).toBe('arcade');
+    expect(modeFromPath('/arcade/anything')).toBe('arcade');
+  });
+
   it('gives each section one canonical address that leads back to it', () => {
     for (const mode of ['stories', 'quotes', 'learn', 'speed-test', 'arcade', 'profile', 'pdf', 'manuscript'] as const) {
       expect(modeFromPath(pathForMode(mode))).toBe(mode);

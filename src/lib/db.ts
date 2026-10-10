@@ -130,6 +130,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
   ambientVolume: 0.4,
   showLiveWpm: true,
   showLiveAccuracy: true,
+  liveStatsPosition: 'top',
+  showLiveTime: true,
+  showLiveProgress: true,
   showKeyboard: false,
   zenMode: false,
   smoothCaret: true,
@@ -202,7 +205,10 @@ export function normalizeSettings(value: unknown): UserSettings {
     sectionPrefs: sanitizeSectionPrefs(parsed.sectionPrefs),
     readerInput: sanitizeReaderInput(parsed.readerInput),
     quoteFilter: typeof parsed.quoteFilter === 'string' && parsed.quoteFilter.length <= 60 ? parsed.quoteFilter : 'all',
-    speedPrefs: sanitizeSpeedPrefs(parsed.speedPrefs)
+    speedPrefs: sanitizeSpeedPrefs(parsed.speedPrefs),
+    liveStatsPosition: parsed.liveStatsPosition === 'corner' ? 'corner' : 'top',
+    showLiveTime: typeof parsed.showLiveTime === 'boolean' ? parsed.showLiveTime : true,
+    showLiveProgress: typeof parsed.showLiveProgress === 'boolean' ? parsed.showLiveProgress : true
   };
 }
 

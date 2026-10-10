@@ -3,8 +3,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { RotateCcw, X } from 'lucide-react';
-import type { CaretStyle, FontFamily, TypingMode, UserSettings } from '@/types';
+import type { CaretStyle, FontFamily, LiveStatsPosition, TypingMode, UserSettings } from '@/types';
 import { GlassSelect } from '@/components/ui/GlassSelect';
+import { Segmented } from '@/components/ui/Segmented';
 import { SliderField } from '@/components/ui/SliderField';
 import { FONTS } from '@/lib/themes';
 import { fade, slideInRight } from '@/lib/motion';
@@ -31,6 +32,10 @@ const TYPING_FACES: FontFamily[] = ['jetbrains', 'jetbrains-mono', 'sans', 'inte
 const CARETS: Array<{ value: CaretStyle; label: string }> = [
   { value: 'smooth', label: 'Smooth' }, { value: 'bar', label: 'Bar' }, { value: 'block', label: 'Block' },
   { value: 'underline', label: 'Underline' }, { value: 'glow', label: 'Glow' }
+];
+
+const LIVE_STATS_POSITIONS: Array<{ value: LiveStatsPosition; label: string }> = [
+  { value: 'top', label: 'Under the header' }, { value: 'corner', label: 'Bottom corner' }
 ];
 
 /**
@@ -94,8 +99,13 @@ export function SectionSettings({ mode, settings, onUpdateSetting, onUpdateSetti
               <GlassSelect value={settings.caretStyle} options={CARETS} onChange={value => onUpdateSetting('caretStyle', value)} />
             </div>
             {spec.liveStats && <>
+              <div className="app-field"><span className="rs-field-label">Live stats</span>
+                <Segmented label="Live stats position" value={settings.liveStatsPosition} options={LIVE_STATS_POSITIONS} onChange={value => onUpdateSetting('liveStatsPosition', value)} layoutId="section-live-stats-position" />
+              </div>
               <label className="toggle-row app-toggle"><span><span>Show live speed</span></span><input type="checkbox" role="switch" checked={settings.showLiveWpm} onChange={event => onUpdateSetting('showLiveWpm', event.target.checked)} /></label>
               <label className="toggle-row app-toggle"><span><span>Show live accuracy</span></span><input type="checkbox" role="switch" checked={settings.showLiveAccuracy} onChange={event => onUpdateSetting('showLiveAccuracy', event.target.checked)} /></label>
+              <label className="toggle-row app-toggle"><span><span>Show time</span></span><input type="checkbox" role="switch" checked={settings.showLiveTime} onChange={event => onUpdateSetting('showLiveTime', event.target.checked)} /></label>
+              <label className="toggle-row app-toggle"><span><span>Show progress line</span><small>Along the bottom of the stats bar</small></span><input type="checkbox" role="switch" checked={settings.showLiveProgress} onChange={event => onUpdateSetting('showLiveProgress', event.target.checked)} /></label>
             </>}
             {spec.guide && <label className="toggle-row app-toggle"><span><span>Keyboard guide</span><small>Fingers and keys under the practice text</small></span><input type="checkbox" role="switch" checked={settings.academyGuide !== 'off'} onChange={event => onUpdateSetting('academyGuide', event.target.checked ? 'on' : 'off')} /></label>}
           </div></div>

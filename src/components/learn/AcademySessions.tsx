@@ -59,6 +59,8 @@ function PracticeSession({ settings, onKeyPress, onUpdateSetting, eyebrow, title
   const guideOn = settings.academyGuide !== 'off';
   const nextChar = engine.isFinished ? '' : text[engine.typed.length] ?? '';
   const current = steps ? steps.indexOf('current') : -1;
+  const statsAtTop = settings.liveStatsPosition !== 'corner';
+  const liveStats = <LiveStatsBar position={statsAtTop ? 'top' : 'corner'} progress={text.length ? engine.typed.length / text.length : 0} wpm={engine.wpm} accuracy={engine.accuracy} timeElapsed={engine.timeElapsed} onReset={() => engine.reset()} showLiveWpm={settings.showLiveWpm} showLiveAccuracy={settings.showLiveAccuracy} showTime={settings.showLiveTime} showProgress={settings.showLiveProgress} />;
 
   return <section className="ac-shell ac-practice">
     <header className="kh-bar-row ac-practice-bar">
@@ -78,10 +80,11 @@ function PracticeSession({ settings, onKeyPress, onUpdateSetting, eyebrow, title
         {!settings.zenMode && <SettingsTab label="Academy" />}
       </div>
     </header>
+    {statsAtTop && liveStats}
     <TypingArea targetText={text} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" viewportLines={3} lineHeight={1.8} onKeyDown={engine.handleKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={() => engine.reset()} />
     {summary}
     {guideOn && <KeyGuide nextChar={nextChar} focusKeys={focusKeys} />}
-    {!summary && <LiveStatsBar wpm={engine.wpm} accuracy={engine.accuracy} timeElapsed={engine.timeElapsed} onReset={() => engine.reset()} showLiveWpm={settings.showLiveWpm} showLiveAccuracy={settings.showLiveAccuracy} />}
+    {!summary && !statsAtTop && liveStats}
   </section>;
 }
 

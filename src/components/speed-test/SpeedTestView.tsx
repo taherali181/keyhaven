@@ -199,73 +199,80 @@ export const SpeedTestView = ({ settings, onKeyPress, onUpdateSetting }: { setti
     : mode === 'words'
       ? { value: wordConfig, options: WORD_OPTIONS.map(value => ({ value, label: String(value) })) }
       : null;
+  // How far through the run: the clock for time tests, the text for the rest; Zen has no end.
+  const progress = mode === 'zen' ? undefined : mode === 'time' ? engine.timeElapsed / timeConfig : targetText.length ? engine.typed.length / targetText.length : 0;
+  const statsAtTop = settings.liveStatsPosition !== 'corner';
+  const liveStats = <LiveStatsBar position={statsAtTop ? 'top' : 'corner'} progress={progress} wpm={engine.wpm} accuracy={engine.accuracy} timeRemaining={engine.timeRemaining} timeElapsed={engine.timeElapsed} isTimed={mode === 'time'} onReset={restart} showLiveWpm={settings.showLiveWpm} showLiveAccuracy={settings.showLiveAccuracy} showTime={settings.showLiveTime} showProgress={settings.showLiveProgress} />;
 
   return <section className="speed-shell">
     <SectionHeader eyebrow="Practice against the clock" title="Speed" tabs={[{ id: 'test', label: 'Test' }, { id: 'leaderboard', label: 'Leaderboard' }]} active={view} onChange={setView} layoutId="speed-tab" facts={view === 'test' ? speedFacts(history, now) : undefined} settingsLabel={settings.zenMode ? undefined : 'Speed'} />
+    {view === 'test' && statsAtTop && liveStats}
     {view === 'leaderboard' ? <LeaderboardView speedOnly embedded /> : <div className="speed-stage">
-      <div className="speed-toolbar">
-        <div className="speed-modes glass glass-pill">
-          <Segmented label="Test mode" value={mode} options={SPEED_MODES} onChange={chooseMode} layoutId="speed-mode" />
-        </div>
-        <div className="speed-config-wrap" ref={configRef}>
-          <button type="button" className="speed-config-trigger" onClick={() => setConfigOpen(value => !value)} aria-expanded={configOpen} aria-haspopup="dialog">
-            <SlidersHorizontal aria-hidden="true" />
-            <span>{speedLabel(prefs)}</span>
-            {mode !== 'quote' && mode !== 'custom' && punctuation && <em>punctuation</em>}
-            {mode !== 'quote' && mode !== 'custom' && numbers && <em>numbers</em>}
-            <motion.span className="speed-config-chevron" animate={{ rotate: configOpen ? 180 : 0 }} transition={{ duration: 0.2 }} aria-hidden="true"><ChevronDown /></motion.span>
-          </button>
-          <AnimatePresence>
-            {configOpen && <motion.div
-              className="speed-config-panel"
-              role="dialog"
-              aria-label="Test settings"
-              initial={{ opacity: 0, scale: 0.96, y: -6 }}
-              animate={{ opacity: 1, scale: 1, y: 0, transition: spring.soft }}
-              exit={{ opacity: 0, scale: 0.98, y: -4, transition: { duration: 0.12 } }}
-            >
-              {lengthOptions && <div className="speed-config-row">
-                <span>Length</span>
-                <Segmented label="Length" value={lengthOptions.value} options={lengthOptions.options} onChange={value => reconfigure(mode === 'time' ? { time: value } : { words: value })} layoutId="speed-length" />
-              </div>}
-              {mode === 'quote' && <div className="speed-config-row">
-                <span>Length</span>
-                <Segmented label="Quote length" value={prefs.quoteLength} options={QUOTE_LENGTHS.map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} onChange={value => reconfigure({ quoteLength: value })} layoutId="speed-quote-length" />
-              </div>}
-              {(mode === 'time' || mode === 'words' || mode === 'zen') && <div className="speed-config-row">
-                <span>Text</span>
-                <div className="speed-toggles">
-                  <button type="button" className="speed-toggle" aria-pressed={punctuation} onClick={() => reconfigure({ punctuation: !punctuation })}>Punctuation</button>
-                  <button type="button" className="speed-toggle" aria-pressed={numbers} onClick={() => reconfigure({ numbers: !numbers })}>Numbers</button>
-                </div>
-              </div>}
-              {mode === 'custom' && <div className="speed-config-row">
-                <span>Text</span>
-                <button type="button" className="speed-toggle" onClick={() => { setCustomDraft(prefs.customText); setEditing(true); setConfigOpen(false); }}><PenLine aria-hidden="true" />Edit your text</button>
-              </div>}
-              <p className="speed-config-note">{mode === 'time' ? 'Type as much as you can before the time runs out.' : mode === 'words' ? 'Type a set number of words as fast as you can.' : mode === 'quote' ? 'A line from the quote collection, with who said it.' : mode === 'custom' ? 'Practise on any text you paste in.' : 'No clock and no finish line. Press Shift+Enter when you are done.'}</p>
-            </motion.div>}
-          </AnimatePresence>
-        </div>
-        {mode === 'zen' && <button type="button" className="speed-finish" disabled={!engine.isActive} onClick={() => engine.finishTest()}><Flag aria-hidden="true" />Finish<kbd>Shift Enter</kbd></button>}
-      </div>
-
-      {showEditor
-        ? <div className="speed-custom glass">
-          <label htmlFor="speed-custom-text"><strong>Your practice text</strong><small>Paste or write anything. Curly quotes and long dashes become plain keys.</small></label>
-          <textarea id="speed-custom-text" value={customDraft} maxLength={MAX_CUSTOM_CHARS} rows={6} placeholder="Paste a paragraph you want to get faster at…" onChange={event => setCustomDraft(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); saveCustom(); } }} autoFocus />
-          <div className="speed-custom-actions">
-            <small>{customDraft.length.toLocaleString()} / {MAX_CUSTOM_CHARS.toLocaleString()}</small>
-            {customText && <button type="button" className="rs-btn" onClick={() => setEditing(false)}>Cancel</button>}
-            <button type="button" className="rs-btn is-primary" disabled={!practiceText(customDraft)} onClick={saveCustom}><Check aria-hidden="true" />Use this text</button>
+      <div className="speed-focus">
+        <div className="speed-toolbar">
+          <div className="speed-modes glass glass-pill">
+            <Segmented label="Test mode" value={mode} options={SPEED_MODES} onChange={chooseMode} layoutId="speed-mode" />
           </div>
+          <div className="speed-config-wrap" ref={configRef}>
+            <button type="button" className="speed-config-trigger" onClick={() => setConfigOpen(value => !value)} aria-expanded={configOpen} aria-haspopup="dialog">
+              <SlidersHorizontal aria-hidden="true" />
+              <span>{speedLabel(prefs)}</span>
+              {mode !== 'quote' && mode !== 'custom' && punctuation && <em>punctuation</em>}
+              {mode !== 'quote' && mode !== 'custom' && numbers && <em>numbers</em>}
+              <motion.span className="speed-config-chevron" animate={{ rotate: configOpen ? 180 : 0 }} transition={{ duration: 0.2 }} aria-hidden="true"><ChevronDown /></motion.span>
+            </button>
+            <AnimatePresence>
+              {configOpen && <motion.div
+                className="speed-config-panel"
+                role="dialog"
+                aria-label="Test settings"
+                initial={{ opacity: 0, scale: 0.96, y: -6 }}
+                animate={{ opacity: 1, scale: 1, y: 0, transition: spring.soft }}
+                exit={{ opacity: 0, scale: 0.98, y: -4, transition: { duration: 0.12 } }}
+              >
+                {lengthOptions && <div className="speed-config-row">
+                  <span>Length</span>
+                  <Segmented label="Length" value={lengthOptions.value} options={lengthOptions.options} onChange={value => reconfigure(mode === 'time' ? { time: value } : { words: value })} layoutId="speed-length" />
+                </div>}
+                {mode === 'quote' && <div className="speed-config-row">
+                  <span>Length</span>
+                  <Segmented label="Quote length" value={prefs.quoteLength} options={QUOTE_LENGTHS.map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} onChange={value => reconfigure({ quoteLength: value })} layoutId="speed-quote-length" />
+                </div>}
+                {(mode === 'time' || mode === 'words' || mode === 'zen') && <div className="speed-config-row">
+                  <span>Text</span>
+                  <div className="speed-toggles">
+                    <button type="button" className="speed-toggle" aria-pressed={punctuation} onClick={() => reconfigure({ punctuation: !punctuation })}>Punctuation</button>
+                    <button type="button" className="speed-toggle" aria-pressed={numbers} onClick={() => reconfigure({ numbers: !numbers })}>Numbers</button>
+                  </div>
+                </div>}
+                {mode === 'custom' && <div className="speed-config-row">
+                  <span>Text</span>
+                  <button type="button" className="speed-toggle" onClick={() => { setCustomDraft(prefs.customText); setEditing(true); setConfigOpen(false); }}><PenLine aria-hidden="true" />Edit your text</button>
+                </div>}
+                <p className="speed-config-note">{mode === 'time' ? 'Type as much as you can before the time runs out.' : mode === 'words' ? 'Type a set number of words as fast as you can.' : mode === 'quote' ? 'A line from the quote collection, with who said it.' : mode === 'custom' ? 'Practise on any text you paste in.' : 'No clock and no finish line. Press Shift+Enter when you are done.'}</p>
+              </motion.div>}
+            </AnimatePresence>
+          </div>
+          {mode === 'zen' && <button type="button" className="speed-finish" disabled={!engine.isActive} onClick={() => engine.finishTest()}><Flag aria-hidden="true" />Finish<kbd>Shift Enter</kbd></button>}
         </div>
-        : targetText
-          ? <TypingArea targetText={targetText} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" viewportLines={3} viewportMode="centered" lineHeight={1.8} onKeyDown={onKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={restart} />
-          : <div className="speed-loading"><span className="skeleton" aria-label="Choosing a quote" /></div>}
-      {mode === 'quote' && quote && !showEditor && <p className="speed-attribution">— {quote.author}{quote.source ? <>, <cite>{quote.source}</cite></> : null}</p>}
+
+        {showEditor
+          ? <div className="speed-custom glass">
+            <label htmlFor="speed-custom-text"><strong>Your practice text</strong><small>Paste or write anything. Curly quotes and long dashes become plain keys.</small></label>
+            <textarea id="speed-custom-text" value={customDraft} maxLength={MAX_CUSTOM_CHARS} rows={6} placeholder="Paste a paragraph you want to get faster at…" onChange={event => setCustomDraft(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); saveCustom(); } }} autoFocus />
+            <div className="speed-custom-actions">
+              <small>{customDraft.length.toLocaleString()} / {MAX_CUSTOM_CHARS.toLocaleString()}</small>
+              {customText && <button type="button" className="rs-btn" onClick={() => setEditing(false)}>Cancel</button>}
+              <button type="button" className="rs-btn is-primary" disabled={!practiceText(customDraft)} onClick={saveCustom}><Check aria-hidden="true" />Use this text</button>
+            </div>
+          </div>
+          : targetText
+            ? <TypingArea targetText={targetText} typed={engine.typed} isFinished={engine.isFinished} caretStyle={settings.caretStyle} font={settings.font} fontSize={settings.fontSize} wrapMode="whole-word" viewportLines={3} viewportMode="centered" lineHeight={1.8} onKeyDown={onKeyDown} onCompositionStart={engine.handleCompositionStart} onCompositionEnd={engine.handleCompositionEnd} onReset={restart} />
+            : <div className="speed-loading"><span className="skeleton" aria-label="Choosing a quote" /></div>}
+        {mode === 'quote' && quote && !showEditor && <p className="speed-attribution">— {quote.author}{quote.source ? <>, <cite>{quote.source}</cite></> : null}</p>}
+      </div>
       <SpeedRecords subMode={subMode} rows={history} />
-      <LiveStatsBar wpm={engine.wpm} accuracy={engine.accuracy} timeRemaining={engine.timeRemaining} timeElapsed={engine.timeElapsed} isTimed={mode === 'time'} onReset={restart} showLiveWpm={settings.showLiveWpm} showLiveAccuracy={settings.showLiveAccuracy} />
+      {!statsAtTop && liveStats}
       <TestResultsModal
         stats={completed}
         isOpen={resultOpen}
